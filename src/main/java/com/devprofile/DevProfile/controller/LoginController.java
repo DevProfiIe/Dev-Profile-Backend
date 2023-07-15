@@ -8,10 +8,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
 public class LoginController {
-    @GetMapping("/login")
-    public String login(Model model, @AuthenticationPrincipal OAuth2User oauth2User) {
+    @GetMapping("/CustomLogin")
+    public String customLogin(Model model, @AuthenticationPrincipal OAuth2User oauth2User) {
         String userName = oauth2User.getAttribute("login");
         model.addAttribute("userName", userName);
-        return "login";
+        return "CustomLogin";
     }
 }
