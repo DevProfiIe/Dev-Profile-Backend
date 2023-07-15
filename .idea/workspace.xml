@@ -5,10 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="28d335bb-38ee-4511-b5e4-b2334a665e10" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/devprofile/DevProfile/config/SecurityConfig.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/devprofile/DevProfile/controller/LoginController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/templates/login.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/classes/com/devprofile/DevProfile/config/SecurityConfig.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/resources/application.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -105,7 +103,7 @@
       <option name="presentableId" value="Default" />
       <updated>1689405018428</updated>
       <workItem from="1689405020231" duration="1196000" />
-      <workItem from="1689406253746" duration="4968000" />
+      <workItem from="1689406253746" duration="5408000" />
     </task>
     <servers />
   </component>
