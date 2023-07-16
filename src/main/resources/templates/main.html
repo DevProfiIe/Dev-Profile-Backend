@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Main Page</title>
+</head>
+<body>
+<h1>Repository List</h1>
+<ul>
+  <li th:each="repo : ${repositories}">
+    <span th:text="${repo}"></span>
+  </li>
+</ul>
+</body>
+</html>

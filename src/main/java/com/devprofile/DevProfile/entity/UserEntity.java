@@ -14,5 +14,11 @@ public class UserEntity {
     private Long id;
 
     @Column
-    private String username;
+    private String userName;
+
+    @Column
+    private String userImg;
+
+    @Column
+    private String userEmail;
 }
