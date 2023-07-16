@@ -21,14 +21,17 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         OAuth2User oAuth2User = super.loadUser(userRequest);
 
-        String username = (String) oAuth2User.getAttributes().get("name");
-        System.out.println("username = " + username);
+        String userName = (String) oAuth2User.getAttributes().get("login");
+        String userImg = (String) oAuth2User.getAttributes().get("avatar_url");
+        String userEmail = (String) oAuth2User.getAttributes().get("email");
 
-        Optional<UserEntity> optionalUserEntity = userRepository.findByUsername(username);
+        Optional<UserEntity> optionalUserEntity = userRepository.findByUserEmail(userEmail);
         UserEntity userEntity;
         if (!optionalUserEntity.isPresent()) {
             userEntity = new UserEntity();
-            userEntity.setUsername(username);
+            userEntity.setUserName(userName);
+            userEntity.setUserEmail(userEmail);
+            userEntity.setUserImg(userImg);
             userRepository.save(userEntity);
         } else {
             userEntity = optionalUserEntity.get();
