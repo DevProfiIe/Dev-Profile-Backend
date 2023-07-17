@@ -14,15 +14,14 @@ public class ApiResponse<T> {
     private boolean result;
     private T data;
     private String token;
-    private HttpStatus errorCode;
+
     private String message;
 
 
-    public ApiResponse(boolean result, T data, String token, HttpStatus errorCode, String message) {
+    public ApiResponse(boolean result, T data, String token, String message) {
         this.result = result;
         this.data = data;
         this.token = token;
-        this.errorCode = errorCode;
         this.message = message;
     }
 
