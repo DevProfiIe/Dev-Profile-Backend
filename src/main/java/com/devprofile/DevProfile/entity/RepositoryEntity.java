@@ -17,14 +17,21 @@ public class RepositoryEntity {
     private Integer userId;
 
     @Column
-    private String repositoryName;
+    private String repoName;
     @Column
     private String userName;
 
-    public RepositoryEntity(String repositoryName, Integer userId, String userName) {
-        this.repositoryName = repositoryName;
+    @Column
+    private Integer repoId;
+
+    @Column
+    private String repoNodeId;
+    public RepositoryEntity(String repoName, Integer userId, String userName,Integer repoId,String repoNodeId) {
+        this.repoName = repoName;
         this.userId = userId;
         this.userName = userName;
+        this.repoId = repoId;
+        this.repoNodeId = repoNodeId;
     }
 
 
