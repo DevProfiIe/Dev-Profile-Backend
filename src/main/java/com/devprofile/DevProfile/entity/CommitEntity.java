@@ -23,8 +23,20 @@ public class CommitEntity {
     private String commitDate;
 
     @Column
-    private String RepositoryName;
+    private String userName;
 
     @Column
     private String commitSha;
+
+    public CommitEntity(Integer userId, String commitMessage, String commitDate, String userName, String commitSha) {
+        this.userId = userId;
+        this.commitMessage = commitMessage;
+        this.commitDate = commitDate;
+        this.userName = userName;
+        this.commitSha = commitSha;
+    }
+
+    public CommitEntity() {
+
+    }
 }
