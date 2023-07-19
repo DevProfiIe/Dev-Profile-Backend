@@ -18,6 +18,9 @@ public class UserEntity {
     private Integer userId;
 
     @Column
+    private String userNodeId;
+
+    @Column
     private String userName;
 
     @Column
