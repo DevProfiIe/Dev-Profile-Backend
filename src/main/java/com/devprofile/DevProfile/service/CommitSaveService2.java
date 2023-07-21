@@ -6,6 +6,7 @@ import com.devprofile.DevProfile.repository.CommitRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,17 +20,12 @@ public class CommitSaveService2 {
 
     private final CommitRepository commitRepository;
 
-
     @Transactional
-    public void saveCommitDatas(Integer userId, List<String> commitMessages, List<String> commitDates, String userName,List<String> commitShas) {
-        List<CommitEntity> commitEntities = new ArrayList<>();
-        for (int i = 0; i < commitShas.size(); i++) {
-            if (!commitRepository.existsByCommitSha(commitShas.get(i))) {
-                    CommitEntity commitEntity = new CommitEntity(userId, commitMessages.get(i), commitDates.get(i),userName,commitShas.get(i));
-                    commitEntities.add(commitEntity);
-            }
+    public synchronized void saveCommitDatas(CommitEntity commit) {
+        if (!commitRepository.existsByCommitSha(commit.getCommitSha())) {
+            commitRepository.save(commit);
+        }else{
+            log.error(commit.getCommitMessage());
         }
-            commitRepository.saveAll(commitEntities);
-
     }
 }
