@@ -27,9 +27,9 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
         String userEmail = (String) oAuth2User.getAttributes().get("email");
         String userNickName = (String) oAuth2User.getAttributes().get("name");
 
-        if (userId == null || userName == null || userImg == null || userEmail == null || userNickName == null || userNodeId == null) {
-            throw new IllegalArgumentException("Invalid OAuth2User attributes");
-        }
+//        if (userId == null || userName == null || userImg == null || userEmail == null || userNickName == null || userNodeId == null) {
+//            throw new IllegalArgumentException("Invalid OAuth2User attributes");
+//        }
 
         if (!userRepository.existsByUserId(userId)) {
             UserEntity newUser = new UserEntity();

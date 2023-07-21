@@ -31,6 +31,7 @@ dependencies {
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 	implementation 'org.springframework.boot:spring-boot-starter-graphql'
 	implementation group: 'com.graphql-java', name: 'graphql-java', version: '14.0'
+	implementation group: 'org.kohsuke', name: 'github-api', version: '1.315'
 	implementation 'com.graphql-java-kickstart:graphql-webclient-spring-boot-starter:2.0.0'
 
 	compileOnly 'org.projectlombok:lombok'
