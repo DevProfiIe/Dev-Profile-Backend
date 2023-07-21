@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.Map;
+
 @Entity
 @Getter
 @Setter
@@ -27,6 +29,13 @@ public class CommitEntity {
 
     @Column
     private String commitSha;
+
+    @Column
+    private String repoNodeId;
+
+    @Column
+    private String language;
+
 
     public CommitEntity(Integer userId, String commitMessage, String commitDate, String userName, String commitSha) {
         this.userId = userId;

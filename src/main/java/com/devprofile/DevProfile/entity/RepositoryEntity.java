@@ -14,26 +14,35 @@ public class RepositoryEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column
-    private Long userId;
+    private Integer userId;
 
     @Column
     private String repoName;
-    @Column
-    private String userName;
-
-    @Column
-    private Integer repoId;
 
     @Column
     private String repoNodeId;
-    public RepositoryEntity(String repoName, Long userId, String userName,Integer repoId,String repoNodeId) {
-        this.repoName = repoName;
-        this.userId = userId;
-        this.userName = userName;
-        this.repoId = repoId;
-        this.repoNodeId = repoNodeId;
-    }
 
+    @Column
+    private String repoCreated;
+
+    @Column
+    private String repoUpdated;
+
+    @Column
+    private String repoDesc;
+    @Column
+    private String repoUrl;
+
+
+    public RepositoryEntity(Integer userId, String repoName, String repoNodeId, String repoCreated, String repoUpdated, String repoDesc, String repoUrl) {
+        this.userId = userId;
+        this.repoName = repoName;
+        this.repoNodeId = repoNodeId;
+        this.repoCreated = repoCreated;
+        this.repoUpdated = repoUpdated;
+        this.repoDesc = repoDesc;
+        this.repoUrl = repoUrl;
+    }
 
     public RepositoryEntity() {
 

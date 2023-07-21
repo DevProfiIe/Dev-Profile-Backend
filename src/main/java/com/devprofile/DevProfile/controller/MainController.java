@@ -3,8 +3,8 @@ package com.devprofile.DevProfile.controller;
 import com.devprofile.DevProfile.component.JwtProvider;
 import com.devprofile.DevProfile.entity.UserEntity;
 import com.devprofile.DevProfile.repository.UserRepository;
-import com.devprofile.DevProfile.service.CommitSaveService;
 import com.devprofile.DevProfile.service.GitLoginService;
+import com.devprofile.DevProfile.service.graphql.GraphUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -23,7 +23,6 @@ import java.io.IOException;
 public class MainController {
     private static final Logger logger = LoggerFactory.getLogger(MainController.class);
 
-    private final CommitSaveService commitSaveService;
 
     @Autowired
     private final UserRepository userRepository;
@@ -34,6 +33,8 @@ public class MainController {
     @Autowired
     private final GitLoginService gitLoginService;
 
+    @Autowired
+    private final GraphUserService userService;
 
 
 
@@ -47,7 +48,7 @@ public class MainController {
         UserEntity user = userRepository.findById(Integer.parseInt(primaryId)).orElseThrow();
         System.out.println("accessToken = " + user.getGitHubToken());
 
-        return commitSaveService.saveCommitsForRepo(user);
+        return userService.UserSaves(user);
 
     }
 }
