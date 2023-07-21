@@ -1,12 +1,15 @@
 package com.devprofile.DevProfile.controller;
 
 import com.devprofile.DevProfile.dto.response.ApiResponse;
+import com.devprofile.DevProfile.entity.CommitEntity;
+import com.devprofile.DevProfile.entity.RepositoryEntity;
 import com.devprofile.DevProfile.service.CommitSaveService2;
 import com.devprofile.DevProfile.service.RepositorySaveService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.kohsuke.github.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
@@ -19,6 +22,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -37,7 +41,7 @@ public class MainController2 {
     private final CommitSaveService2 commitSaveService2;
 
     @GetMapping("/main")
-    public List<String> main(@AuthenticationPrincipal OAuth2User oauth2User, OAuth2AuthenticationToken authentication) {
+    public String main(@AuthenticationPrincipal OAuth2User oauth2User, OAuth2AuthenticationToken authentication) {
         String userName = (String) oauth2User.getAttributes().get("login");
         Integer userId = (Integer) oauth2User.getAttributes().get("id");
         String apiUrl = "https://api.github.com/search/commits?q=author:" + userName;
@@ -47,75 +51,100 @@ public class MainController2 {
                         authentication.getName());
         OAuth2AccessToken accessToken = authorizedClient.getAccessToken();
         System.out.println("accessToken = " + accessToken.getTokenValue());
-        List<String> responseList =fetchAllPages(1,apiUrl, accessToken, new ArrayList<>());
-                    List<String> commitDates = new ArrayList<>();
-                    List<String> commitMessages = new ArrayList<>();
-                    List<String> commitShas = new ArrayList<>();
-                    List<Integer> repoIds = new ArrayList<>();
-                    List<String> repoNodeIds = new ArrayList<>();
-                    List<String> repoNames = new ArrayList<>();
 
-                    for (String response : responseList) {
-                        try {
 
-                            ObjectMapper mapper = new ObjectMapper();
-                            JsonNode rootNode = mapper.readTree(response);
-                            if (rootNode.path("items").isArray()) {
-                                for (JsonNode commitNode : rootNode.path("items")) {
-                                    String commitDate = commitNode.path("commit").path("author").path("date").asText();
-                                    String commitMessage = commitNode.path("commit").path("message").asText();
-                                    String commitSha = commitNode.path("sha").asText();
-                                    commitDates.add(commitDate);
-                                    commitMessages.add(commitMessage);
-                                    commitShas.add(commitSha);
-                                    JsonNode repoNode = commitNode.path("repository");
-                                    int repoId = repoNode.path("id").asInt();
-                                    String repoNodeId = repoNode.path("node_id").asText();
-                                    String repoName = repoNode.path("name").asText();
-                                    repoIds.add(repoId);
-                                    repoNodeIds.add(repoNodeId);
-                                    repoNames.add(repoName);
-                                }
-                            }
-                        } catch (IOException e) {
-                            return handleException(e);
-                        }
-                    }
+        fetchAllPages(apiUrl, accessToken, userName, userId);
 
-                    repositorySaveService.saveRepoNames(repoNames, userId, userName, repoIds, repoNodeIds);
-                    commitSaveService2.saveCommitDatas(userId,commitMessages,commitDates, userName,commitShas);
-
-//                    ApiResponse<List<String>> apiResponse = new ApiResponse<>(true, repoNames, accessToken.getTokenValue(), "Repository and Commit data retrieved successfully");
-//                    return Mono.just(ResponseEntity.ok(apiResponse));
-
-                    return responseList;
+        return "main";
     }
 
-    private List<String> fetchAllPages(Integer pageNum,String apiUrl, OAuth2AccessToken accessToken, List<String> responses) {
-        String response = webClient.get()
-                .uri(apiUrl+"&page="+pageNum)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken.getTokenValue())
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
+    private void fetchAllPages(String apiUrl, OAuth2AccessToken accessToken, String userName, Integer userId) {
+        try{
+            GitHub gitHub = new GitHubBuilder().withOAuthToken(accessToken.getTokenValue()).build();
+            gitHub.checkApiUrlValidity();
 
-                responses.add(response);
+            GHCommitSearchBuilder builder = gitHub.searchCommits()
+                    .author(userName)
+                    .sort(GHCommitSearchBuilder.Sort.AUTHOR_DATE);
+            PagedSearchIterable<GHCommit> commits = builder.list().withPageSize(30);
 
-                ObjectMapper mapper = new ObjectMapper();
-                try {
-                    JsonNode rootNode = mapper.readTree(response);
-                    int totalCount = rootNode.path("total_count").asInt();
-                    int remainingCount = totalCount - (30 * pageNum);
+            for (GHCommit commit : commits) {
+                GHCommit.ShortInfo commitInfo = commit.getCommitShortInfo();
 
-                    if (remainingCount > 0) {
-                        return fetchAllPages(pageNum+1,apiUrl, accessToken, responses);
-                    } else {
-                        return responses;
-                    }
-                } catch (IOException e) {
-                    return handleException(e);
-                }
 
+                CommitEntity commitEntity = new CommitEntity(
+                        userId,
+                        commitInfo.getMessage(),
+                        commitInfo.getAuthor().getDate().toString(),
+                        userName,
+                        commit.getSHA1());
+
+                commitSaveService2.saveCommitDatas(commitEntity);
+
+                GHRepository repository = commit.getOwner();
+                RepositoryEntity repositoryEntity = new RepositoryEntity(
+                        repository.getName(),
+                        userId,
+                        userName,
+                        (int) repository.getId(),
+                        repository.getNodeId());
+                repositorySaveService.saveRepoNames(repositoryEntity);
+            }
+
+        }catch (IOException e){
+            log.error(e.getMessage());
+        }
+
+
+
+
+//        RestTemplate restTemplate = new RestTemplate();
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.set("Authorization", "Bearer " + accessToken.getTokenValue());
+//        HttpEntity<String> entity = new HttpEntity<>("parameters", headers);
+//
+//        ResponseEntity<String> response = restTemplate.exchange(
+//                apiUrl + "&per_page=1", HttpMethod.GET, entity, String.class);
+//        int totalCount = 0;
+//        ObjectMapper mapper = new ObjectMapper();
+//        try {
+//            JsonNode rootNode = mapper.readTree(response.getBody());
+//            totalCount = rootNode.path("total_count").asInt();
+//        } catch (IOException e) {
+//            handleException(e);
+//            return;
+//        }
+//        int pageNum = 1;
+//        while (totalCount > 0) {
+//            ResponseEntity<String> commitResponse = restTemplate.exchange(
+//                    apiUrl + "&per_page=30&page=" + pageNum, HttpMethod.GET, entity, String.class);
+//
+//            try {
+//                ObjectMapper mapping = new ObjectMapper();
+//                JsonNode rootNode = mapping.readTree(commitResponse.getBody());
+//                if(rootNode.path("incomplete_result").asBoolean()) log.error("약해");
+//                if (rootNode.path("items").isArray()) {
+//                    for (JsonNode commitNode : rootNode.path("items")) {
+//                        String commitDate = commitNode.path("commit").path("author").path("date").asText();
+//                        String commitMessage = commitNode.path("commit").path("message").asText();
+//                        String commitSha = commitNode.path("sha").asText();
+//                        CommitEntity commitEntity = new CommitEntity(userId, commitMessage, commitDate, userName, commitSha);
+//                        commitSaveService2.saveCommitDatas(commitEntity);
+//                        JsonNode repoNode = commitNode.path("repository");
+//                        int repoId = repoNode.path("id").asInt();
+//                        String repoNodeId = repoNode.path("node_id").asText();
+//                        String repoName = repoNode.path("name").asText();
+//                        RepositoryEntity repositoryEntity = new RepositoryEntity(repoName, userId, userName, repoId, repoNodeId);
+//                        repositorySaveService.saveRepoNames(repositoryEntity);
+//                    }
+//                }
+//            } catch (Exception e) {
+//                log.error("Is there any Problem?!!");
+//                return;
+//            }
+//            totalCount -= 30;
+//            pageNum++;
+//        }
     }
 
     private List<String> handleException(Throwable e) {
