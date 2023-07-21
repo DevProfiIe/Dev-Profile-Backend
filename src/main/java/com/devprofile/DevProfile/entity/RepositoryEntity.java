@@ -14,7 +14,7 @@ public class RepositoryEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column
-    private Integer userId;
+    private Long userId;
 
     @Column
     private String repoName;
@@ -26,7 +26,7 @@ public class RepositoryEntity {
 
     @Column
     private String repoNodeId;
-    public RepositoryEntity(String repoName, Integer userId, String userName,Integer repoId,String repoNodeId) {
+    public RepositoryEntity(String repoName, Long userId, String userName,Integer repoId,String repoNodeId) {
         this.repoName = repoName;
         this.userId = userId;
         this.userName = userName;
