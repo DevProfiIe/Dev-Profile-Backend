@@ -6,11 +6,18 @@ query($login: String!, $node_id: ID!, $repoCursor: String, $commitCursor: String
         hasNextPage
       }
       nodes {
+        id
         name
+        databaseId
+        description
+        createdAt
+        updatedAt
+        url
         defaultBranchRef {
+          name
           target {
             ... on Commit {
-              history(first: 100, after: $commitCursor, author: { id: $node_id}) {
+              history(first: 100, after: $commitCursor, author: { id: $node_id }) {
                 pageInfo {
                   endCursor
                   hasNextPage
