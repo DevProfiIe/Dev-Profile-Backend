@@ -24,7 +24,7 @@ public class RepositoryService {
         gitRepository.flush();
     }
 
-    public void extractAndSaveRepositories(JsonNode jsonResponse, Integer userId) {
+        public void extractAndSaveRepositories(JsonNode jsonResponse, Integer userId) {
         List<RepositoryEntity> repositoriesToSave = new ArrayList<>();
         List<String> allRepoNodeIds = new ArrayList<>();
         Iterator<JsonNode> repositoriesIterator = jsonResponse
@@ -37,6 +37,7 @@ public class RepositoryService {
         while (repositoriesIterator.hasNext()) {
             JsonNode repoNode = repositoriesIterator.next();
             String repoNodeId = repoNode.get("id").asText();
+            String repoName = repoNode.get("name").asText();
             allRepoNodeIds.add(repoNodeId);
         }
 
@@ -76,5 +77,7 @@ public class RepositoryService {
         if (!repositoriesToSave.isEmpty()) {
             saveRepositories(repositoriesToSave);
         }
+
     }
+
 }
