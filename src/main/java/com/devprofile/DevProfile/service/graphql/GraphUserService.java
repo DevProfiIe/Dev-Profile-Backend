@@ -1,6 +1,7 @@
 package com.devprofile.DevProfile.service.graphql;
 
 import com.devprofile.DevProfile.entity.UserEntity;
+import com.devprofile.DevProfile.service.commit.CommitOrgService;
 import com.devprofile.DevProfile.service.commit.CommitService;
 import com.devprofile.DevProfile.service.commit.PatchService;
 import com.devprofile.DevProfile.service.repository.RepositoryService;
@@ -23,6 +24,7 @@ public class GraphUserService {
     private final CommitService commitService;
     private final GraphQLService graphQLService;
     private final RepositoryService repositoryService;
+    private final CommitOrgService commitOrgService;
 
     private final PatchService patchService;
 
@@ -49,10 +51,12 @@ public class GraphUserService {
                     }
 
                     repositoryService.extractAndSaveRepositories(response,userId);
-                    Map<String, List<String>> oids = commitService.extractAndSaveCommits(response, userId);
+                    List<String> orgNames = repositoryService.getOrganizationNames(response);
+                    Map<String, List<String>> oidsMap = commitService.extractAndSaveRepoCommits(response, userId);
+                    Map<String,Map<String, List<String>>> orgOidsMap = commitOrgService.extractAndSaveOrgCommits(response,userId);
 
-                    patchService.extractAndSavePatchs(userName,accessToken,oids);
-
+                    patchService.extractAndSavePatchs(userName,accessToken,oidsMap, orgOidsMap,orgNames);
                 }).then();
+
     }
 }

@@ -1,34 +1,82 @@
-query($login: String!, $node_id: ID!, $repoCursor: String, $commitCursor: String) {
+query($login: String!, $node_id: ID!, $repoCursor: String, $commitCursor: String, $orgCursor: String) {
   user(login: $login) {
-    repositories(first: 100, after: $repoCursor) {
-      pageInfo {
-        endCursor
-        hasNextPage
-      }
-      nodes {
-        id
-        name
-        databaseId
-        description
-        createdAt
-        updatedAt
-        url
-        defaultBranchRef {
+      organizations(first: 10, after: $orgCursor) {
+        pageInfo {
+          endCursor
+          hasNextPage
+        }
+        nodes {
           name
-          target {
-            ... on Commit {
-              history(first: 100, after: $commitCursor, author: { id: $node_id }) {
-                pageInfo {
-                  endCursor
-                  hasNextPage
+          repositories(first: 100, after: $repoCursor) {
+            pageInfo {
+              endCursor
+              hasNextPage
+            }
+            nodes {
+              id
+              name
+              databaseId
+              description
+              createdAt
+              updatedAt
+              url
+              defaultBranchRef {
+                name
+                target {
+                  ... on Commit {
+                    history(first: 100, after: $commitCursor,author: { id:$node_id}) {
+                      pageInfo {
+                        endCursor
+                        hasNextPage
+                      }
+                      edges {
+                        node {
+                          oid
+                          message
+                          author {
+                            name
+                            date
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
-                edges {
-                  node {
-                    oid
-                    message
-                    author {
-                      name
-                      date
+              }
+            }
+          }
+        }
+      }
+      repositories(first: 100, after: $repoCursor) {
+        pageInfo {
+          endCursor
+          hasNextPage
+        }
+        nodes {
+          id
+          name
+          databaseId
+          description
+          createdAt
+          updatedAt
+          url
+          defaultBranchRef {
+            name
+            target {
+              ... on Commit {
+                history(first: 100, after: $commitCursor,author: { id:$node_id}) {
+                  pageInfo {
+                    endCursor
+                    hasNextPage
+                  }
+                  edges {
+                    node {
+                      oid
+                      message
+                      author {
+                        name
+                        date
+                      }
                     }
                   }
                 }
@@ -39,4 +87,3 @@ query($login: String!, $node_id: ID!, $repoCursor: String, $commitCursor: String
       }
     }
   }
-}
