@@ -24,58 +24,104 @@ public class RepositoryService {
         gitRepository.flush();
     }
 
-        public void extractAndSaveRepositories(JsonNode jsonResponse, Integer userId) {
+    public void extractAndSaveRepositories(JsonNode jsonResponse, Integer userId) {
+        List<String> allRepoNodeIds = getAllRepoNodeIds(jsonResponse);
+        List<String> existingRepoNodeIds = gitRepository.findExistingRepoNodeIds(allRepoNodeIds);
+        List<RepositoryEntity> repositoriesToSave = getRepositoriesToSave(jsonResponse, userId, existingRepoNodeIds);
 
-            List<RepositoryEntity> repositoriesToSave = new ArrayList<>();
-            List<String> allRepoNodeIds = new ArrayList<>();
-            Iterator<JsonNode> repositoriesIterator = jsonResponse
-                    .path("data")
-                    .path("user")
-                    .path("repositories")
-                    .path("nodes")
-                    .elements();
+        if (!repositoriesToSave.isEmpty()) {
+            saveRepositories(repositoriesToSave);
+        }
+    }
+    public List<String> getOrganizationNames(JsonNode jsonResponse) {
+        List<String> organizationNames = new ArrayList<>();
+        Iterator<JsonNode> iterator = jsonResponse.path("data").path("user").path("organizations").path("nodes").elements();
 
-            while (repositoriesIterator.hasNext()) {
-                JsonNode repoNode = repositoriesIterator.next();
-                String repoNodeId = repoNode.get("id").asText();
+        while (iterator.hasNext()) {
+            JsonNode node = iterator.next();
+            String orgName = node.get("name").asText();
+            organizationNames.add(orgName);
+        }
 
-                allRepoNodeIds.add(repoNodeId);
-            }
+        return organizationNames;
+    }
 
-            List<String> existingRepoNodeIds = gitRepository.findExistingRepoNodeIds(allRepoNodeIds);
+    private List<String> getAllRepoNodeIds(JsonNode jsonResponse) {
+        List<String> allRepoNodeIds = new ArrayList<>();
+        allRepoNodeIds.addAll(getRepoNodeIds(jsonResponse, "repositories"));
+        allRepoNodeIds.addAll(getRepoNodeIds(jsonResponse, "organizations"));
+        return allRepoNodeIds;
+    }
 
-            repositoriesIterator = jsonResponse
-                    .path("data")
-                    .path("user")
-                    .path("repositories")
-                    .path("nodes")
-                    .elements();
+    private List<String> getRepoNodeIds(JsonNode jsonResponse, String path) {
+        List<String> repoNodeIds = new ArrayList<>();
+        Iterator<JsonNode> iterator = jsonResponse.path("data").path("user").path(path).path("nodes").elements();
+        while (iterator.hasNext()) {
+            JsonNode node = iterator.next();
 
-            while (repositoriesIterator.hasNext()) {
-                JsonNode repoNode = repositoriesIterator.next();
-                String repoNodeId = repoNode.get("id").asText();
-
-                if (!existingRepoNodeIds.contains(repoNodeId)) {
-                    String repoName = repoNode.get("name").asText();
-                    String repoCreated = repoNode.get("createdAt").asText();
-                    String repoUpdated = repoNode.get("updatedAt").asText();
-                    String repoDesc = repoNode.get("description").asText(null);
-                    String repoUrl = repoNode.get("url").asText();
-
-                    RepositoryEntity repository = new RepositoryEntity();
-                    repository.setRepoName(repoName);
-                    repository.setRepoNodeId(repoNodeId);
-                    repository.setRepoCreated(repoCreated);
-                    repository.setRepoUpdated(repoUpdated);
-                    repository.setRepoDesc(repoDesc);
-                    repository.setRepoUrl(repoUrl);
-                    repository.setUserId(userId);
-                    repositoriesToSave.add(repository);
+            if ("repositories".equals(path)) {
+                String repoNodeId = node.get("id").asText();
+                repoNodeIds.add(repoNodeId);
+            } else if ("organizations".equals(path)) {
+                Iterator<JsonNode> orgIterator = node.path("repositories").path("nodes").elements();
+                while (orgIterator.hasNext()) {
+                    JsonNode repoNode = orgIterator.next();
+                    String repoNodeId = repoNode.get("id").asText();
+                    repoNodeIds.add(repoNodeId);
                 }
             }
+        }
 
-            if (!repositoriesToSave.isEmpty()) {
-                saveRepositories(repositoriesToSave);
+        return repoNodeIds;
+    }
+
+    private List<RepositoryEntity> getRepositoriesToSave(JsonNode jsonResponse, Integer userId, List<String> existingRepoNodeIds) {
+        List<RepositoryEntity> repositoriesToSave = new ArrayList<>();
+        repositoriesToSave.addAll(getNewRepositories(jsonResponse, userId, existingRepoNodeIds, "organizations"));
+        repositoriesToSave.addAll(getNewRepositories(jsonResponse, userId, existingRepoNodeIds, "repositories"));
+        return repositoriesToSave;
+    }
+
+    private List<RepositoryEntity> getNewRepositories(JsonNode jsonResponse, Integer userId, List<String> existingRepoNodeIds, String path) {
+        List<RepositoryEntity> repositories = new ArrayList<>();
+        Iterator<JsonNode> iterator = jsonResponse.path("data").path("user").path(path).path("nodes").elements();
+
+        while (iterator.hasNext()) {
+            JsonNode node = iterator.next();
+
+            if ("repositories".equals(path)) {
+                createAndAddRepositoryIfNotExist(node, userId, existingRepoNodeIds, repositories);
+            } else if ("organizations".equals(path)) {
+                Iterator<JsonNode> orgIterator = node.path("repositories").path("nodes").elements();
+                while (orgIterator.hasNext()) {
+                    JsonNode orgNode = orgIterator.next();
+                    createAndAddRepositoryIfNotExist(orgNode, userId, existingRepoNodeIds, repositories);
+                }
             }
         }
+
+        return repositories;
+    }
+
+    private void createAndAddRepositoryIfNotExist(JsonNode repoNode, Integer userId, List<String> existingRepoNodeIds, List<RepositoryEntity> repositories) {
+        String repoNodeId = repoNode.get("id").asText();
+
+        if (!existingRepoNodeIds.contains(repoNodeId)) {
+            String repoName = repoNode.get("name").asText();
+            String repoCreated = repoNode.get("createdAt").asText();
+            String repoUpdated = repoNode.get("updatedAt").asText();
+            String repoDesc = repoNode.get("description").asText(null);
+            String repoUrl = repoNode.get("url").asText();
+
+            RepositoryEntity repository = new RepositoryEntity();
+            repository.setRepoName(repoName);
+            repository.setRepoNodeId(repoNodeId);
+            repository.setRepoCreated(repoCreated);
+            repository.setRepoUpdated(repoUpdated);
+            repository.setRepoDesc(repoDesc);
+            repository.setRepoUrl(repoUrl);
+            repository.setUserId(userId);
+            repositories.add(repository);
+        }
+    }
 }

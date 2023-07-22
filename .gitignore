@@ -57,10 +57,7 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
-<<<<<<< HEAD
-=======
 /src/main/resources/application.properties
->>>>>>> 630577e5e534af8e7ab31689e031b6fa8f40a7ec
 # Editor-based Rest Client
 .idea/httpRequests
 # Android studio 3.1+ serialized cache file
@@ -156,5 +153,6 @@ gradle-app.setting
 .classpath
 ### Gradle Patch ###
 # Java heap dump
+
 *.hprof
 # End of https://www.toptal.com/developers/gitignore/api/java,intellij+all,gradle,windows,macos

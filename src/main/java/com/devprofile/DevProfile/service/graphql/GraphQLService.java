@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
@@ -20,12 +21,17 @@ import java.util.Map;
 import java.util.Scanner;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class GraphQLService {
+    public GraphQLService(WebClient.Builder webClientBuilder, ResourceLoader resourceLoader, @Qualifier("webClient")WebClient webClient) {
+        this.webClientBuilder = webClientBuilder;
+        this.resourceLoader = resourceLoader;
+        this.webClient = webClient;
+    }
 
     private final WebClient.Builder webClientBuilder;
     private final ResourceLoader resourceLoader;
+
     private WebClient webClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
