@@ -32,6 +32,8 @@ public class CommitEntity {
 
     @Column
     private String repoNodeId;
+    @Column
+    private String repoName;
 
     @Column
     private String language;
