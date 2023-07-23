@@ -7,24 +7,29 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class RepositoryService {
     private final GitRepository gitRepository;
+    private final WebClient webClient;
 
+    public RepositoryService(GitRepository gitRepository, WebClient.Builder webClientBuilder) {
+        this.gitRepository = gitRepository;
+        this.webClient = webClientBuilder.baseUrl("https://api.github.com").build();
+    }
     @Transactional
     public void saveRepositories(List<RepositoryEntity> repositories) {
         gitRepository.saveAll(repositories);
         gitRepository.flush();
     }
 
-    public void extractAndSaveRepositories(JsonNode jsonResponse, Integer userId) {
+    public List<RepositoryEntity> extractAndSaveRepositories(JsonNode jsonResponse, Integer userId) {
         List<String> allRepoNodeIds = getAllRepoNodeIds(jsonResponse);
         List<String> existingRepoNodeIds = gitRepository.findExistingRepoNodeIds(allRepoNodeIds);
         List<RepositoryEntity> repositoriesToSave = getRepositoriesToSave(jsonResponse, userId, existingRepoNodeIds);
@@ -32,6 +37,8 @@ public class RepositoryService {
         if (!repositoriesToSave.isEmpty()) {
             saveRepositories(repositoriesToSave);
         }
+
+        return repositoriesToSave;
     }
     public List<String> getOrganizationNames(JsonNode jsonResponse) {
         List<String> organizationNames = new ArrayList<>();
@@ -95,7 +102,7 @@ public class RepositoryService {
                 Iterator<JsonNode> orgIterator = node.path("repositories").path("nodes").elements();
                 while (orgIterator.hasNext()) {
                     JsonNode orgNode = orgIterator.next();
-                    createAndAddRepositoryIfNotExist(orgNode, userId, existingRepoNodeIds, repositories);
+                    orgCreateAndAddRepositoryIfNotExist(orgNode, userId, existingRepoNodeIds, repositories);
                 }
             }
         }
@@ -122,6 +129,32 @@ public class RepositoryService {
             repository.setRepoUrl(repoUrl);
             repository.setUserId(userId);
             repositories.add(repository);
+        }
+    }
+
+    private void orgCreateAndAddRepositoryIfNotExist(JsonNode repoNode, Integer userId, List<String> existingRepoNodeIds, List<RepositoryEntity> repositories) {
+        String repoNodeId = repoNode.get("id").asText();
+
+        if (!existingRepoNodeIds.contains(repoNodeId)) {
+            JsonNode commitHistory = repoNode.path("defaultBranchRef").path("target").path("history").path("edges");
+
+            if (!commitHistory.isNull() && commitHistory.size() > 0) {
+                String repoName = repoNode.get("name").asText();
+                String repoCreated = repoNode.get("createdAt").asText();
+                String repoUpdated = repoNode.get("updatedAt").asText();
+                String repoDesc = repoNode.get("description").asText(null);
+                String repoUrl = repoNode.get("url").asText();
+
+                RepositoryEntity repository = new RepositoryEntity();
+                repository.setRepoName(repoName);
+                repository.setRepoNodeId(repoNodeId);
+                repository.setRepoCreated(repoCreated);
+                repository.setRepoUpdated(repoUpdated);
+                repository.setRepoDesc(repoDesc);
+                repository.setRepoUrl(repoUrl);
+                repository.setUserId(userId);
+                repositories.add(repository);
+            }
         }
     }
 }
