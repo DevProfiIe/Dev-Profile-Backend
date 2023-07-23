@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Getter
 @Setter
@@ -33,6 +36,10 @@ public class RepositoryEntity {
     @Column
     private String repoUrl;
 
+    @ElementCollection
+    @CollectionTable(name = "repo_language", joinColumns = @JoinColumn(name = "repoNodeId"))
+    @Column(name = "language")
+    private Set<String> repoLanguages = new HashSet<>();
 
     public RepositoryEntity(Integer userId, String repoName, String repoNodeId, String repoCreated, String repoUpdated, String repoDesc, String repoUrl) {
         this.userId = userId;
