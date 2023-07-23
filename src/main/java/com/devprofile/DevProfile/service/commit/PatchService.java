@@ -2,6 +2,7 @@ package com.devprofile.DevProfile.service.commit;
 
 import com.devprofile.DevProfile.entity.PatchEntity;
 import com.devprofile.DevProfile.repository.PatchRepository;
+import com.devprofile.DevProfile.service.gpt.GPTService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -22,9 +23,12 @@ public class PatchService {
     private final PatchRepository patchRepository;
     private final WebClient webClient;
 
-    public PatchService(PatchRepository patchRepository, @Qualifier("patchWebClient") WebClient webClient) {
+    private final GPTService gptService;
+
+    public PatchService(PatchRepository patchRepository, @Qualifier("patchWebClient") WebClient webClient, GPTService gptService) {
         this.patchRepository = patchRepository;
         this.webClient = webClient;
+        this.gptService = gptService;
     }
 
     public void extractAndSavePatchs(String userName, String accessToken, Map<String, List<String>> repoOidsMap, Map<String,Map<String, List<String>>> orgOidsMap, List<String> orgNames) {
@@ -34,7 +38,6 @@ public class PatchService {
 
             handlePatchExtraction(userName, accessToken, repoName, oids);
         }
-
 
         for (Map.Entry<String, Map<String, List<String>>> entry : orgOidsMap.entrySet()) {
             String orgName = entry.getKey();
@@ -104,8 +107,10 @@ public class PatchService {
                                         if (file.has("filename")) patchEntity.setFileName(file.get("filename").asText());
                                         if (file.has("raw_url")) patchEntity.setRawUrl(file.get("raw_url").asText());
                                         if (file.has("contents_url")) patchEntity.setContentsUrl(file.get("contents_url").asText());
-                                        if (file.has("patch")) patchEntity.setPatch(file.get("patch").asText());
+                                        if (file.has("patch")){patchEntity.setPatch(file.get("patch").asText());}
                                         patchEntity.setCommitSha(oid);
+
+
                                         patchesToSave.add(patchEntity);
                                     }
                                 }
