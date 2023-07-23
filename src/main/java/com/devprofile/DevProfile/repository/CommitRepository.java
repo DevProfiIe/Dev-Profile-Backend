@@ -11,6 +11,8 @@ import java.util.List;
 
 @Repository
 public interface CommitRepository extends JpaRepository<CommitEntity, String> {
+    
+
 
 
     @Query("select c from CommitEntity c where lower(c.commitMessage) like lower(:query)")
