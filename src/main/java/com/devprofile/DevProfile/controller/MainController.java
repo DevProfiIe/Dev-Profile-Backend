@@ -1,7 +1,9 @@
 package com.devprofile.DevProfile.controller;
 
 import com.devprofile.DevProfile.component.JwtProvider;
+import com.devprofile.DevProfile.dto.response.ApiResponse;
 import com.devprofile.DevProfile.entity.UserEntity;
+import com.devprofile.DevProfile.repository.UserDataRepository;
 import com.devprofile.DevProfile.repository.UserRepository;
 import com.devprofile.DevProfile.service.GitLoginService;
 import com.devprofile.DevProfile.service.gpt.GPTService;
@@ -12,12 +14,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
+import java.util.Set;
 
 @Controller
 @RequiredArgsConstructor
@@ -41,6 +46,9 @@ public class MainController {
     @Autowired
     private final GPTService gptService;
 
+    @Autowired
+    private final UserDataRepository userDataRepository;
+
 
 
     @GetMapping("/main")
@@ -56,9 +64,19 @@ public class MainController {
         return userService.UserSaves(user);
     }
 
-    @GetMapping("/test/gpt")
-    public String testGpt(){
+    @GetMapping("/user/keyword")
+    public ResponseEntity<ApiResponse> giveKeywords(@RequestParam String userName){
+        ApiResponse<Set<String>> apiResponse = new ApiResponse<>();
+        apiResponse.setResult(true);
+        apiResponse.setData(userDataRepository.findByUserName(userName).getKeywordSet());
+        apiResponse.setMessage(null);
+        apiResponse.setToken(null);
+        return ResponseEntity.ok(apiResponse);
+    }
 
+    @GetMapping("/test/gpt")
+    public String testGpt(@RequestParam String userName){
+        gptService.processAllEntities(userName);
         return "index";
     }
 }

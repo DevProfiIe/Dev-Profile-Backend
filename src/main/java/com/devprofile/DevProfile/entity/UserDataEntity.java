@@ -6,22 +6,17 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.List;
 import java.util.Set;
 
 
 @Getter
 @Setter
-@Document(collection = "commitKeyword")
-public class CommitKeywordsEntity {
+@Document(collection = "userData")
+public class UserDataEntity {
 
     @Id
-    private String oid;
+    private String userName;
 
-    private Set<String> langFramework;
-
-    private Set<String> cs;
-
-    private Set<String> featured;
-
-
+    private Set<String> keywordSet;
 }
