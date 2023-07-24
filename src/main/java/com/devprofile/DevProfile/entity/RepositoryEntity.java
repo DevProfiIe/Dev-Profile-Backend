@@ -3,7 +3,11 @@ package com.devprofile.DevProfile.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.cglib.core.Local;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -26,10 +30,10 @@ public class RepositoryEntity {
     private String repoNodeId;
 
     @Column
-    private String repoCreated;
+    private LocalDate repoCreated;
 
     @Column
-    private String repoUpdated;
+    private LocalDate repoUpdated;
 
     @Column
     private String repoDesc;
@@ -48,14 +52,27 @@ public class RepositoryEntity {
         this.userId = userId;
         this.repoName = repoName;
         this.repoNodeId = repoNodeId;
-        this.repoCreated = repoCreated;
-        this.repoUpdated = repoUpdated;
+        this.setRepoCreated(repoCreated);
+        this.setRepoUpdated(repoUpdated);
         this.repoDesc = repoDesc;
         this.repoUrl = repoUrl;
     }
 
     public RepositoryEntity() {
 
+    }
+    public void setRepoCreated(String repoCreated) {
+        this.repoCreated = convertToLocalDate(repoCreated);
+    }
+
+    public void setRepoUpdated(String repoUpdated) {
+        this.repoUpdated = convertToLocalDate(repoUpdated);
+    }
+
+    private LocalDate convertToLocalDate(String dateTime) {
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
+        LocalDateTime localDateTime = LocalDateTime.parse(dateTime, formatter);
+        return localDateTime.toLocalDate();
     }
 
 }
