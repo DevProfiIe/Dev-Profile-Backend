@@ -3,7 +3,9 @@ package com.devprofile.DevProfile.controller;
 import com.devprofile.DevProfile.component.JwtProvider;
 import com.devprofile.DevProfile.dto.response.ApiResponse;
 import com.devprofile.DevProfile.entity.PatchEntity;
+import com.devprofile.DevProfile.entity.UserDataEntity;
 import com.devprofile.DevProfile.entity.UserEntity;
+import com.devprofile.DevProfile.repository.CommitKeywordsRepository;
 import com.devprofile.DevProfile.repository.PatchRepository;
 import com.devprofile.DevProfile.repository.UserDataRepository;
 import com.devprofile.DevProfile.repository.UserRepository;
@@ -90,6 +92,16 @@ public class MainController {
         List<PatchEntity> patchEntities = patchRepository.findByCommitOid("6e380e3a22b01d67038cecb6ffd943d6305ec346");
         patchEntities.forEach(patchEntity -> gptService.generateKeyword(userName, patchEntity));
         return "index";
+    }
+
+    @GetMapping("/user_keyword")
+    public ResponseEntity<ApiResponse> user_keyword(@RequestParam String userName){
+        ApiResponse<UserDataEntity> apiResponse = new ApiResponse<>();
+        apiResponse.setToken(null);
+        apiResponse.setResult(true);
+        apiResponse.setData(userDataRepository.findByUserName(userName));
+        apiResponse.setMessage(null);
+        return ResponseEntity.ok(apiResponse);
     }
 }
 

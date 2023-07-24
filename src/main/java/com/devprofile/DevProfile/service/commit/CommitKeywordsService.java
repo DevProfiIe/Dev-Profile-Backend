@@ -12,6 +12,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 @Service
 public class CommitKeywordsService {
@@ -41,10 +42,10 @@ public class CommitKeywordsService {
         keywords = keywords.replace("\\n", "\n");
 
         System.out.println("keywords = " + keywords);
-        Query query = new Query(Criteria.where("oid").is(oid));
-        Query queryUser = new Query(Criteria.where("userName").is(userName));
         Update update = new Update();
+        update.set("oid", oid);
         Update updateUser = new Update();
+        updateUser.set("userName", userName);
         ObjectMapper mapper = new ObjectMapper();
 
         try {
@@ -68,7 +69,6 @@ public class CommitKeywordsService {
             if (features != null) {
                 for (JsonNode feature : features) {
                     update.addToSet("featured", feature.asText());
-                    updateUser.addToSet("keywordSet", feature.asText());
                 }
             }
             JsonNode fields = keywordsJson.get("field");
@@ -93,15 +93,22 @@ public class CommitKeywordsService {
                         case ("Document"):
                             updateUser.inc("document");
                             break;
-                        case ("OS"):
-                            updateUser.inc("embeddedSystem");
+                        case ("System Programming"):
+                            updateUser.inc("systemProgramming");
                             break;
                         case ("AI"):
                             updateUser.inc("ai");
                             break;
+                        case ("Algorithm"):
+                            updateUser.inc("algorithm");
+                            break;
                     }
                 }
             }
+            Query query = new Query(Criteria.where("oid").is(oid));
+            Query queryUser = new Query(Criteria.where("userName").is(userName));
+
+
 
             mongoTemplate.upsert(queryUser, updateUser, UserDataEntity.class);
             mongoTemplate.upsert(query, update, CommitKeywordsEntity.class);

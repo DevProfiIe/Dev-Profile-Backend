@@ -76,10 +76,10 @@ public class GPTService {
                 .build();
 
         String systemPrompt = "Answer in English. Analyze the contents of a GitHub patch.\n" +
-                "1.cs: Provide three to five keywords of 1-2 words each, describing what computer science knowledge is applied in this code (Not Language or framework).  \n" +
+                "1.cs: Provide three to five keywords of 1~2 words each, describing what computer science knowledge is applied in this code (Not Language or framework).  \n" +
                 "2.frameLang: Provide frameworks or languages this code uses.\n" +
-                "3.feature: Provide  keywords that describes what feature this patch has modified(Up to 6 words). \n" +
-                "4.field: Pick the nearest keyword in these Keywords: Game, OS, AI, Data Science, Database, Mobile, Web Backend, Web Frontend, Document.\n" +
+                "3.feature: Provide 1~3 keywords that describes what feature this patch has modified(Up to 6 words). \n" +
+                "4.field: Pick the nearest keyword in these Keywords: Game, Algorithm, System Programming, AI, Data Science, Database, Mobile, Web Backend, Web Frontend, Document.\n" +
                 "If the accuracy drops significantly, it's okay not to provide 3 and 4 keywords.\n" +
                 "Produce the results in JSON format. \n" +
                 "Respond in the following schema.\n" +
