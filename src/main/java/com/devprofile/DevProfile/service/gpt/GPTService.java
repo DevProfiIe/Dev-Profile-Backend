@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,22 +42,22 @@ public class GPTService {
     }
 
     @Transactional(readOnly = true)
-    public void processAllEntities() {
+    public void processAllEntities(String userName) {
         List<PatchEntity> patchEntities = patchRepository.findAll();
-        patchEntities.forEach(this::generateKeyword);
+        patchEntities.forEach(patchEntity -> this.generateKeyword(userName, patchEntity));
     }
 
-    public void generateKeyword(PatchEntity patchEntity){
+    public void generateKeyword(String userName, PatchEntity patchEntity){
 
         String patch = patchEntity.getPatch();
-        String oid = patchEntity.getOid();
-
+//        String oid = patchEntity.getid();
+        String oid = "";
         WebClient webClient = WebClient.builder()
                 .baseUrl(url)
                 .defaultHeader(HttpHeaders.AUTHORIZATION,"Bearer " + key)
                 .build();
 
-        String systemPrompt = "I am going to analyze the contents of a GitHub patch. You will receive the next given patch, and provide three to five keywords of 1-2 words each, describing what computer science knowledge is applied in this code(Not Language or framework).  Second Tell me what frameworks or languages this code uses. Also, provide  keywords that describes what feature this patch has modified(Up to 6 words). If the accuracy drops significantly, it's okay not to provide the second keyword. Also, produce the results in JSON format. First Key = cs, Second Key = framework and language, Third Key = feature Answer with English";
+        String systemPrompt = "I am going to analyze the contents of a GitHub patch. You will receive the next given patch, and provide three to five keywords of 1-2 words each, describing what computer science knowledge is applied in this code(Not Language or framework).  Second Tell me what frameworks or languages this code uses. Also, provide  keywords that describes what feature this patch has modified(Up to 6 words). If the accuracy drops significantly, it's okay not to provide the second keyword. Pick only one keyword in these seven Keywords: Game, Embedded systems, AI, Data Science, Database, Mobile, Web Backend, Web Frontend. Also, produce the results in JSON format. First Key = cs, Second Key = framework and language, Third Key = feature, Fourth Key = field. Answer with English";
         // Create message objects
         List<Map<String, String>> messages = new ArrayList<>();
         messages.add(Map.of("role", "system", "content", systemPrompt));
@@ -67,9 +68,13 @@ public class GPTService {
                 .bodyValue(Map.of( "model", "gpt-3.5-turbo","messages" , messages))
                 .retrieve()
                 .bodyToMono(JsonNode.class)
-                .doOnNext(jsonNode -> {
-                    JsonNode content = jsonNode.get("choices").get("content");
-                    commitKeywordsService.addCommitKeywords(oid, content);
-                });
+                .flatMap(jsonNode -> {
+                    JsonNode choices = jsonNode.get("choices");
+                    if (choices != null && choices.isArray() && choices.size() > 0) {
+                        JsonNode content = choices.get(0).get("message").get("content");
+                        return commitKeywordsService.addCommitKeywords(userName, oid, content);
+                    }
+                    return Mono.empty();
+                }).subscribe();
     }
 }
