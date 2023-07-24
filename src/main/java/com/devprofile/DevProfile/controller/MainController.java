@@ -4,7 +4,10 @@ import com.devprofile.DevProfile.component.JwtProvider;
 import com.devprofile.DevProfile.entity.UserEntity;
 import com.devprofile.DevProfile.repository.UserRepository;
 import com.devprofile.DevProfile.service.graphql.GraphOrgService;
+import com.devprofile.DevProfile.service.GitLoginService;
+import com.devprofile.DevProfile.service.gpt.GPTService;
 import com.devprofile.DevProfile.service.graphql.GraphUserService;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -35,6 +38,8 @@ public class MainController {
     @Autowired
     private final GraphOrgService orgService;
 
+    private final GPTService gptService;
+
 
     @GetMapping("/main")
     public Mono<Void> main(@RequestHeader String Authorization) throws IOException {
@@ -44,7 +49,15 @@ public class MainController {
         UserEntity user = userRepository.findById(Integer.parseInt(primaryId)).orElseThrow();
         System.out.println("accessToken = " + user.getGitHubToken());
 
+
         return Mono.when(userService.userOwnedRepositories(user), orgService.orgOwnedRepositories(user));
+
+    }
+
+    @GetMapping("/test/gpt")
+    public String testGpt(){
+
+        return "index";
     }
 }
 

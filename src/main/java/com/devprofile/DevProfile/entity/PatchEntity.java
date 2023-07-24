@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Entity
 @Getter
 @Setter
@@ -19,6 +21,8 @@ public class PatchEntity {
     @Column
     private String fileName;
 
+    @Column
+    private String keyword;
 
     @Column(columnDefinition="LONGTEXT")
     private String rawUrl;
