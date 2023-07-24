@@ -75,7 +75,17 @@ public class GPTService {
                 .defaultHeader(HttpHeaders.AUTHORIZATION,"Bearer " + key)
                 .build();
 
-        String systemPrompt = "I am going to analyze the contents of a GitHub patch. You will receive the next given patch, and provide three to five keywords of 1-2 words each, describing what computer science knowledge is applied in this code(Not Language or framework).  Second Tell me what frameworks or languages this code uses. Also, provide  keywords that describes what feature this patch has modified(Up to 6 words). If the accuracy drops significantly, it's okay not to provide the second keyword. Pick only one keyword in these seven Keywords: Game, Embedded systems, AI, Data Science, Database, Mobile, Web Backend, Web Frontend. Also, produce the results in JSON format. Provide it without line breaks. First Key = cs, Second Key = langFrame, Third Key = feature, Fourth Key = field.  Answer with English";
+        String systemPrompt = "Answer in English. Analyze the contents of a GitHub patch.\n" +
+                "1.cs: Provide three to five keywords of 1-2 words each, describing what computer science knowledge is applied in this code (Not Language or framework).  \n" +
+                "2.frameLang: Provide frameworks or languages this code uses.\n" +
+                "3.feature: Provide  keywords that describes what feature this patch has modified(Up to 6 words). \n" +
+                "4.field: Pick the nearest keyword in these Keywords: Game, OS, AI, Data Science, Database, Mobile, Web Backend, Web Frontend, Document.\n" +
+                "If the accuracy drops significantly, it's okay not to provide 3 and 4 keywords.\n" +
+                "Produce the results in JSON format. \n" +
+                "Respond in the following schema.\n" +
+                "```\n" +
+                "{\"type\": \"object\",\"properties\": {\"cs\": {\"type\": \"array\", \"items\": { \"type\": \"string\"}},\"langFrame\": {\"type\": \"array\",\"items\": { \"type\": \"string\"} },\"feature\": {\"type\": \"array\", \"items\": { \"type\": \"string\" } },\"field\": {\"type\": \"array\",\"items\": {\"type\": \"string\"}}}}\n" +
+                "```";
         // Create message objects
         List<Map<String, String>> messages = new ArrayList<>();
         messages.add(Map.of("role", "system", "content", systemPrompt));
@@ -84,14 +94,14 @@ public class GPTService {
         try {
             JsonNode jsonNode = webClient.post()
                     .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(Map.of( "model", "gpt-3.5-turbo-0613","messages" , messages))
+                    .bodyValue(Map.of( "model", "gpt-3.5-turbo","messages" , messages, "temperature", 0.4))
                     .retrieve()
                     .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
                             Mono.error(new Exception("Client Error: " + clientResponse.statusCode())))
                     .onStatus(HttpStatusCode::is5xxServerError, clientResponse ->
                             Mono.error(new Exception("Server Error: " + clientResponse.statusCode())))
                     .bodyToMono(JsonNode.class)
-                    .retryWhen(Retry.backoff(5, Duration.ofSeconds(5)).maxBackoff(Duration.ofSeconds(30)))
+                    .retryWhen(Retry.backoff(5, Duration.ofSeconds(2)).maxBackoff(Duration.ofSeconds(10)))
                     .block();
             System.out.println("jsonNode = " + jsonNode);
             JsonNode choices = jsonNode.get("choices");

@@ -65,7 +65,6 @@ public class MainController {
         UserEntity user = userRepository.findById(Integer.parseInt(primaryId)).orElseThrow();
         System.out.println("accessToken = " + user.getGitHubToken());
 
-
         return Mono.when(userService.userOwnedRepositories(user), orgService.orgOwnedRepositories(user));
 
     }

@@ -5,10 +5,6 @@ import com.devprofile.DevProfile.entity.CommitKeywordsEntity;
 import com.devprofile.DevProfile.entity.UserDataEntity;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.minidev.json.JSONObject;
-import net.minidev.json.JSONValue;
-import net.minidev.json.parser.JSONParser;
-import net.minidev.json.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -17,10 +13,6 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-
 @Service
 public class CommitKeywordsService {
 
@@ -58,27 +50,57 @@ public class CommitKeywordsService {
         try {
             JsonNode keywordsJson = mapper.readTree(keywords);
             // 이후 jsonNode 객체를 사용할 수 있습니다.
-            System.out.println("keywordsJson = " + keywordsJson);
             JsonNode css = keywordsJson.get("cs");
             if (css != null) {
                 for (JsonNode cs : css) {
                     update.addToSet("cs", cs.asText());
                     updateUser.addToSet("keywordSet", cs.asText());
-                    System.out.println("cs = " + cs);
                 }
             }
             JsonNode langFrames = keywordsJson.get("langFrame");
-            System.out.println("langFrames = " + langFrames);
             if (langFrames != null) {
                 for (JsonNode langFrame : langFrames) {
                     update.addToSet("langFramework", langFrame.asText());
                     updateUser.addToSet("keywordSet", langFrame.asText());
                 }
             }
-
-            if (keywordsJson.get("feature") != null) {
-                update.addToSet("featured", keywordsJson.get("feature").asText());
-                updateUser.addToSet("keywordSet", keywordsJson.get("feature").asText());
+            JsonNode features = keywordsJson.get("feature");
+            if (features != null) {
+                for (JsonNode feature : features) {
+                    update.addToSet("featured", feature.asText());
+                    updateUser.addToSet("keywordSet", feature.asText());
+                }
+            }
+            JsonNode fields = keywordsJson.get("field");
+            if (fields != null) {
+                for (JsonNode field : fields) {
+                    switch (field.asText()) {
+                        case ("Game"):
+                            updateUser.inc("game");
+                            break;
+                        case ("Web Backend"):
+                            updateUser.inc("webBackend");
+                            break;
+                        case ("Web Frontend"):
+                            updateUser.inc("webFrontend");
+                            break;
+                        case ("Database"):
+                            updateUser.inc("database");
+                            break;
+                        case ("Mobile"):
+                            updateUser.inc("mobile");
+                            break;
+                        case ("Document"):
+                            updateUser.inc("document");
+                            break;
+                        case ("OS"):
+                            updateUser.inc("embeddedSystem");
+                            break;
+                        case ("AI"):
+                            updateUser.inc("ai");
+                            break;
+                    }
+                }
             }
 
             mongoTemplate.upsert(queryUser, updateUser, UserDataEntity.class);
@@ -86,7 +108,6 @@ public class CommitKeywordsService {
             return Mono.empty();
         }
         catch (Exception e) {
-            // 문자열이 유효한 JSON이 아닌 경우 오류 처리를 수행합니다.
             e.printStackTrace();
             return null;
         }

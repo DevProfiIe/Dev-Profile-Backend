@@ -19,4 +19,20 @@ public class UserDataEntity {
     private String userName;
 
     private Set<String> keywordSet;
+
+    private Integer ai;
+
+    private Integer dataScience;
+
+    private Integer database;
+
+    private Integer mobile;
+
+    private Integer webBackend;
+
+    private Integer document;
+
+    private Integer embeddedSystem;
+
+    private Integer game;
 }
