@@ -4,9 +4,18 @@ import com.devprofile.DevProfile.component.JwtProvider;
 import com.devprofile.DevProfile.dto.response.*;
 import com.devprofile.DevProfile.entity.CommitEntity;
 import com.devprofile.DevProfile.entity.PatchEntity;
+
 import com.devprofile.DevProfile.entity.RepositoryEntity;
 import com.devprofile.DevProfile.entity.UserEntity;
 import com.devprofile.DevProfile.repository.*;
+
+import com.devprofile.DevProfile.entity.UserDataEntity;
+import com.devprofile.DevProfile.entity.UserEntity;
+import com.devprofile.DevProfile.repository.CommitKeywordsRepository;
+import com.devprofile.DevProfile.repository.PatchRepository;
+import com.devprofile.DevProfile.repository.UserDataRepository;
+import com.devprofile.DevProfile.repository.UserRepository;
+
 import com.devprofile.DevProfile.service.graphql.GraphOrgService;
 import com.devprofile.DevProfile.service.gpt.GPTService;
 import com.devprofile.DevProfile.service.graphql.GraphUserService;
@@ -79,6 +88,7 @@ public class MainController {
         return "index";
     }
 
+
     @GetMapping("/response_test")
     public ResponseEntity<ApiResponse<List<RepositoryEntityDTO>>> responseApiTest() {
         List<CommitEntity> allCommitEntities = commitRepository.findAll();
@@ -99,6 +109,18 @@ public class MainController {
         apiResponse.setResult(!extendedEntities.isEmpty());
         apiResponse.setData(extendedEntities);
         apiResponse.setMessage(extendedEntities.isEmpty() ? "No data found" : "Data fetched successfully");
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+
+    @GetMapping("/user_keyword")
+    public ResponseEntity<ApiResponse> user_keyword(@RequestParam String userName){
+        ApiResponse<UserDataEntity> apiResponse = new ApiResponse<>();
+        apiResponse.setToken(null);
+        apiResponse.setResult(true);
+        apiResponse.setData(userDataRepository.findByUserName(userName));
+        apiResponse.setMessage(null);
 
         return ResponseEntity.ok(apiResponse);
     }

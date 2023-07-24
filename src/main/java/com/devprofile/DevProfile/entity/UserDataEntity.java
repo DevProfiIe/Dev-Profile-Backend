@@ -32,7 +32,9 @@ public class UserDataEntity {
 
     private Integer document;
 
-    private Integer embeddedSystem;
+    private Integer systemProgramming;
+
+    private Integer algorithm;
 
     private Integer game;
 }
