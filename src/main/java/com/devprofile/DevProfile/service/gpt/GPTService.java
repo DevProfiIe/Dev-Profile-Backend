@@ -68,8 +68,6 @@ public class GPTService {
         if(patch == null){
             return;
         }
-
-
         WebClient webClient = WebClient.builder()
                 .baseUrl(url)
                 .defaultHeader(HttpHeaders.AUTHORIZATION,"Bearer " + key)
