@@ -2,6 +2,7 @@ package com.devprofile.DevProfile.service.graphql;
 
 import com.devprofile.DevProfile.entity.UserEntity;
 import com.devprofile.DevProfile.service.commit.CommitOrgService;
+import com.devprofile.DevProfile.service.commit.ContributorsOrgService;
 import com.devprofile.DevProfile.service.patch.PatchOrgService;
 import com.devprofile.DevProfile.service.repository.LanguageService;
 import com.devprofile.DevProfile.service.repository.OrgRepoService;
@@ -28,6 +29,7 @@ public class GraphOrgService {
     private final CommitOrgService commitOrgService;
     private final PatchOrgService patchOrgService;
     private final LanguageService languageService;
+    private final ContributorsOrgService contributorsOrgService;
 
 
 
@@ -81,10 +83,12 @@ public class GraphOrgService {
                     JsonNode organizations = response.get("data").get("user").get("organizations").get("nodes");
                     orgRepoService.saveRepositories(organizations, userId, userName);
                     commitOrgService.saveCommits(organizations, userName, userId);
+                    commitOrgService.updateDates();
 
 
                     return fetchOrganizationRepoCommits(organizations)
                             .flatMap(orgRepoCommits -> {
+                                contributorsOrgService.countCommits(orgRepoCommits,userName);
                                 return patchOrgService.savePatchs(accessToken, orgRepoCommits)
                                         .then(Mono.just(orgRepoCommits));
                             })

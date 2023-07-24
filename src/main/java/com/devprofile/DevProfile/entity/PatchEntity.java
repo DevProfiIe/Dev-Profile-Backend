@@ -18,18 +18,13 @@ public class PatchEntity {
 
     @Column
     private String commitOid;
-    @Column
-    private String fileName;
-
-    @Column
     private String keyword;
+    private String fileName;
 
     @Column(columnDefinition="LONGTEXT")
     private String rawUrl;
-
     @Column(columnDefinition="LONGTEXT")
     private String contentsUrl;
-
     @Column(columnDefinition="LONGTEXT")
     private String patch;
 

@@ -17,22 +17,13 @@ public class UserEntity {
 
     @Column
     private String login;
-
-    @Column
     private String name;
-
-    @Column
     private String email;
-
-    @Column
     private String node_id;
-
-    @Column
     private String avatar_url;
-
-    @Column
     private String jwtToken;
 
-    @Column
     private String gitHubToken;
+
+
 }

@@ -3,6 +3,7 @@ package com.devprofile.DevProfile.service.commit;
 
 import com.devprofile.DevProfile.entity.CommitEntity;
 import com.devprofile.DevProfile.repository.CommitRepository;
+import com.devprofile.DevProfile.repository.GitRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ import java.util.Map;
 public class CommitOrgService {
 
     private final CommitRepository commitRepository;
+    private final GitRepository gitRepository;
 
     @Transactional
     public void saveCommits(JsonNode repositories, String userName, Integer userId) {
@@ -69,5 +71,10 @@ public class CommitOrgService {
         } catch (DataAccessException e) {
             log.error("Error saving commits: ", e);
         }
+    }
+
+    @Transactional
+    public void updateDates() {
+        gitRepository.updateStartDateEndDate();
     }
 }

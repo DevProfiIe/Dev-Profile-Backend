@@ -2,6 +2,7 @@ package com.devprofile.DevProfile.service.commit;
 
 import com.devprofile.DevProfile.entity.CommitEntity;
 import com.devprofile.DevProfile.repository.CommitRepository;
+import com.devprofile.DevProfile.repository.GitRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,7 @@ import java.util.*;
 public class CommitUserService {
 
     private final CommitRepository commitRepository;
+    private final GitRepository gitRepository;
 
     @Transactional
     public Map<String, List<String>> saveCommits(JsonNode repositories, String userName, Integer userId) {
@@ -50,5 +52,10 @@ public class CommitUserService {
             log.error("Error saving commits: ", e);
         }
         return repoOidsMap;
+    }
+
+    @Transactional
+    public void updateDates() {
+        gitRepository.updateStartDateEndDate();
     }
 }

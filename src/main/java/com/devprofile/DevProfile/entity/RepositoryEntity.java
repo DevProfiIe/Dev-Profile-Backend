@@ -8,6 +8,7 @@ import org.springframework.cglib.core.Local;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -20,28 +21,23 @@ public class RepositoryEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column
-    private Integer userId;
 
     @Column
     private String repoName;
-
-    @Column
     private String repoNodeId;
-
-    @Column
     private LocalDate repoCreated;
-
-    @Column
     private LocalDate repoUpdated;
-
-    @Column
     private String repoDesc;
-    @Column
     private String repoUrl;
-
-    @Column
     private String orgName;
+    private LocalDate startDate;
+    private LocalDate endDate;
+    private Integer userId;
+
+    private Integer totalCommitCnt;
+    private Integer myCommitCnt;
+    private Integer totalContributors;
+
 
     @ElementCollection
     @CollectionTable(name = "repo_language", joinColumns = @JoinColumn(name = "repoNodeId"))

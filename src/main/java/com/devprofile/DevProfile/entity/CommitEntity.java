@@ -19,21 +19,11 @@ public class CommitEntity {
     private Long id;
     @Column
     private Integer userId;
-    @Column
     private String commitOid;
-    @Column
     private String commitMessage;
-
-    @Column
     private LocalDate commitDate;
-
-    @Column
     private String userName;
-
-    @Column
     private String repoNodeId;
-
-    @Column
     private String repoName;
 
 

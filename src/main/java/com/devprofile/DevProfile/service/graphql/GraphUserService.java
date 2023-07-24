@@ -4,6 +4,7 @@ import com.devprofile.DevProfile.entity.RepositoryEntity;
 import com.devprofile.DevProfile.entity.UserEntity;
 import com.devprofile.DevProfile.service.commit.CommitOrgService;
 import com.devprofile.DevProfile.service.commit.CommitUserService;
+import com.devprofile.DevProfile.service.commit.ContributorsUserService;
 import com.devprofile.DevProfile.service.patch.PatchUserService;
 import com.devprofile.DevProfile.service.repository.LanguageService;
 import com.devprofile.DevProfile.service.repository.UserRepoService;
@@ -31,6 +32,7 @@ public class GraphUserService {
     private final CommitUserService commitUserService;
     private final PatchUserService patchUserService;
     private final LanguageService languageService;
+    private final ContributorsUserService contributorsUserService;
 
 
     public Mono<Void> userOwnedRepositories(UserEntity user) throws IOException, IOException {
@@ -56,6 +58,8 @@ public class GraphUserService {
                     JsonNode repositories = response.get("data").get("user").get("repositories").get("nodes");
                     ownRepoService.saveRepositories(repositories, userId);
                     Map<String, List<String>> repoOidsMap = commitUserService.saveCommits(repositories,userName,userId);
+                    commitUserService.updateDates();
+                    contributorsUserService.countCommits(repoOidsMap,userName);
                     patchUserService.savePatchs(userName,accessToken,repoOidsMap);
                     languageService.repoLanguages(repoOidsMap,userName,accessToken);
 
