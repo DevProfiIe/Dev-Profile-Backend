@@ -3,12 +3,14 @@ package com.devprofile.DevProfile.service.repository;
 
 import com.devprofile.DevProfile.entity.RepositoryEntity;
 import com.devprofile.DevProfile.repository.GitRepository;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,43 +27,50 @@ public class LanguageService {
         this.webClient = webClientBuilder.baseUrl("https://api.github.com").build();
     }
 
-    public Mono<RepositoryEntity> repoLanguages(RepositoryEntity repositoryEntity, String userName, List<String> orgRepositories) {
-        String repoName = repositoryEntity.getRepoName();
-        String url = String.format("/repos/%s/%s/languages", userName, repoName);
+    public void repoLanguages(Map<String, List<String>> repoOidsMap, String userName,String token) {
+        repoOidsMap.keySet().forEach(repoName -> {
 
-        return webClient.get().uri(url)
-                .retrieve()
-                .bodyToMono(Map.class)
-                .flatMap(response -> {
-                    Set<String> languages = repositoryEntity.getRepoLanguages();
-                    languages.addAll(response.keySet());
-                    repositoryEntity.setRepoLanguages(languages);
-                    System.out.println("repositoryEntity = " + repositoryEntity);
-                    return Mono.just(gitRepository.save(repositoryEntity));
-                })
-                .onErrorResume(WebClientResponseException.class, e -> {
-                    log.error("Failed to fetch languages for repository: " + url, e);
-                    return Mono.empty();
-                });
+            String url = String.format("/repos/%s/%s/languages", userName, repoName);
+
+            Mono<JsonNode> responseMono = webClient.get().uri(url)
+                    .header("Authorization", "Bearer " + token)
+                    .retrieve()
+                    .bodyToMono(JsonNode.class);
+
+            responseMono.subscribe(response -> {
+                Set<String> languages = new HashSet<>();
+                response.fieldNames().forEachRemaining(languages::add);
+
+                RepositoryEntity repoEntity = gitRepository.findByRepoName(repoName).orElse(new RepositoryEntity());
+                repoEntity.setRepoLanguages(languages);
+
+//                orgLanguages(repoOidsMap,token);
+                gitRepository.save(repoEntity);
+            });
+        });
     }
 
-    public Mono<RepositoryEntity> orgLanguages(RepositoryEntity repositoryEntity, String orgName) {
-        String repoName = repositoryEntity.getRepoName();
-        String url = String.format("/repos/%s/%s/languages", orgName, repoName);
 
-        return webClient.get().uri(url)
-                .retrieve()
-                .bodyToMono(Map.class)
-                .flatMap(response -> {
-                    Set<String> languages = repositoryEntity.getRepoLanguages();
-                    languages.addAll(response.keySet());
-                    repositoryEntity.setRepoLanguages(languages);
-                    System.out.println("repositoryEntity = " + repositoryEntity);
-                    return Mono.just(gitRepository.save(repositoryEntity));
-                })
-                .onErrorResume(WebClientResponseException.class, e -> {
-                    log.error("Failed to fetch languages for repository: " + url, e);
-                    return Mono.empty();
+    public void orgLanguages(Map<String, List<String>> orgsRepoNamesMap, String token) {
+        orgsRepoNamesMap.forEach((orgName, repoNamesList) -> {
+            repoNamesList.forEach(repoName -> {
+                String url = String.format("/repos/%s/%s/languages", orgName, repoName);
+                Mono<JsonNode> responseMono = webClient.get().uri(url)
+                        .header("Authorization", "Bearer " + token)
+                        .retrieve()
+                        .bodyToMono(JsonNode.class);
+
+                responseMono.subscribe(response -> {
+                    Set<String> languages = new HashSet<>();
+                    response.fieldNames().forEachRemaining(languages::add);
+
+                    RepositoryEntity repoEntity = gitRepository.findByRepoName(repoName)
+                            .orElse(new RepositoryEntity());
+                    repoEntity.setRepoLanguages(languages);
+
+                    gitRepository.save(repoEntity);
                 });
+            });
+        });
     }
 }
