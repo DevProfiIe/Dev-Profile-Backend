@@ -17,7 +17,8 @@ public class CommitEntity {
     private Long id;
     @Column
     private Integer userId;
-
+    @Column
+    private String commitOid;
     @Column
     private String commitMessage;
 
@@ -28,24 +29,18 @@ public class CommitEntity {
     private String userName;
 
     @Column
-    private String commitSha;
-
-    @Column
     private String repoNodeId;
 
     @Column
     private String repoName;
 
-    @Column
-    private String language;
 
-
-    public CommitEntity(Integer userId, String commitMessage, String commitDate, String userName, String commitSha) {
+    public CommitEntity(Integer userId, String commitMessage, String commitDate, String userName, String commitOid) {
         this.userId = userId;
         this.commitMessage = commitMessage;
         this.commitDate = commitDate;
         this.userName = userName;
-        this.commitSha = commitSha;
+        this.commitOid = commitOid;
     }
 
     public CommitEntity() {

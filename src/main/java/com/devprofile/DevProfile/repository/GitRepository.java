@@ -7,10 +7,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 
 @Repository
 public interface GitRepository extends JpaRepository<RepositoryEntity, String> {
     @Query("SELECT r.repoNodeId FROM RepositoryEntity r WHERE r.repoNodeId IN :repoNodeIds")
     List<String> findExistingRepoNodeIds(@Param("repoNodeIds") List<String> repoNodeIds);
+
+    Optional<RepositoryEntity> findByRepoName(String repoName);
 }
