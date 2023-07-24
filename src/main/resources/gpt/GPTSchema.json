@@ -1,0 +1,29 @@
+{
+  "type": "object",
+  "properties": {
+    "cs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "langFrame": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "feature": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "field": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

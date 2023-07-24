@@ -23,7 +23,7 @@ import java.util.Scanner;
 @Service
 @Slf4j
 public class GraphQLService {
-    public GraphQLService(WebClient.Builder webClientBuilder, ResourceLoader resourceLoader, @Qualifier("webClient")WebClient webClient) {
+    public GraphQLService(WebClient.Builder webClientBuilder, @Qualifier("webApplicationContext") ResourceLoader resourceLoader, @Qualifier("webClient")WebClient webClient) {
         this.webClientBuilder = webClientBuilder;
         this.resourceLoader = resourceLoader;
         this.webClient = webClient;

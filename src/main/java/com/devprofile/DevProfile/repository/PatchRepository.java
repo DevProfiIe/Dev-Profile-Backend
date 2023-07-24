@@ -12,4 +12,6 @@ import java.util.List;
 public interface PatchRepository extends JpaRepository<PatchEntity,String> {
     @Query("SELECT c.commitOid FROM CommitEntity c WHERE c.commitOid IN :oids")
     List<String> findExistingOids(@Param("oids") List<String> oids);
+
+    List<PatchEntity> findByCommitOid(String commitOid);
 }

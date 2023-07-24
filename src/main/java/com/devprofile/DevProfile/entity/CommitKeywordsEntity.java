@@ -11,7 +11,7 @@ import java.util.Set;
 
 @Getter
 @Setter
-@Document(collection = "commitKeyword")
+@Document(collection = "commitKeywords")
 public class CommitKeywordsEntity {
 
     @Id

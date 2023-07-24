@@ -2,7 +2,9 @@ package com.devprofile.DevProfile.controller;
 
 import com.devprofile.DevProfile.component.JwtProvider;
 import com.devprofile.DevProfile.dto.response.ApiResponse;
+import com.devprofile.DevProfile.entity.PatchEntity;
 import com.devprofile.DevProfile.entity.UserEntity;
+import com.devprofile.DevProfile.repository.PatchRepository;
 import com.devprofile.DevProfile.repository.UserDataRepository;
 import com.devprofile.DevProfile.repository.UserRepository;
 import com.devprofile.DevProfile.service.graphql.GraphOrgService;
@@ -18,11 +20,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 
 @Controller
@@ -45,6 +49,8 @@ public class MainController {
 
     @Autowired
     private final UserDataRepository userDataRepository;
+    @Autowired
+    private final PatchRepository patchRepository;
 
 
     private final GPTService gptService;
@@ -74,9 +80,16 @@ public class MainController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @GetMapping("/test/gpt")
+    @PostMapping("/test/gpt")
     public String testGpt(@RequestParam String userName){
         gptService.processAllEntities(userName);
+        return "index";
+    }
+
+    @PostMapping("/test")
+    public String test(@RequestParam String userName){
+        List<PatchEntity> patchEntities = patchRepository.findByCommitOid("6e380e3a22b01d67038cecb6ffd943d6305ec346");
+        patchEntities.forEach(patchEntity -> gptService.generateKeyword(userName, patchEntity));
         return "index";
     }
 }
