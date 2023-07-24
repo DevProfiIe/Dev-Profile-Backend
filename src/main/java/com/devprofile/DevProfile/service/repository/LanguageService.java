@@ -43,7 +43,6 @@ public class LanguageService {
                 RepositoryEntity repoEntity = gitRepository.findByRepoName(repoName).orElse(new RepositoryEntity());
                 repoEntity.setRepoLanguages(languages);
 
-//                orgLanguages(repoOidsMap,token);
                 gitRepository.save(repoEntity);
             });
         });
@@ -55,6 +54,7 @@ public class LanguageService {
             orgRepoCommits.forEach((orgName, repoCommits) -> {
                 repoCommits.keySet().forEach(repoName -> {
                     String url = String.format("/repos/%s/%s/languages", orgName, repoName);
+                    System.out.println("url = " + url);
                     Mono<JsonNode> responseMono = webClient.get().uri(url)
                             .header("Authorization", "Bearer " + token)
                             .retrieve()

@@ -25,10 +25,11 @@ public class ContributorsUserService {
         this.gitRepository = gitRepository;
     }
 
-    public void countCommits(Map<String, List<String>> repoOidsMap, String userName) {
+    public void countCommits(Map<String, List<String>> repoOidsMap, String userName,String token) {
         repoOidsMap.forEach((repoName, commitList) -> {
             webClient.get()
                     .uri("/repos/{userName}/{repoName}/contributors", userName, repoName)
+                    .header("Authorization", "Bearer " + token)
                     .retrieve()
                     .bodyToMono(String.class)
                     .flatMap(responseBody -> {

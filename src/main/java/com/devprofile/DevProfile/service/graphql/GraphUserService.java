@@ -59,7 +59,7 @@ public class GraphUserService {
                     ownRepoService.saveRepositories(repositories, userId);
                     Map<String, List<String>> repoOidsMap = commitUserService.saveCommits(repositories,userName,userId);
                     commitUserService.updateDates();
-                    contributorsUserService.countCommits(repoOidsMap,userName);
+                    contributorsUserService.countCommits(repoOidsMap,userName,accessToken);
                     patchUserService.savePatchs(userName,accessToken,repoOidsMap);
                     languageService.repoLanguages(repoOidsMap,userName,accessToken);
 

@@ -23,6 +23,7 @@ public class CommitEntity {
     private String commitMessage;
     private LocalDate commitDate;
     private String userName;
+
     private String repoNodeId;
     private String repoName;
 

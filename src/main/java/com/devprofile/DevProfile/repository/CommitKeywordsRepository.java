@@ -4,5 +4,5 @@ import com.devprofile.DevProfile.entity.CommitKeywordsEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface CommitKeywordsRepository extends MongoRepository<CommitKeywordsEntity, String> {
-
+    CommitKeywordsEntity findByOid(String oid);
 }

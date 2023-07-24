@@ -26,11 +26,12 @@ public class ContributorsOrgService {
         this.gitRepository = gitRepository;
     }
 
-    public void countCommits(Map<String, Map<String, List<String>>> orgRepoCommits,String userName) {
+    public void countCommits(Map<String, Map<String, List<String>>> orgRepoCommits,String userName,String token) {
         orgRepoCommits.forEach((orgName, repoCommitMap) -> {
             repoCommitMap.forEach((repoName, commitList) -> {
                 webClient.get()
                         .uri("/repos/{orgName}/{repoName}/contributors", orgName, repoName)
+                        .header("Authorization", "Bearer " + token)
                         .retrieve()
                         .bodyToMono(String.class)
                         .flatMap(responseBody -> {

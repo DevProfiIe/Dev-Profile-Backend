@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 
 @Repository
@@ -20,4 +21,7 @@ public interface CommitRepository extends JpaRepository<CommitEntity, String> {
 
     @Query("SELECT c.commitOid FROM CommitEntity c WHERE c.commitOid IN :oids")
     List<String> findExistingOids(@Param("oids") List<String> oids);
+
+    @Query("SELECT c FROM CommitEntity c WHERE c.commitOid = :commitOid")
+    Optional<CommitEntity> findByCommitOid(@Param("commitOid") String commitOid);
 }
