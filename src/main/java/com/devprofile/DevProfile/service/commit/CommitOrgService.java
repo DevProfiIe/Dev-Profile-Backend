@@ -1,5 +1,6 @@
 package com.devprofile.DevProfile.service.commit;
 
+
 import com.devprofile.DevProfile.entity.CommitEntity;
 import com.devprofile.DevProfile.repository.CommitRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -8,8 +9,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -17,44 +23,51 @@ import java.util.*;
 public class CommitOrgService {
 
     private final CommitRepository commitRepository;
-    private final CommitService commitService;
 
     @Transactional
-    public void saveCommits(List<CommitEntity> commits) {
-        commitRepository.saveAll(commits);
-        commitRepository.flush();
-    }
-
-    @Transactional
-    public Map<String, Map<String, List<String>>> extractAndSaveOrgCommits(JsonNode jsonResponse, Integer userId) {
-        List<CommitEntity> commitsToSave = new ArrayList<>();
-        Map<String, Map<String, List<String>>> orgOidsMap = new HashMap<>();
-
-        Iterator<JsonNode> orgsIterator = jsonResponse
-                .path("data")
-                .path("user")
-                .path("organizations")
-                .path("nodes")
-                .elements();
-
-        while (orgsIterator.hasNext()) {
-            JsonNode orgNode = orgsIterator.next();
-            String orgName = orgNode.get("name").asText();
-            Map<String, List<String>> repoOidsMap = new HashMap<>();
-            commitService.processCommits(orgNode.path("repositories").path("nodes")
-                    .elements(), commitsToSave, repoOidsMap, userId);
-            orgOidsMap.put(orgName, repoOidsMap);
-        }
-
+    public void saveCommits(JsonNode repositories, String userName, Integer userId) {
         try {
-            if (!commitsToSave.isEmpty()) {
-                saveCommits(commitsToSave);
-            }
-        } catch (DataAccessException ex) {
-            log.error("Error occurred while saving commits", ex);
-        }
+            List<CommitEntity> commits = new ArrayList<>();
 
-        return orgOidsMap;
+            for (JsonNode repo : repositories) {
+                JsonNode repository = repo.get("repositories");
+                JsonNode nodes = repository.get("nodes");
+                for(JsonNode repoNode:nodes){
+                    String repoName = repoNode.get("name").asText();
+                    JsonNode defaultBranchRef = repoNode.get("defaultBranchRef");
+                    if (defaultBranchRef != null) {
+                        JsonNode target = defaultBranchRef.get("target");
+                        if (target != null) {
+                            JsonNode history = target.get("history");
+                            if (history != null) {
+                                JsonNode edges = history.get("edges");
+                                if (edges != null) {
+                                    for (JsonNode edge : edges) {
+                                        CommitEntity commitEntity = new CommitEntity();
+                                        JsonNode node = edge.get("node");
+                                        if (node != null) {
+                                            commitEntity.setCommitMessage(node.get("message").asText());
+                                            JsonNode author = node.get("author");
+                                            if (author != null) {
+                                                commitEntity.setCommitDate(author.get("date").asText());
+                                            }
+                                            commitEntity.setCommitOid(node.get("oid").asText());
+                                        }
+                                        commitEntity.setRepoNodeId(repoNode.get("id").asText());
+                                        commitEntity.setRepoName(repoName);
+                                        commitEntity.setUserName(userName);
+                                        commitEntity.setUserId(userId);
+                                        commits.add(commitEntity);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            commitRepository.saveAll(commits);
+        } catch (DataAccessException e) {
+            log.error("Error saving commits: ", e);
+        }
     }
 }
-

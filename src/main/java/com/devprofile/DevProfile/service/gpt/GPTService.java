@@ -50,8 +50,9 @@ public class GPTService {
     public void generateKeyword(String userName, PatchEntity patchEntity){
 
         String patch = patchEntity.getPatch();
-//        String oid = patchEntity.getid();
-        String oid = "";
+        String oid = patchEntity.getCommitOid();
+
+
         WebClient webClient = WebClient.builder()
                 .baseUrl(url)
                 .defaultHeader(HttpHeaders.AUTHORIZATION,"Bearer " + key)

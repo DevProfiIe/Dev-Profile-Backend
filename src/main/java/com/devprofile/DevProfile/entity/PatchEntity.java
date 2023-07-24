@@ -17,7 +17,7 @@ public class PatchEntity {
     private Long id;
 
     @Column
-    private String commitSha;
+    private String commitOid;
     @Column
     private String fileName;
 

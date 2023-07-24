@@ -72,7 +72,7 @@ public class PatchService {
                                         if (file.has("raw_url")) patchEntity.setRawUrl(file.get("raw_url").asText());
                                         if (file.has("contents_url")) patchEntity.setContentsUrl(file.get("contents_url").asText());
                                         if (file.has("patch")) patchEntity.setPatch(file.get("patch").asText());
-                                        patchEntity.setCommitSha(oid);
+                                        patchEntity.setCommitOid(oid);
                                         patchesToSave.add(patchEntity);
                                     }
                                 }
@@ -108,7 +108,7 @@ public class PatchService {
                                         if (file.has("raw_url")) patchEntity.setRawUrl(file.get("raw_url").asText());
                                         if (file.has("contents_url")) patchEntity.setContentsUrl(file.get("contents_url").asText());
                                         if (file.has("patch")){patchEntity.setPatch(file.get("patch").asText());}
-                                        patchEntity.setCommitSha(oid);
+                                        patchEntity.setCommitOid(oid);
 
 
                                         patchesToSave.add(patchEntity);
