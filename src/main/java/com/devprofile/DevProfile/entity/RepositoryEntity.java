@@ -36,6 +36,9 @@ public class RepositoryEntity {
     @Column
     private String repoUrl;
 
+    @Column
+    private String orgName;
+
     @ElementCollection
     @CollectionTable(name = "repo_language", joinColumns = @JoinColumn(name = "repoNodeId"))
     @Column(name = "language")
