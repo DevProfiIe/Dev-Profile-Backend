@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @Slf4j
@@ -26,21 +27,31 @@ public class OrgRepoService extends AbstractRepositoryService {
         this.commitOrgService = commitOrgService;
     }
 
-    public Mono<Void> saveRepositories(JsonNode orgs, Integer userId, String userName) {
-        return Flux.fromIterable(orgs)
-                .flatMap(org -> {
-                    String orgName = org.get("name").asText();
-                    return Flux.fromIterable(org.get("repositories").get("nodes"))
-                            .flatMap(repo -> this.saveRepository(repo, userId, orgName));
-                })
-                .then()
-                .onErrorResume(e -> {
-                    log.error("Error saving repositories: ", e);
-                    return Mono.empty();
-                });
+    public CompletableFuture<Void> saveRepositories(JsonNode orgs, Integer userId, String userName) {
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+
+        orgs.forEach(org -> {
+            String orgName = org.get("name").asText();
+            org.get("repositories").get("nodes").forEach(repo -> {
+                CompletableFuture<Void> result = this.saveRepository(repo, userId, orgName);
+                if (result != null) {
+                    futures.add(result);
+                }
+            });
+        });
+
+        CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+                futures.toArray(new CompletableFuture[futures.size()])
+        );
+
+        return allFutures.exceptionally(e -> {
+            log.error("Error saving repositories: ", e);
+            return null;
+        });
     }
 
-    private Mono<RepositoryEntity> saveRepository(JsonNode repo, Integer userId, String orgName) {
+
+    private CompletableFuture<Void> saveRepository(JsonNode repo, Integer userId, String orgName) {
         RepositoryEntity repositoryEntity = new RepositoryEntity();
 
         JsonNode defaultBranchRef = repo.get("defaultBranchRef");
@@ -51,7 +62,7 @@ public class OrgRepoService extends AbstractRepositoryService {
                 if (history != null) {
                     JsonNode edges = history.get("edges");
                     if (edges == null || edges.isNull() || !edges.elements().hasNext()) {
-                        return Mono.empty();
+                        return null;
                     }
                 }
             }
@@ -74,6 +85,6 @@ public class OrgRepoService extends AbstractRepositoryService {
         repositoryEntity.setUserId(userId);
 
         gitRepository.save(repositoryEntity);
-        return Mono.empty();
+        return CompletableFuture.completedFuture(null);
     }
 }

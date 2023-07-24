@@ -3,6 +3,7 @@ package com.devprofile.DevProfile.service.graphql;
 import com.devprofile.DevProfile.entity.UserEntity;
 import com.devprofile.DevProfile.service.commit.CommitOrgService;
 import com.devprofile.DevProfile.service.patch.PatchOrgService;
+import com.devprofile.DevProfile.service.repository.LanguageService;
 import com.devprofile.DevProfile.service.repository.OrgRepoService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class GraphOrgService {
     private final OrgRepoService orgRepoService;
     private final CommitOrgService commitOrgService;
     private final PatchOrgService patchOrgService;
+    private final LanguageService languageService;
 
 
 
@@ -80,8 +82,14 @@ public class GraphOrgService {
                     orgRepoService.saveRepositories(organizations, userId, userName);
                     commitOrgService.saveCommits(organizations, userName, userId);
 
-                    return fetchOrganizationRepoCommits(organizations);
-                }).flatMap(orgRepoCommits -> patchOrgService.savePatchs(accessToken, orgRepoCommits))
-                .then();
-    }
+
+                    return fetchOrganizationRepoCommits(organizations)
+                            .flatMap(orgRepoCommits -> {
+                                return patchOrgService.savePatchs(accessToken, orgRepoCommits)
+                                        .then(Mono.just(orgRepoCommits));
+                            })
+                            .flatMap(orgRepoCommits -> languageService.orgLanguages(orgRepoCommits,accessToken))
+                            .then();
+    });
+}
 }

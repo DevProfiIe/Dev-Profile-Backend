@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
 import java.util.HashSet;
@@ -51,24 +50,26 @@ public class LanguageService {
     }
 
 
-    public void orgLanguages(Map<String, List<String>> orgsRepoNamesMap, String token) {
-        orgsRepoNamesMap.forEach((orgName, repoNamesList) -> {
-            repoNamesList.forEach(repoName -> {
-                String url = String.format("/repos/%s/%s/languages", orgName, repoName);
-                Mono<JsonNode> responseMono = webClient.get().uri(url)
-                        .header("Authorization", "Bearer " + token)
-                        .retrieve()
-                        .bodyToMono(JsonNode.class);
+    public Mono<Void> orgLanguages(Map<String, Map<String, List<String>>> orgRepoCommits, String token) {
+        return Mono.fromRunnable(() -> {
+            orgRepoCommits.forEach((orgName, repoCommits) -> {
+                repoCommits.keySet().forEach(repoName -> {
+                    String url = String.format("/repos/%s/%s/languages", orgName, repoName);
+                    Mono<JsonNode> responseMono = webClient.get().uri(url)
+                            .header("Authorization", "Bearer " + token)
+                            .retrieve()
+                            .bodyToMono(JsonNode.class);
 
-                responseMono.subscribe(response -> {
-                    Set<String> languages = new HashSet<>();
-                    response.fieldNames().forEachRemaining(languages::add);
+                    responseMono.subscribe(response -> {
+                        Set<String> languages = new HashSet<>();
+                        response.fieldNames().forEachRemaining(languages::add);
 
-                    RepositoryEntity repoEntity = gitRepository.findByRepoName(repoName)
-                            .orElse(new RepositoryEntity());
-                    repoEntity.setRepoLanguages(languages);
+                        RepositoryEntity repoEntity = gitRepository.findByRepoName(repoName)
+                                .orElse(new RepositoryEntity());
+                        repoEntity.setRepoLanguages(languages);
 
-                    gitRepository.save(repoEntity);
+                        gitRepository.save(repoEntity);
+                    });
                 });
             });
         });

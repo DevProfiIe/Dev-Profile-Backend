@@ -9,6 +9,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
 @Service
 @Slf4j
 public class UserRepoService extends AbstractRepositoryService {
@@ -17,17 +21,24 @@ public class UserRepoService extends AbstractRepositoryService {
         super(gitRepository, webClientBuilder);
     }
 
-    public Mono<Void> saveRepositories(JsonNode repos, Integer userId) {
-        return Flux.fromIterable(repos)
-                .flatMap(repo -> this.saveRepository(repo, userId))
-                .then()
-                .onErrorResume(e -> {
-                    log.error("Error saving repositories: ", e);
-                    return Mono.empty();
-                });
+    public CompletableFuture<Void> saveRepositories(JsonNode repos, Integer userId) {
+        List<CompletableFuture<RepositoryEntity>> futures = new ArrayList<>();
+
+        repos.forEach(repo -> {
+            futures.add(this.saveRepository(repo, userId));
+        });
+
+        CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+                futures.toArray(new CompletableFuture[futures.size()])
+        );
+
+        return allFutures.exceptionally(e -> {
+            log.error("Error saving repositories: ", e);
+            return null;
+        });
     }
 
-    private Mono<RepositoryEntity> saveRepository(JsonNode repo,Integer userId) {
+    private CompletableFuture<RepositoryEntity> saveRepository(JsonNode repo,Integer userId) {
         RepositoryEntity repositoryEntity = new RepositoryEntity();
 
         String repoNodeId = repo.get("id").asText();
@@ -45,6 +56,6 @@ public class UserRepoService extends AbstractRepositoryService {
         repositoryEntity.setRepoDesc(repoDesc);
         repositoryEntity.setUserId(userId);
 
-        return Mono.just(gitRepository.save(repositoryEntity));
+        return CompletableFuture.completedFuture(gitRepository.save(repositoryEntity));
     }
 }
