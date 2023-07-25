@@ -138,9 +138,12 @@ public class MainController {
             userDTO.setCommitStart(firstDate);
         }
 
-        String userMessage = userDTO == null ? "No user found" : "User fetched successfully";
-
-        String repositoryMessage = extendedEntities.isEmpty() ? "No data found" : "Data fetched successfully";
+        String message = null;
+        if (userDTO == null) {
+            message = "Fail: No user found";
+        } else if (extendedEntities.isEmpty()) {
+            message = "Fail: No data found";
+        }
 
         Map<String, Object> combinedData = new HashMap<>();
         combinedData.put("userInfo", userDTO);
@@ -149,7 +152,7 @@ public class MainController {
         ApiResponse<Object> apiResponse = new ApiResponse<>();
         apiResponse.setResult(userDTO != null && !extendedEntities.isEmpty());
         apiResponse.setData(combinedData);
-        apiResponse.setMessage(userMessage + "; " + repositoryMessage);
+        apiResponse.setMessage(message);
 
         return ResponseEntity.ok(apiResponse);
     }
