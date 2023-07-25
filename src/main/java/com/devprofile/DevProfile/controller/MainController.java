@@ -99,7 +99,7 @@ public class MainController {
 
 
     @GetMapping("/response_test")
-    public ResponseEntity<CombinedResponseDTO> responseApiTest(@RequestParam String userName) {
+    public ResponseEntity<ApiResponse<Object>> responseApiTest(@RequestParam String userName) {
         List<CommitEntity> allCommitEntities = commitRepository.findAll();
         Map<String, CommitKeywordsDTO> oidAndKeywordsMap = new HashMap<>();
 
@@ -120,21 +120,20 @@ public class MainController {
             userDTO = convertToDTO(userEntity, userDataEntity);
         }
 
-        ApiResponse<UserDTO> userApiResponse = new ApiResponse<>();
-        userApiResponse.setResult(userDTO != null);
-        userApiResponse.setData(userDTO);
-        userApiResponse.setMessage(userDTO == null ? "No user found" : "User fetched successfully");
+        String userMessage = userDTO == null ? "No user found" : "User fetched successfully";
 
-        ApiResponse<List<RepositoryEntityDTO>> apiResponse = new ApiResponse<>();
-        apiResponse.setResult(!extendedEntities.isEmpty());
-        apiResponse.setData(extendedEntities);
-        apiResponse.setMessage(extendedEntities.isEmpty() ? "No data found" : "Data fetched successfully");
+        String repositoryMessage = extendedEntities.isEmpty() ? "No data found" : "Data fetched successfully";
 
-        CombinedResponseDTO combinedResponseDTO = new CombinedResponseDTO();
-        combinedResponseDTO.setUserDTO(userApiResponse);
-        combinedResponseDTO.setApiResponse(apiResponse);
+        Map<String, Object> combinedData = new HashMap<>();
+        combinedData.put("userInfo", userDTO);
+        combinedData.put("repositoryInfo", extendedEntities);
 
-        return ResponseEntity.ok(combinedResponseDTO);
+        ApiResponse<Object> apiResponse = new ApiResponse<>();
+        apiResponse.setResult(userDTO != null && !extendedEntities.isEmpty());
+        apiResponse.setData(combinedData);
+        apiResponse.setMessage(userMessage + "; " + repositoryMessage);
+
+        return ResponseEntity.ok(apiResponse);
     }
 
 
