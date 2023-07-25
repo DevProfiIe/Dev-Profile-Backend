@@ -45,12 +45,12 @@ public class CommitUserService {
                     String repoName = repo.get("name").asText();
                     commitEntity.setRepoName(repoName);
                     commitEntity.setUserId(userId);
+                    commitEntity.setLength(0);
                     commits.add(commitEntity);
                     oids.add(oid);
                 }
                 repoOidsMap.put(repo.get("name").asText(), oids);
             }
-
             commitRepository.saveAll(commits);
             commitRepository.flush();
         } catch (DataAccessException e) {

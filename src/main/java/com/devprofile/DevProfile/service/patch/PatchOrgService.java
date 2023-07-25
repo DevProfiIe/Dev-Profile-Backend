@@ -1,6 +1,7 @@
 package com.devprofile.DevProfile.service.patch;
 
 import com.devprofile.DevProfile.entity.PatchEntity;
+import com.devprofile.DevProfile.repository.CommitRepository;
 import com.devprofile.DevProfile.repository.PatchRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
@@ -19,10 +20,12 @@ public class PatchOrgService {
 
     private final PatchRepository patchRepository;
     private final WebClient webClient;
+    private final CommitRepository commitRepository;
 
-    public PatchOrgService(PatchRepository patchRepository, @Qualifier("patchWebClient") WebClient webClient) {
+    public PatchOrgService(PatchRepository patchRepository, @Qualifier("patchWebClient") WebClient webClient, CommitRepository commitRepository) {
         this.patchRepository = patchRepository;
         this.webClient = webClient;
+        this.commitRepository = commitRepository;
     }
 
     public Mono<Void> savePatchs(String accessToken, Map<String, Map<String, List<String>>> orgRepoCommits) {
@@ -51,8 +54,12 @@ public class PatchOrgService {
                                                             patchEntity.setRawUrl(file.get("raw_url").asText());
                                                         if (file.has("contents_url"))
                                                             patchEntity.setContentsUrl(file.get("contents_url").asText());
-                                                        if (file.has("patch"))
-                                                            patchEntity.setPatch(file.get("patch").asText());
+                                                        if (file.has("patch")){
+                                                            String patch =file.get("patch").asText();
+                                                            patchEntity.setPatch(patch);
+                                                            commitRepository.updateLength(oid, patch.length());
+                                                        }
+
                                                         patchEntity.setCommitOid(oid);
                                                         return patchEntity;
                                                     });

@@ -23,9 +23,9 @@ public class CommitEntity {
     private String commitMessage;
     private LocalDate commitDate;
     private String userName;
-
     private String repoNodeId;
     private String repoName;
+    private Integer length;
 
 
     public void setCommitDate(String commitDateStr) {

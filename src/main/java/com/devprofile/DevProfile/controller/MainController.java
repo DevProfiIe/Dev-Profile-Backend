@@ -11,17 +11,17 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cglib.core.Local;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.*;
 
+@CrossOrigin
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -39,6 +39,8 @@ public class MainController {
     private final GitRepository gitRepository;
     private final GPTService gptService;
     private final RepositoryService repositoryService;
+
+
 
 
     private UserDTO convertToDTO(UserEntity userEntity, UserDataEntity userDataEntity) {
@@ -102,12 +104,26 @@ public class MainController {
     public ResponseEntity<ApiResponse<Object>> responseApiTest(@RequestParam String userName) {
         List<CommitEntity> allCommitEntities = commitRepository.findAll();
         Map<String, CommitKeywordsDTO> oidAndKeywordsMap = new HashMap<>();
+        Map<LocalDate, Integer> calender = new HashMap<>();
+
 
         for (CommitEntity commitEntity : allCommitEntities) {
             Optional<CommitKeywordsDTO> keywords = responseService.getFeatureFramework(commitEntity.getCommitOid());
             if (keywords.isPresent()) {
                 oidAndKeywordsMap.put(commitEntity.getCommitOid(), keywords.get());
             }
+            LocalDate date = commitEntity.getCommitDate();
+            Integer length = commitEntity.getLength();
+            calender.merge(date, length, Integer::sum);
+        }
+        List<Map<String, Object>> calenderData = new ArrayList<>();
+        LocalDate firstDate = LocalDate.now();
+        for( LocalDate date : calender.keySet() ){
+            if(firstDate.isAfter(date)) firstDate = date;
+            Map<String, Object> oneDay = new HashMap<>();
+            oneDay.put("date", date);
+            oneDay.put("value", calender.get(date));
+            calenderData.add(oneDay);
         }
 
         List<RepositoryEntity> repositoryEntities = gitRepository.findWithCommitAndEndDate();
@@ -118,6 +134,8 @@ public class MainController {
         UserDTO userDTO = null;
         if (userEntity != null) {
             userDTO = convertToDTO(userEntity, userDataEntity);
+            userDTO.setCommitCalender(calenderData);
+            userDTO.setCommitStart(firstDate);
         }
 
         String message = null;
