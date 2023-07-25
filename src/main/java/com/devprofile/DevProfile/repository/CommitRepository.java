@@ -24,4 +24,5 @@ public interface CommitRepository extends JpaRepository<CommitEntity, String> {
 
     @Query("SELECT c FROM CommitEntity c WHERE c.commitOid = :commitOid")
     Optional<CommitEntity> findByCommitOid(@Param("commitOid") String commitOid);
+
 }

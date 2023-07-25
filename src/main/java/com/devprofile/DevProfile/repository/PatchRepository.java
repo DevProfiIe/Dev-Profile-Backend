@@ -14,4 +14,6 @@ public interface PatchRepository extends JpaRepository<PatchEntity,String> {
     List<String> findExistingOids(@Param("oids") List<String> oids);
 
     List<PatchEntity> findByCommitOid(String commitOid);
+
+
 }

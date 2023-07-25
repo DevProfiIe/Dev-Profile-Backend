@@ -2,22 +2,10 @@ package com.devprofile.DevProfile.controller;
 
 import com.devprofile.DevProfile.component.JwtProvider;
 import com.devprofile.DevProfile.dto.response.*;
-import com.devprofile.DevProfile.entity.CommitEntity;
-import com.devprofile.DevProfile.entity.PatchEntity;
-
-import com.devprofile.DevProfile.entity.RepositoryEntity;
-import com.devprofile.DevProfile.entity.UserEntity;
+import com.devprofile.DevProfile.entity.*;
 import com.devprofile.DevProfile.repository.*;
-
-import com.devprofile.DevProfile.entity.UserDataEntity;
-import com.devprofile.DevProfile.entity.UserEntity;
-import com.devprofile.DevProfile.repository.CommitKeywordsRepository;
-import com.devprofile.DevProfile.repository.PatchRepository;
-import com.devprofile.DevProfile.repository.UserDataRepository;
-import com.devprofile.DevProfile.repository.UserRepository;
-
-import com.devprofile.DevProfile.service.graphql.GraphOrgService;
 import com.devprofile.DevProfile.service.gpt.GPTService;
+import com.devprofile.DevProfile.service.graphql.GraphOrgService;
 import com.devprofile.DevProfile.service.graphql.GraphUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
