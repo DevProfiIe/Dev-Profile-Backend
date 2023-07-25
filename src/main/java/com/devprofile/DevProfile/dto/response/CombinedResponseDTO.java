@@ -1,27 +1,14 @@
 package com.devprofile.DevProfile.dto.response;
 
-import com.devprofile.DevProfile.entity.RepositoryEntity;
+import lombok.Data;
 
 import java.util.List;
-import java.util.Map;
 
+@Data
 public class CombinedResponseDTO {
-    private Map<String, CommitKeywordsDTO> oidAndKeywordsMap;
-    private List<RepositoryEntity> repositoryEntities;
 
-    public Map<String, CommitKeywordsDTO> getOidAndKeywordsMap() {
-        return oidAndKeywordsMap;
-    }
+    private ApiResponse<UserDTO> userDTO;
+    private ApiResponse<List<RepositoryEntityDTO>> apiResponse;
 
-    public void setOidAndKeywordsMap(Map<String, CommitKeywordsDTO> oidAndKeywordsMap) {
-        this.oidAndKeywordsMap = oidAndKeywordsMap;
-    }
 
-    public List<RepositoryEntity> getRepositoryEntities() {
-        return repositoryEntities;
-    }
-
-    public void setRepositoryEntities(List<RepositoryEntity> repositoryEntities) {
-        this.repositoryEntities = repositoryEntities;
-    }
 }

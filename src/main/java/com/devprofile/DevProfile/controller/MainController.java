@@ -41,6 +41,27 @@ public class MainController {
     private final RepositoryService repositoryService;
 
 
+    private UserDTO convertToDTO(UserEntity userEntity, UserDataEntity userDataEntity) {
+        UserDTO userDTO = new UserDTO();
+        userDTO.setAvatar_url(userEntity.getAvatar_url());
+        userDTO.setLogin(userEntity.getLogin());
+        userDTO.setName(userEntity.getName());
+
+        if (userDataEntity != null) {
+            userDTO.setKeywordSet(userDataEntity.getKeywordSet());
+            userDTO.setAi(userDataEntity.getAi());
+            userDTO.setDataScience(userDataEntity.getDataScience());
+            userDTO.setDatabase(userDataEntity.getDatabase());
+            userDTO.setMobile(userDataEntity.getMobile());
+            userDTO.setWebBackend(userDataEntity.getWebBackend());
+            userDTO.setDocument(userDataEntity.getDocument());
+            userDTO.setSystemProgramming(userDataEntity.getSystemProgramming());
+            userDTO.setAlgorithm(userDataEntity.getAlgorithm());
+            userDTO.setGame(userDataEntity.getGame());
+        }
+
+        return userDTO;
+    }
     @GetMapping("/main")
     public Mono<Void> main(@RequestHeader String Authorization) throws IOException {
         jwtProvider.validateToken(Authorization);
@@ -78,7 +99,7 @@ public class MainController {
 
 
     @GetMapping("/response_test")
-    public ResponseEntity<ApiResponse<List<RepositoryEntityDTO>>> responseApiTest() {
+    public ResponseEntity<CombinedResponseDTO> responseApiTest(@RequestParam String userName) {
         List<CommitEntity> allCommitEntities = commitRepository.findAll();
         Map<String, CommitKeywordsDTO> oidAndKeywordsMap = new HashMap<>();
 
@@ -90,15 +111,30 @@ public class MainController {
         }
 
         List<RepositoryEntity> repositoryEntities = gitRepository.findWithCommitAndEndDate();
-
         List<RepositoryEntityDTO> extendedEntities = repositoryService.createRepositoryEntityDTOs(repositoryEntities, allCommitEntities, oidAndKeywordsMap);
+
+        UserEntity userEntity = userRepository.findByLogin(userName);
+        UserDataEntity userDataEntity = userDataRepository.findByUserName(userName);
+        UserDTO userDTO = null;
+        if (userEntity != null) {
+            userDTO = convertToDTO(userEntity, userDataEntity);
+        }
+
+        ApiResponse<UserDTO> userApiResponse = new ApiResponse<>();
+        userApiResponse.setResult(userDTO != null);
+        userApiResponse.setData(userDTO);
+        userApiResponse.setMessage(userDTO == null ? "No user found" : "User fetched successfully");
 
         ApiResponse<List<RepositoryEntityDTO>> apiResponse = new ApiResponse<>();
         apiResponse.setResult(!extendedEntities.isEmpty());
         apiResponse.setData(extendedEntities);
         apiResponse.setMessage(extendedEntities.isEmpty() ? "No data found" : "Data fetched successfully");
 
-        return ResponseEntity.ok(apiResponse);
+        CombinedResponseDTO combinedResponseDTO = new CombinedResponseDTO();
+        combinedResponseDTO.setUserDTO(userApiResponse);
+        combinedResponseDTO.setApiResponse(apiResponse);
+
+        return ResponseEntity.ok(combinedResponseDTO);
     }
 
 
