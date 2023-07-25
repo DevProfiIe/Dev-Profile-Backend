@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
@@ -43,11 +42,14 @@ public class PatchUserService {
                                     PatchEntity patchEntity = new PatchEntity();
                                     if (file.has("filename")) patchEntity.setFileName(file.get("filename").asText());
                                     if (file.has("raw_url")) patchEntity.setRawUrl(file.get("raw_url").asText());
-                                    if (file.has("contents_url")) patchEntity.setContentsUrl(file.get("contents_url").asText());
+                                    if (file.has("contents_url"))
+                                        patchEntity.setContentsUrl(file.get("contents_url").asText());
                                     if (file.has("patch")) patchEntity.setPatch(file.get("patch").asText());
                                     patchEntity.setCommitOid(oid);
 
-                                    patchRepository.save(patchEntity);
+                                    if (patchEntity.getPatch() != null) {
+                                        patchRepository.save(patchEntity);
+                                    }
                                 }
                             }
                         }, error -> log.error("Error fetching commit detail: ", error));
@@ -55,4 +57,3 @@ public class PatchUserService {
         }
     }
 }
-

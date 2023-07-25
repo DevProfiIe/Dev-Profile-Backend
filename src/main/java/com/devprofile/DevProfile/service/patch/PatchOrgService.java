@@ -59,6 +59,7 @@ public class PatchOrgService {
                                         });
                             });
                 })
+                .filter(patchEntity -> patchEntity.getPatch() != null)
                 .flatMap(patchEntity -> Mono.fromCallable(() -> patchRepository.save(patchEntity)))
                 .doOnError(e -> log.error("Error saving patch: ", e))
                 .onErrorContinue((throwable, o) -> log.error("Error continuing with next patch", throwable))

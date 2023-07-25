@@ -12,7 +12,7 @@ import java.util.Optional;
 
 
 @Repository
-public interface GitRepository extends JpaRepository<RepositoryEntity, String> {
+public interface GitRepository extends JpaRepository<RepositoryEntity, Long> {
     @Query("SELECT r.repoNodeId FROM RepositoryEntity r WHERE r.repoNodeId IN :repoNodeIds")
     List<String> findExistingRepoNodeIds(@Param("repoNodeIds") List<String> repoNodeIds);
 
@@ -20,6 +20,7 @@ public interface GitRepository extends JpaRepository<RepositoryEntity, String> {
     @Query("update RepositoryEntity ur set ur.startDate = (select min(uc.commitDate) from CommitEntity uc where uc.repoName = ur.repoName), ur.endDate = (select max(uc.commitDate) from CommitEntity uc where uc.repoName = ur.repoName)")
     void updateStartDateEndDate();
     Optional<RepositoryEntity> findByRepoName(String repoName);
+    Optional<RepositoryEntity> findByRepoNodeId(String repoNodeId);
 
     @Query("SELECT r FROM RepositoryEntity r WHERE r.totalCommitCnt IS NOT NULL AND r.endDate IS NOT NULL")
     List<RepositoryEntity> findWithCommitAndEndDate();

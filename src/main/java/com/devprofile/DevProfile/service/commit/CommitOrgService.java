@@ -10,13 +10,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -45,8 +42,17 @@ public class CommitOrgService {
                                 JsonNode edges = history.get("edges");
                                 if (edges != null) {
                                     for (JsonNode edge : edges) {
-                                        CommitEntity commitEntity = new CommitEntity();
+
                                         JsonNode node = edge.get("node");
+                                        String commitOid = node.get("oid").asText();
+                                        Optional<CommitEntity> existingCommit = commitRepository.findByCommitOid(commitOid);
+
+                                        if (existingCommit.isPresent()) {
+                                            continue;
+                                        }
+
+                                        CommitEntity commitEntity = new CommitEntity();
+
                                         if (node != null) {
                                             commitEntity.setCommitMessage(node.get("message").asText());
                                             JsonNode author = node.get("author");

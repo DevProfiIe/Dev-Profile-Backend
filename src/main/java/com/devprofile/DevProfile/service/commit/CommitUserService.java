@@ -30,11 +30,16 @@ public class CommitUserService {
                 List<String> oids = new ArrayList<>();
                 JsonNode edges = repo.get("defaultBranchRef").get("target").get("history").get("edges");
                 for (JsonNode edge : edges) {
+                    String oid = edge.get("node").get("oid").asText();
+
+                    Optional<CommitEntity> existingCommit = commitRepository.findByCommitOid(oid);
+                    if (existingCommit.isPresent()) {
+                        continue;
+                    }
                     CommitEntity commitEntity = new CommitEntity();
                     commitEntity.setCommitMessage(edge.get("node").get("message").asText());
                     commitEntity.setCommitDate(edge.get("node").get("author").get("date").asText());
                     commitEntity.setUserName(userName);
-                    String oid = edge.get("node").get("oid").asText();
                     commitEntity.setCommitOid(oid);
                     commitEntity.setRepoNodeId(repo.get("id").asText());
                     String repoName = repo.get("name").asText();
