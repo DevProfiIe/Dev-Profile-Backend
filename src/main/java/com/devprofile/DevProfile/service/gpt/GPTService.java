@@ -5,6 +5,10 @@ import com.devprofile.DevProfile.entity.PatchEntity;
 import com.devprofile.DevProfile.repository.PatchRepository;
 import com.devprofile.DevProfile.service.commit.CommitKeywordsService;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.knuddels.jtokkit.Encodings;
+import com.knuddels.jtokkit.api.Encoding;
+import com.knuddels.jtokkit.api.EncodingRegistry;
+import com.knuddels.jtokkit.api.ModelType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,6 +45,7 @@ public class GPTService {
     private String key;
 
 
+
     @Transactional(readOnly = true)
     public void processAllEntities(String userName) {
         List<PatchEntity> patchEntities = patchRepository.findAll();
@@ -57,6 +62,8 @@ public class GPTService {
                 .baseUrl(url)
                 .defaultHeader(HttpHeaders.AUTHORIZATION,"Bearer " + key)
                 .build();
+
+
 
         String systemPrompt = "Answer in English. Analyze the contents of a GitHub patch.\n" +
                 "1.cs: Provide three to five keywords of 1~2 words each, describing what computer science knowledge is applied in this code (Not Language or framework).  \n" +

@@ -1,6 +1,8 @@
 package com.devprofile.DevProfile.service.patch;
 
+import com.devprofile.DevProfile.entity.CommitEntity;
 import com.devprofile.DevProfile.entity.PatchEntity;
+import com.devprofile.DevProfile.repository.CommitRepository;
 import com.devprofile.DevProfile.repository.PatchRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
@@ -15,10 +17,12 @@ import java.util.Map;
 @Service
 public class PatchUserService {
 
+    private final CommitRepository commitRepository;
     private final PatchRepository patchRepository;
     private final WebClient webClient;
 
-    public PatchUserService(PatchRepository patchRepository, @Qualifier("patchWebClient") WebClient webClient) {
+    public PatchUserService(PatchRepository patchRepository,CommitRepository commitRepository, @Qualifier("patchWebClient") WebClient webClient) {
+        this.commitRepository = commitRepository;
         this.patchRepository = patchRepository;
         this.webClient = webClient;
     }
@@ -40,11 +44,16 @@ public class PatchUserService {
                             if (commitDetailResponse.has("files")) {
                                 for (JsonNode file : commitDetailResponse.get("files")) {
                                     PatchEntity patchEntity = new PatchEntity();
+                                    CommitEntity commitEntity = commitRepository.findByCommitOid(oid).orElseThrow();
                                     if (file.has("filename")) patchEntity.setFileName(file.get("filename").asText());
                                     if (file.has("raw_url")) patchEntity.setRawUrl(file.get("raw_url").asText());
                                     if (file.has("contents_url"))
                                         patchEntity.setContentsUrl(file.get("contents_url").asText());
-                                    if (file.has("patch")) patchEntity.setPatch(file.get("patch").asText());
+                                    if (file.has("patch")) {
+                                        String patch =file.get("patch").asText();
+                                        patchEntity.setPatch(patch);
+                                        commitRepository.updateLength(oid, patch.length());
+                                    }
                                     patchEntity.setCommitOid(oid);
 
                                     if (patchEntity.getPatch() != null) {

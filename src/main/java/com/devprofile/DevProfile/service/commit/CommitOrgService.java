@@ -65,6 +65,7 @@ public class CommitOrgService {
                                         commitEntity.setRepoName(repoName);
                                         commitEntity.setUserName(userName);
                                         commitEntity.setUserId(userId);
+                                        commitEntity.setLength(0);
                                         commits.add(commitEntity);
                                     }
                                 }
