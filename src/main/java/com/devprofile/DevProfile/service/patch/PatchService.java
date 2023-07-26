@@ -90,6 +90,8 @@ public class PatchService {
                         root = objectMapper.readTree(body);
 
                         String content = root.get("content").asText();
+                        content = content.replaceAll("\\r\\n|\\r|\\n", "");
+
                         return decodeBase64(content);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
