@@ -112,17 +112,19 @@ public class MainController {
             if (keywords.isPresent()) {
                 oidAndKeywordsMap.put(commitEntity.getCommitOid(), keywords.get());
             }
-            LocalDate date = commitEntity.getCommitDate();
+            LocalDate day = commitEntity.getCommitDate();
             Integer length = commitEntity.getLength();
-            calender.merge(date, length, Integer::sum);
+            calender.merge(day, length, Integer::sum);
         }
         List<Map<String, Object>> calenderData = new ArrayList<>();
         LocalDate firstDate = LocalDate.now();
-        for( LocalDate date : calender.keySet() ){
-            if(firstDate.isAfter(date)) firstDate = date;
+        LocalDate lastDate = LocalDate.MIN;
+        for( LocalDate day : calender.keySet() ){
+            if(firstDate.isAfter(day)) firstDate = day;
+            if(lastDate.isBefore(day)) lastDate = day;
             Map<String, Object> oneDay = new HashMap<>();
-            oneDay.put("date", date);
-            oneDay.put("value", calender.get(date));
+            oneDay.put("day", day);
+            oneDay.put("value", calender.get(day));
             calenderData.add(oneDay);
         }
 
@@ -136,6 +138,7 @@ public class MainController {
             userDTO = convertToDTO(userEntity, userDataEntity);
             userDTO.setCommitCalender(calenderData);
             userDTO.setCommitStart(firstDate);
+            userDTO.setCommitEnd(lastDate);
         }
 
         String message = null;
