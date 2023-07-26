@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @CrossOrigin
@@ -50,8 +51,12 @@ public class SearchController {
     @GetMapping("/search/similarity")
     public ResponseEntity<ApiResponse> searchSimilarCommit(@RequestParam String query){
         ApiResponse<List<CommitEntity>> apiResponse = new ApiResponse<>();
+        List<CommitEntity> searchResultList =new ArrayList<>();
+        for(String oid : searchService.getTop10JaccardSimilarEntity(query)){
+            searchResultList.add(commitRepository.findByCommitOid(oid).orElseThrow());
+        }
         apiResponse.setMessage(null);
-        apiResponse.setData(searchService.getTop10SimilarEntity(query));
+        apiResponse.setData(searchResultList);
         apiResponse.setToken(null);
         apiResponse.setResult(true);
         return  ResponseEntity.ok(apiResponse);

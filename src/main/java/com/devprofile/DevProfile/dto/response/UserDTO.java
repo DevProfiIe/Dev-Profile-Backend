@@ -13,7 +13,10 @@ public class UserDTO {
     private String login;
     private String name;
 
+
     private LocalDate commitStart;
+
+    private LocalDate commitEnd;
 
     private List<Map<String, Object>> commitCalender;
 
