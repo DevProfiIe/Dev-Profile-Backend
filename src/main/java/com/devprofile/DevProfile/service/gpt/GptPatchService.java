@@ -5,10 +5,6 @@ import com.devprofile.DevProfile.entity.PatchEntity;
 import com.devprofile.DevProfile.repository.PatchRepository;
 import com.devprofile.DevProfile.service.commit.CommitKeywordsService;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.knuddels.jtokkit.Encodings;
-import com.knuddels.jtokkit.api.Encoding;
-import com.knuddels.jtokkit.api.EncodingRegistry;
-import com.knuddels.jtokkit.api.ModelType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,11 +26,10 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class GPTService {
+public class GptPatchService {
 
 
     private final CommitKeywordsService commitKeywordsService;
-
 
     private final PatchRepository patchRepository;
 
@@ -47,15 +42,7 @@ public class GPTService {
             4.field: Select the most relevant keyword from the following list: Game, System Programming, AI, Data Science, Database, Mobile, Web Backend, Web Frontend, Document. 
             If the accuracy significantly decreases, it's acceptable to omit the 3rd and 4th keywords. 
             Regardless of the length of the response, please ensure that it is provided in JSON format and strictly conforms to the specified schema.
-            {
-                "type":"object",
-                "properties":{
-                    "cs":{"type":"array", "items":{"type":"string"}},
-                    "langFrame":{"type":"array", "items":{"type":"string"}},
-                    "feature":{"type":"array","items":{"type":"string"}},
-                    "field":{"type":"array","items":{"type":"string"}}
-                }
-            }
+            {"type":"object","properties":{"cs":{"type":"array", "items":{"type":"string"}},"langFrame":{"type":"array", "items":{"type":"string"}},"feature":{"type":"array","items":{"type":"string"}},"field":{"type":"array","items":{"type":"string"}}}}
             """;
 /*    String systemPrompt = "Answer in English.\n" +
             "1.cs: Provide three to five keywords, each consisting of 1-2 words, that describe the computer science principles or concepts applied in this code, excluding specific languages or frameworks.\n" +
@@ -70,7 +57,6 @@ public class GPTService {
 
     @Value("${gpt.secret}")
     private String key;
-
 
 
     @Transactional(readOnly = true)
@@ -114,7 +100,7 @@ public class GPTService {
     private JsonNode postToGptService(WebClient webClient, List<Map<String, String>> messages) throws Exception {
         return webClient.post()
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(Map.of("model", "gpt-3.5-turbo", "messages", messages, "temperature", 0.33,"top_p",0.65))
+                .bodyValue(Map.of("model", "gpt-3.5-turbo", "messages", messages, "temperature", 0.33, "top_p", 0.65))
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
                         Mono.error(new Exception("Client Error: " + clientResponse.statusCode())))
