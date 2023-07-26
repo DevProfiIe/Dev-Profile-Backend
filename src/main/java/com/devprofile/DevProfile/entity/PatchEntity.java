@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-
 @Entity
 @Getter
 @Setter
@@ -18,7 +16,6 @@ public class PatchEntity {
 
     @Column
     private String commitOid;
-    private String keyword;
     private String fileName;
 
     @Column(columnDefinition="LONGTEXT")
