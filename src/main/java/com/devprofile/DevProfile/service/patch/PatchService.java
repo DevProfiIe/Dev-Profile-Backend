@@ -111,6 +111,7 @@ public class PatchService {
                                 return Mono.just(decodeBase64(content));
                             }
                         }
+
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }

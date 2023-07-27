@@ -65,8 +65,10 @@ public class SearchController {
     @GetMapping("/search/similarity")
     public ResponseEntity<ApiResponse> searchSimilarCommit(@RequestParam String query) {
         ApiResponse<List<CommitEntity>> apiResponse = new ApiResponse<>();
-        List<CommitEntity> searchResultList = new ArrayList<>();
-        for (String oid : searchService.getTop10JaccardSimilarEntity(query)) {
+
+        List<CommitEntity> searchResultList =new ArrayList<>();
+        for(String oid : searchService.getTop10LevenshteinSimilarEntity(query)){
+
             searchResultList.add(commitRepository.findByCommitOid(oid).orElseThrow());
         }
         apiResponse.setMessage(null);
