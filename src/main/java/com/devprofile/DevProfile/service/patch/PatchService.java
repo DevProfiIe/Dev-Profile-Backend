@@ -20,9 +20,7 @@ import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -37,19 +35,33 @@ public class PatchService {
     @Autowired
     public PatchService(PatchRepository patchRepository, @Qualifier("patchWebClient") WebClient webClient, JwtProvider jwtProvider, UserRepository userRepository) { // 변경된 부분
         this.patchRepository = patchRepository;
-        this.webClient = webClient; // 변경된 부분
+        this.webClient = webClient;
         this.jwtProvider = jwtProvider;
         this.userRepository = userRepository;
     }
 
     public Flux<PatchEntity> getPatchesByCommitOid(String commitOid) {
-        // List<PatchEntity> 대신 Flux<PatchEntity>를 반환하도록 변경
         return Flux.fromIterable(patchRepository.findByCommitOid(commitOid));
+    }
+
+    public Map<String, Object> compareCodeAndDiff(String code, List<String> diff) {
+        List<String> codeLines = Stream.of(code.split("\n")).collect(Collectors.toList());
+        Map<String, Object> result = new HashMap<>();
+
+        for (String line : diff) {
+            if (codeLines.contains(line)) {
+                result.put(line, "original");
+            } else {
+                result.put(line, "modified");
+            }
+        }
+        return result;
     }
 
     public List<String> analyzeDiff(String patch, String originalText) {
         List<String> originalLines = Stream.of(originalText.split("\n")).collect(Collectors.toList());
         List<String> patchLines = Stream.of(patch.split("\n")).collect(Collectors.toList());
+
         Patch<String> diffs = DiffUtils.diff(originalLines, patchLines);
 
         List<String> result = new ArrayList<>();
@@ -60,10 +72,12 @@ public class PatchService {
         return result;
     }
 
-    public String decodeBase64(String encoded) {
-        System.out.println("encoded = " + encoded);
-        byte[] decodedBytes = Base64.getDecoder().decode(encoded);
 
+
+
+
+    public String decodeBase64(String encoded) {
+        byte[] decodedBytes = Base64.getDecoder().decode(encoded);
         String decodedString = new String(decodedBytes);
 
         return decodedString;
@@ -83,17 +97,24 @@ public class PatchService {
                     return Mono.error(new RuntimeException("Not found: " + contentsUrl));
                 })
                 .bodyToMono(String.class)
-                .map(body -> {
+                .flatMap(body -> {
                     ObjectMapper objectMapper = new ObjectMapper();
                     JsonNode root;
                     try {
                         root = objectMapper.readTree(body);
 
-                        String content = root.get("content").asText();
-                        return decodeBase64(content);
+                        JsonNode contentNode = root.get("content");
+                        if (contentNode != null) {
+                            String content = contentNode.asText();
+                            if(content != null && !content.isEmpty()) {
+                                content = content.replaceAll("\\r\\n|\\r|\\n", "");
+                                return Mono.just(decodeBase64(content));
+                            }
+                        }
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
+                    return Mono.empty();
                 });
     }
 }
