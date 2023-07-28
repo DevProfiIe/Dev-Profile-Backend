@@ -1,14 +1,12 @@
 package com.devprofile.DevProfile.service.gpt;
 
-
-import com.devprofile.DevProfile.entity.PatchEntity;
+import com.devprofile.DevProfile.entity.CommitEntity;
+import com.devprofile.DevProfile.entity.CommitKeywordsEntity;
+import com.devprofile.DevProfile.repository.CommitKeywordsRepository;
+import com.devprofile.DevProfile.repository.CommitRepository;
 import com.devprofile.DevProfile.repository.PatchRepository;
 import com.devprofile.DevProfile.service.commit.CommitKeywordsService;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.knuddels.jtokkit.Encodings;
-import com.knuddels.jtokkit.api.Encoding;
-import com.knuddels.jtokkit.api.EncodingRegistry;
-import com.knuddels.jtokkit.api.ModelType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,29 +20,26 @@ import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
+import java.util.*;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class GPTService {
-
+public class GptCommitService {
 
     private final CommitKeywordsService commitKeywordsService;
 
+    // 커밋 단위로 gpt에게 질의 -> 데이터 저장은 다른 서비스로 넘김.
+    private final CommitRepository commitRepository;
+    private final CommitKeywordsRepository commitKeywordsRepository;
 
-    private final PatchRepository patchRepository;
-
-    String systemPrompt = "Answer in English.\n" +
-            "1.cs: Provide three to five keywords, each consisting of 1-2 words, that describe the computer science principles or concepts applied in this code, excluding specific languages or frameworks.\n" +
-            "2.frameLang: Provide the framework used in this code.\n" +
-            "3.feature:Provide a concise 1-2 line description of the feature implemented by this provided code.\n" +
-            "4.field: Select the most relevant keyword from the following list: Game, System Programming, AI, Data Science, Database, Mobile, Web Backend, Web Frontend, Document. If the accuracy significantly decreases, it's acceptable to omit the 3rd and 4th keywords. Regardless of the length of the response, please ensure that it is provided in JSON format and strictly conforms to the specified schema.\n" +
-            "```\n" +
-            "{\"type\":\"object\",\"properties\":{\"cs\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"langFrame\":{\"type\":\"array\",\"items”:{“type\":\"string\"}},\"feature\":{\"type”:”array\",\"items\":{\"type\":\"string\"}},\"field\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}}}}";
+    String systemPrompt =
+            """
+            You are programmer.
+            Respond with a score out of 10 on how appropriate the commit message is, comparing commitMessage to the patchKeywords list.
+            Regardless of the length of the response, please ensure that it is provided in JSON format and strictly conforms to the specified schema.
+            {"type":"object","properties":{"msgScore":{"type":"String", "items":"String"},}}
+            """;
 
     @Value("${gpt.url}")
     private String url;
@@ -53,26 +48,35 @@ public class GPTService {
     private String key;
 
 
-
+    // 1개커밋oid -> 스코어링,
     @Transactional(readOnly = true)
-    public void processAllEntities(String userName) {
-        List<PatchEntity> patchEntities = patchRepository.findAll();
-        patchEntities.forEach(patchEntity -> this.generateKeyword(userName, patchEntity));
+    public void processOneCommit(String userName, String commitOid) {
+        CommitEntity commitEntity = commitRepository.findByCommitOid(commitOid).orElseThrow();
+        CommitKeywordsEntity commitKeywordsEntity = commitKeywordsRepository.findByOid(commitOid);
+        // username, commitEntity, commitKeywordsEntity
+        System.out.println("GptCOmmitService.processOneCommit()");
+        generateCommitMessageScore(userName, commitEntity, commitKeywordsEntity);
     }
 
-    public void generateKeyword(String userName, PatchEntity patchEntity) {
-        String patch = patchEntity.getPatch();
-        if (patch == null) {
+    public void generateCommitMessageScore(String userName, CommitEntity commitEntity, CommitKeywordsEntity commitKeywordsEntity) {
+        System.out.println("GptCommitService.generateCommitMessageScore");
+        String commitMessage = commitEntity.getCommitMessage();
+        Set<String> features = commitKeywordsEntity.getFeatured();
+        if (commitMessage == null || features == null) {
+            System.out.println(commitEntity.toString());
+            System.out.println(commitKeywordsEntity.toString());
             return;
         }
         WebClient webClient = createWebClient();
 
+		String content = "commitMessage:" + commitMessage + ", patchKeywords:" + features.toString();
 
-        List<Map<String, String>> messages = createMessageObjects(patch);
+        System.out.println("generateCommitMessageScore.content : " + content);
+        List<Map<String, String>> messages = createMessageObjects(content);
 
         try {
             JsonNode jsonNode = postToGptService(webClient, messages);
-            processJsonNode(jsonNode, userName, patchEntity.getCommitOid());
+            processJsonNode(jsonNode, userName, commitEntity.getCommitOid());
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
@@ -95,7 +99,7 @@ public class GPTService {
     private JsonNode postToGptService(WebClient webClient, List<Map<String, String>> messages) throws Exception {
         return webClient.post()
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(Map.of("model", "gpt-3.5-turbo", "messages", messages, "temperature", 0.33,"top_p",0.65))
+                .bodyValue(Map.of("model", "gpt-3.5-turbo", "messages", messages, "temperature", 0.33, "top_p", 0.65))
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
                         Mono.error(new Exception("Client Error: " + clientResponse.statusCode())))
@@ -110,7 +114,7 @@ public class GPTService {
         JsonNode choices = jsonNode.get("choices");
         if (choices != null && choices.isArray() && choices.size() > 0) {
             JsonNode content = choices.get(0).get("message").get("content");
-            commitKeywordsService.addCommitKeywords(userName, oid, content.toString()).subscribe();
+            commitKeywordsService.processMsgScore(userName, content.toString()).subscribe();
         }
     }
 }

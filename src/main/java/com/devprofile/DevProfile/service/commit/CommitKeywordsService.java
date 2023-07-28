@@ -1,6 +1,5 @@
 package com.devprofile.DevProfile.service.commit;
 
-
 import com.devprofile.DevProfile.entity.CommitKeywordsEntity;
 import com.devprofile.DevProfile.entity.UserDataEntity;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -58,6 +57,27 @@ public class CommitKeywordsService {
             Query queryUser = new Query(Criteria.where("userName").is(userName));
             mongoTemplate.upsert(queryUser, updateUser, UserDataEntity.class);
             mongoTemplate.upsert(query, update, CommitKeywordsEntity.class);
+            return Mono.empty();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public Mono<?> processMsgScore(String userName, String contents) {
+        contents = trimQuotes(contents);
+        contents = contents.replace("\\\"", "\"");
+        contents = contents.replace("\\n", "\n");
+
+        System.out.println("contents = " + contents);
+        Update updateUser = new Update().set("userName", userName);
+        ObjectMapper mapper = new ObjectMapper();
+
+        try {
+            JsonNode keywordsJson = mapper.readTree(contents);
+            addMsgScore(updateUser, keywordsJson.get("msgScore"));
+            Query queryUser = new Query(Criteria.where("userName").is(userName));
+            mongoTemplate.upsert(queryUser, updateUser, UserDataEntity.class);
             return Mono.empty();
         } catch (Exception e) {
             e.printStackTrace();
@@ -133,4 +153,47 @@ public class CommitKeywordsService {
             }
         }
     }
+
+    private void addMsgScore (Update updateUser, JsonNode msgScore) {
+        if (msgScore != null) {
+            for (JsonNode field : msgScore) {
+                switch (field.asText()) {
+                    case ("0"):
+                        updateUser.inc("msgScore_0");
+                        break;
+                    case ("1"):
+                        updateUser.inc("msgScore_1");
+                        break;
+                    case ("2"):
+                        updateUser.inc("msgScore_2");
+                        break;
+                    case ("3"):
+                        updateUser.inc("msgScore_3");
+                        break;
+                    case ("4"):
+                        updateUser.inc("msgScore_4");
+                        break;
+                    case ("5"):
+                        updateUser.inc("msgScore_5");
+                        break;
+                    case ("6"):
+                        updateUser.inc("msgScore_6");
+                        break;
+                    case ("7"):
+                        updateUser.inc("msgScore_7");
+                        break;
+                    case ("8"):
+                        updateUser.inc("msgScore_8");
+                        break;
+                    case ("9"):
+                        updateUser.inc("msgScore_9");
+                        break;
+                    case ("10"):
+                        updateUser.inc("msgScore_10");
+                        break;
+                }
+            }
+        }
+    }
+
 }
