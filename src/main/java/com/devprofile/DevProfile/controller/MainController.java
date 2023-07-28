@@ -4,6 +4,7 @@ import com.devprofile.DevProfile.component.JwtProvider;
 import com.devprofile.DevProfile.dto.response.*;
 import com.devprofile.DevProfile.entity.*;
 import com.devprofile.DevProfile.repository.*;
+import com.devprofile.DevProfile.service.gpt.GptCommitService;
 import com.devprofile.DevProfile.service.gpt.GptPatchService;
 import com.devprofile.DevProfile.service.graphql.GraphOrgService;
 import com.devprofile.DevProfile.service.graphql.GraphUserService;
@@ -37,6 +38,7 @@ public class MainController {
     private final ResponseService responseService;
     private final GitRepository gitRepository;
     private final GptPatchService gptPatchService;
+    private final GptCommitService gptCommitService;
     private final RepositoryService repositoryService;
 
 
@@ -88,6 +90,12 @@ public class MainController {
     @PostMapping("/test/gpt")
     public String testGpt(@RequestParam String userName) {
         gptPatchService.processAllEntities(userName);
+        return "index";
+    }
+
+    @PostMapping("/test/gpt/score")
+    public String testGptScore(@RequestParam String userName, @RequestParam String commitOid) {
+        gptCommitService.processOneCommit(userName, commitOid);
         return "index";
     }
 
