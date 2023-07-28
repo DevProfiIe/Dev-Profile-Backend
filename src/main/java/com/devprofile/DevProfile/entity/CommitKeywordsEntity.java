@@ -19,11 +19,15 @@ public class CommitKeywordsEntity {
     @Id
     private String oid;
 
+    private String userName;
+
     private Set<String> langFramework;
 
     private Set<String> cs;
 
     private Set<String> featured;
+
+    private Set<String> field;
 
     private Integer tokens;
 }

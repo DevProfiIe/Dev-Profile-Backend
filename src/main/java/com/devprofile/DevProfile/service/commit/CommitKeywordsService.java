@@ -17,7 +17,6 @@ public class CommitKeywordsService {
 
     private final MongoTemplate mongoTemplate;
 
-
     @Autowired
     public CommitKeywordsService(MongoTemplate mongoTemplate) {
         this.mongoTemplate = mongoTemplate;
@@ -39,7 +38,7 @@ public class CommitKeywordsService {
         return str;
     }
 
-    public Mono<?> addCommitKeywords(String userName,String oid, String keywords) {
+    public Mono<?> addCommitKeywords(String userName, String oid, String keywords) {
         keywords = trimQuotes(keywords);
         keywords = keywords.replace("\\\"", "\"");
         keywords = keywords.replace("\\n", "\n");
@@ -53,6 +52,7 @@ public class CommitKeywordsService {
         try {
             JsonNode keywordsJson = mapper.readTree(keywords);
             processKeywords(update, updateUser, keywordsJson);
+            update.set("userName", userName);
             Query query = new Query(Criteria.where("oid").is(oid));
             Query queryUser = new Query(Criteria.where("userName").is(userName));
             mongoTemplate.upsert(queryUser, updateUser, UserDataEntity.class);
@@ -89,7 +89,7 @@ public class CommitKeywordsService {
         addCsKeywords(update, updateUser, keywordsJson.get("cs"));
         addLangFrameKeywords(update, updateUser, keywordsJson.get("langFrame"));
         addFeatureKeywords(update, keywordsJson.get("feature"));
-        addFieldKeywords(updateUser, keywordsJson.get("field"));
+        addFieldKeywords(update, updateUser, keywordsJson.get("field"));
     }
 
     private void addCsKeywords(Update update, Update updateUser, JsonNode csNode) {
@@ -118,9 +118,10 @@ public class CommitKeywordsService {
         }
     }
 
-    private void addFieldKeywords(Update updateUser, JsonNode fieldNode) {
+    private void addFieldKeywords(Update update, Update updateUser, JsonNode fieldNode) {
         if (fieldNode != null) {
             for (JsonNode field : fieldNode) {
+                update.addToSet("field", fieldNode.asText());
                 switch (field.asText()) {
                     case ("Game"):
                         updateUser.inc("game");
@@ -154,7 +155,7 @@ public class CommitKeywordsService {
         }
     }
 
-    private void addMsgScore (Update updateUser, JsonNode msgScore) {
+    private void addMsgScore(Update updateUser, JsonNode msgScore) {
         if (msgScore != null) {
             for (JsonNode field : msgScore) {
                 switch (field.asText()) {
