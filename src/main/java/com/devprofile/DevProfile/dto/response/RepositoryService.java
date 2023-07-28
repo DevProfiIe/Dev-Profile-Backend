@@ -33,6 +33,7 @@ public class RepositoryService {
             dto.setMyCommitCnt(repositoryEntity.getMyCommitCnt());
             dto.setTotalContributors(repositoryEntity.getTotalContributors());
             dto.setRepoLanguages(repositoryEntity.getRepoLanguages());
+            dto.setRepoDesc(repositoryEntity.getRepoDesc());
 
             for (Map.Entry<String, CommitKeywordsDTO> entry : oidAndKeywordsMap.entrySet()) {
                 CommitEntity commitEntity = oidAndCommitMap.get(entry.getKey());
