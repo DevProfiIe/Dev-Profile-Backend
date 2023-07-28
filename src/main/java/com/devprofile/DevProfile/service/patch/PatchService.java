@@ -44,22 +44,7 @@ public class PatchService {
         return Flux.fromIterable(patchRepository.findByCommitOid(commitOid));
     }
 
-    public Map<String, Object> compareCodeAndDiff(String code, List<String> diff) {
-        List<String> codeLines = Stream.of(code.split("\n")).collect(Collectors.toList());
-        Map<String, Object> result = new HashMap<>();
-
-        for (String line : diff) {
-            if (codeLines.contains(line)) {
-                result.put(line, "original");
-            } else {
-                result.put(line, "modified");
-            }
-        }
-        return result;
-    }
-
     public Map<String, Object> analyzeDiff(String patch, String originalText) {
-        List<String> originalLines = Stream.of(originalText.split("\n")).collect(Collectors.toList());
         List<String> patchLines = Stream.of(patch.split("\n")).collect(Collectors.toList());
 
         StringBuilder contentBuilder = new StringBuilder();
