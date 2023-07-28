@@ -41,7 +41,7 @@ public class GPTService {
     String systemPrompt = "Answer in English.\n" +
             "1.cs: Provide three to five keywords, each consisting of 1-2 words, that describe the computer science principles or concepts applied in this code, excluding specific languages or frameworks.\n" +
             "2.frameLang: Provide the framework used in this code.\n" +
-            "3.feature:Provide a concise 1-2 line description of the feature implemented by this provided code.\n" +
+            "3.feature:Provide a con                                                                                                                                                cise 1-2 line description of the feature implemented by this provided code.\n" +
             "4.field: Select the most relevant keyword from the following list: Game, System Programming, AI, Data Science, Database, Mobile, Web Backend, Web Frontend, Document. If the accuracy significantly decreases, it's acceptable to omit the 3rd and 4th keywords. Regardless of the length of the response, please ensure that it is provided in JSON format and strictly conforms to the specified schema.\n" +
             "```\n" +
             "{\"type\":\"object\",\"properties\":{\"cs\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"langFrame\":{\"type\":\"array\",\"items”:{“type\":\"string\"}},\"feature\":{\"type”:”array\",\"items\":{\"type\":\"string\"}},\"field\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}}}}";

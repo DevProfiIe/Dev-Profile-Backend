@@ -86,16 +86,13 @@ public class SearchController {
 
         return patchService.getPatchesByCommitOid(commitOid)
                 .concatMap(patch -> {
-                    Map<String, Object> diffData = new HashMap<>();
                     String contentsUrl = patch.getContentsUrl();
 
                     return patchService.fetchCode(contentsUrl, Authorization)
                             .map(decodedCode -> {
-                                List<String> diffs = patchService.analyzeDiff(patch.getPatch(), decodedCode);
-                                String joinedDiffs = String.join("\n", diffs);
-                                diffData.put("diff", joinedDiffs);
-                                diffList.add(diffData);
-                                return diffData;
+                                Map<String, Object> diff = patchService.analyzeDiff(patch.getPatch(), decodedCode);
+                                diffList.add(diff);
+                                return diff;
                             });
                 })
                 .then(Mono.just(diffList))

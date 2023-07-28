@@ -58,20 +58,41 @@ public class PatchService {
         return result;
     }
 
-    public List<String> analyzeDiff(String patch, String originalText) {
+    public Map<String, Object> analyzeDiff(String patch, String originalText) {
         List<String> originalLines = Stream.of(originalText.split("\n")).collect(Collectors.toList());
         List<String> patchLines = Stream.of(patch.split("\n")).collect(Collectors.toList());
 
-        Patch<String> diffs = DiffUtils.diff(originalLines, patchLines);
+        StringBuilder contentBuilder = new StringBuilder();
+        List<Integer> original = new ArrayList<>();
+        List<Integer> inserted = new ArrayList<>();
+        List<Integer> deleted = new ArrayList<>();
 
-        List<String> result = new ArrayList<>();
-        for (AbstractDelta<String> delta : diffs.getDeltas()) {
-            result.addAll(delta.getSource().getLines());
+        int lineNumber = 1;
+        for (String line : patchLines) {
+            if (line.startsWith("@@")) {
+                continue;
+            }
+
+            if (line.startsWith("+")) {
+                inserted.add(lineNumber);
+                contentBuilder.append(line.substring(1)).append("\n");
+            } else if (line.startsWith("-")) {
+                deleted.add(lineNumber);
+                contentBuilder.append(line.substring(1)).append("\n");
+            } else {
+                original.add(lineNumber);
+                contentBuilder.append(line).append("\n");
+            }
+
+            lineNumber++;
         }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("content", contentBuilder.toString());
+        result.put("status", Map.of("original", original, "inserted", inserted, "deleted", deleted));
 
         return result;
     }
-
 
 
 
