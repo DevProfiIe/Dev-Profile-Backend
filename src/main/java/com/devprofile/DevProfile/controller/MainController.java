@@ -4,14 +4,14 @@ import com.devprofile.DevProfile.component.JwtProvider;
 import com.devprofile.DevProfile.dto.response.*;
 import com.devprofile.DevProfile.entity.*;
 import com.devprofile.DevProfile.repository.*;
-import com.devprofile.DevProfile.service.gpt.GPTService;
+import com.devprofile.DevProfile.service.gpt.GptCommitService;
+import com.devprofile.DevProfile.service.gpt.GptPatchService;
 import com.devprofile.DevProfile.service.graphql.GraphOrgService;
 import com.devprofile.DevProfile.service.graphql.GraphUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cglib.core.Local;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -37,7 +37,8 @@ public class MainController {
     private final CommitRepository commitRepository;
     private final ResponseService responseService;
     private final GitRepository gitRepository;
-    private final GPTService gptService;
+    private final GptPatchService gptPatchService;
+    private final GptCommitService gptCommitService;
     private final RepositoryService repositoryService;
 
 
@@ -88,14 +89,20 @@ public class MainController {
 
     @PostMapping("/test/gpt")
     public String testGpt(@RequestParam String userName) {
-        gptService.processAllEntities(userName);
+        gptPatchService.processAllEntities(userName);
+        return "index";
+    }
+
+    @PostMapping("/test/gpt/score")
+    public String testGptScore(@RequestParam String userName, @RequestParam String commitOid) {
+        gptCommitService.processOneCommit(userName, commitOid);
         return "index";
     }
 
     @PostMapping("/test")
     public String test(@RequestParam String userName) {
         List<PatchEntity> patchEntities = patchRepository.findByCommitOid("6e380e3a22b01d67038cecb6ffd943d6305ec346");
-        patchEntities.forEach(patchEntity -> gptService.generateKeyword(userName, patchEntity));
+        patchEntities.forEach(patchEntity -> gptPatchService.generateKeyword(userName, patchEntity));
         return "index";
     }
 
