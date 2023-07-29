@@ -28,36 +28,26 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class GptPatchService {
 
-
     private final CommitKeywordsService commitKeywordsService;
 
     private final PatchRepository patchRepository;
 
-    String systemPrompt =
-            """
+    String systemPrompt = """
             Answer in English.
             1.cs: Provide three to five keywords, each consisting of 1-2 words, that describe the computer science principles or concepts applied in this code, excluding specific languages or frameworks.
             2.langFrame: Provide the framework used in this code.
-            3.feature:Provide a purpose of this code. describe 1-2 keywords.
-            4.field: Select the most relevant keyword from the following list: game, systemProgramming, ai, dataScience, database, mobile, webBackend, webFrontend. 
-            If the accuracy significantly decreases, it's acceptable to omit the 3rd and 4th keywords. 
+            3.feature: Provide a purpose of this code. describe 1-2 keywords.
+            4.field: Select the most relevant keyword from the following list: game, systemProgramming, ai, dataScience, database, mobile, webBackend, webFrontend.
+            If the accuracy significantly decreases, it's acceptable to omit the 3rd and 4th keywords.
             Regardless of the length of the response, please ensure that it is provided in JSON format and strictly conforms to the specified schema.
             {"type":"object","properties":{"cs":{"type":"array", "items":{"type":"string"}},"langFrame":{"type":"array", "items":{"type":"string"}},"feature":{"type":"array","items":{"type":"string"}},"field":{"type":"array","items":{"type":"string"}}}}
             """;
-/*    String systemPrompt = "Answer in English.\n" +
-            "1.cs: Provide three to five keywords, each consisting of 1-2 words, that describe the computer science principles or concepts applied in this code, excluding specific languages or frameworks.\n" +
-            "2.frameLang: Provide the framework used in this code.\n" +
-            "3.feature:Provide a con                                                                                                                                                cise 1-2 line description of the feature implemented by this provided code.\n" +
-            "4.field: Select the most relevant keyword from the following list: Game, System Programming, AI, Data Science, Database, Mobile, Web Backend, Web Frontend, Document. If the accuracy significantly decreases, it's acceptable to omit the 3rd and 4th keywords. Regardless of the length of the response, please ensure that it is provided in JSON format and strictly conforms to the specified schema.\n" +
-            "```\n" +
-            "{\"type\":\"object\",\"properties\":{\"cs\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"langFrame\":{\"type\":\"array\",\"items”:{“type\":\"string\"}},\"feature\":{\"type”:”array\",\"items\":{\"type\":\"string\"}},\"field\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}}}}";*/
 
     @Value("${gpt.url}")
     private String url;
 
     @Value("${gpt.secret}")
     private String key;
-
 
     @Transactional(readOnly = true)
     public void processAllEntities(String userName) {
@@ -71,7 +61,6 @@ public class GptPatchService {
             return;
         }
         WebClient webClient = createWebClient();
-
 
         List<Map<String, String>> messages = createMessageObjects(patch);
 

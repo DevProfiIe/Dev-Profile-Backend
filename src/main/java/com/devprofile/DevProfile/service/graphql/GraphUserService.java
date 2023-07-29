@@ -62,7 +62,6 @@ public class GraphUserService {
                     contributorsUserService.countCommits(repoOidsMap,userName,accessToken);
                     patchUserService.savePatchs(userName,accessToken,repoOidsMap);
                     languageService.repoLanguages(repoOidsMap,userName,accessToken);
-                    // features by user field : user, patch 처리 이후에 제공 가능.
 
                 }).then();
     }

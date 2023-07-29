@@ -46,7 +46,6 @@ public class CommitKeywordsService {
         keywords = keywords.replace("\\\"", "\"");
         keywords = keywords.replace("\\n", "\n");
 
-        System.out.println("keywords = " + keywords);
         Update update = new Update().set("oid", oid);
         Update updateUser = new Update().set("userName", userName);
 
@@ -72,7 +71,6 @@ public class CommitKeywordsService {
         contents = contents.replace("\\\"", "\"");
         contents = contents.replace("\\n", "\n");
 
-        System.out.println("contents = " + contents);
         Update updateUser = new Update().set("userName", userName);
         ObjectMapper mapper = new ObjectMapper();
 
@@ -147,7 +145,6 @@ public class CommitKeywordsService {
             }
         }
         // feature가 있었다면 featureSet 데이터 메모리적재 완료됨.
-
         // userData에 filed별 feature 저장
         if (fieldNode != null) {
             for (JsonNode field : fieldNode) {
@@ -163,7 +160,6 @@ public class CommitKeywordsService {
                     }
                 }
             }
-
         }
     }
 

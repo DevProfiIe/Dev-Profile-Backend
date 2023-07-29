@@ -42,8 +42,6 @@ public class MainController {
     private final RepositoryService repositoryService;
 
 
-
-
     private UserDTO convertToDTO(UserEntity userEntity, UserDataEntity userDataEntity) {
         UserDTO userDTO = new UserDTO();
         userDTO.setAvatar_url(userEntity.getAvatar_url());
@@ -73,6 +71,7 @@ public class MainController {
 
         return userDTO;
     }
+
     @GetMapping("/main")
     public Mono<Void> main(@RequestHeader String Authorization) throws IOException {
         jwtProvider.validateToken(Authorization);
@@ -132,9 +131,9 @@ public class MainController {
         List<Map<String, Object>> calenderData = new ArrayList<>();
         LocalDate firstDate = LocalDate.now();
         LocalDate lastDate = LocalDate.MIN;
-        for( LocalDate day : calender.keySet() ){
-            if(firstDate.isAfter(day)) firstDate = day;
-            if(lastDate.isBefore(day)) lastDate = day;
+        for (LocalDate day : calender.keySet()) {
+            if (firstDate.isAfter(day)) firstDate = day;
+            if (lastDate.isBefore(day)) lastDate = day;
             Map<String, Object> oneDay = new HashMap<>();
             oneDay.put("day", day);
             oneDay.put("value", calender.get(day));
@@ -175,7 +174,7 @@ public class MainController {
 
 
     @GetMapping("/user_keyword")
-    public ResponseEntity<ApiResponse> user_keyword(@RequestParam String userName){
+    public ResponseEntity<ApiResponse> user_keyword(@RequestParam String userName) {
         ApiResponse<UserDataEntity> apiResponse = new ApiResponse<>();
         apiResponse.setToken(null);
         apiResponse.setResult(true);
