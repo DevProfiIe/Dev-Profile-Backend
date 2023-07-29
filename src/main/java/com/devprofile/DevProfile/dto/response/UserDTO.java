@@ -10,9 +10,10 @@ import java.util.Set;
 @Data
 public class UserDTO {
     private String avatar_url;
-    private String login;
-    private String name;
 
+    private String login;
+
+    private String name;
 
     private LocalDate commitStart;
 

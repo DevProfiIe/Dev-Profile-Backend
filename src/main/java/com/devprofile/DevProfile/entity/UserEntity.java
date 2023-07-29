@@ -21,9 +21,6 @@ public class UserEntity {
     private String email;
     private String node_id;
     private String avatar_url;
-    private String jwtToken;
-
+    private String jwtRefreshToken;
     private String gitHubToken;
-
-
 }
