@@ -12,6 +12,9 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Service
 public class CommitKeywordsService {
 
@@ -88,8 +91,9 @@ public class CommitKeywordsService {
     private void processKeywords(Update update, Update updateUser, JsonNode keywordsJson) {
         addCsKeywords(update, updateUser, keywordsJson.get("cs"));
         addLangFrameKeywords(update, updateUser, keywordsJson.get("langFrame"));
-        addFeatureKeywords(update, keywordsJson.get("feature"));
-        addFieldKeywords(update, updateUser, keywordsJson.get("field"));
+        addFeatureByField(update, updateUser, keywordsJson.get("field"), keywordsJson.get("feature"));
+//        addFeatureKeywords(update, keywordsJson.get("feature"));
+//        addFieldKeywords(update, updateUser, keywordsJson.get("field"));
     }
 
     private void addCsKeywords(Update update, Update updateUser, JsonNode csNode) {
@@ -118,10 +122,56 @@ public class CommitKeywordsService {
         }
     }
 
+    private void addFeatureByField(Update updateCommit, Update updateUser, JsonNode fieldNode, JsonNode featureNode) {
+        // DONE : 개별커밋에 field 저장, 사용자에 field 컬럼생성 및 count, feature keyword 저장
+        /*
+         * 1. 개별 feature 순회
+         * 	1-1. Set<String>으로 메모리
+         * 	1-2. commit에 하나씩 저장(asSet)
+         *
+         * 2. field 순회
+         * 	2-1. commit 에 하나씩 저장 field
+         * 	2-2. user에 field inc
+         * 	2-3. user에 featureSet 저장 (null체크)
+         * */
+
+        Set<String> featureSet = null;
+
+        // 개별 feature를 commitKeywords.featured 에 저장
+        if (featureNode != null) {
+            featureSet = new HashSet<>();
+            for (JsonNode feature : featureNode) {
+                String featureStr = feature.asText();
+                featureSet.add(featureStr);
+                updateCommit.addToSet("featured", featureStr);
+            }
+        }
+        // feature가 있었다면 featureSet 데이터 메모리적재 완료됨.
+
+        // userData에 filed별 feature 저장
+        if (fieldNode != null) {
+            for (JsonNode field : fieldNode) {
+                // field명 (game, systemProgramming, ai, dataScience, database, mobile, webBackend, webFrontend)
+                String fieldName = field.asText();
+
+                updateCommit.addToSet("field", fieldName);
+                updateUser.inc(fieldName);
+                if (featureSet != null) {
+                    for (String feature : featureSet) {
+                        // key : gameSet, aiSet, ... / value : featureStr
+                        updateUser.addToSet(fieldName + "Set", feature);
+                    }
+                }
+            }
+
+        }
+    }
+
+
     private void addFieldKeywords(Update update, Update updateUser, JsonNode fieldNode) {
         if (fieldNode != null) {
             for (JsonNode field : fieldNode) {
-                update.addToSet("field", fieldNode.asText());
+                update.addToSet("field", field.asText());
                 switch (field.asText()) {
                     case ("Game"):
                         updateUser.inc("game");

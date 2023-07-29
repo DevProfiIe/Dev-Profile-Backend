@@ -13,7 +13,6 @@ public class UserDTO {
     private String login;
     private String name;
 
-
     private LocalDate commitStart;
 
     private LocalDate commitEnd;
@@ -23,22 +22,28 @@ public class UserDTO {
     private Set<String> keywordSet;
 
     private Integer ai;
+    private Set<String> aiSet;
 
     private Integer dataScience;
+    private Set<String> dataScienceSet;
 
     private Integer database;
+    private Set<String> databaseSet;
 
     private Integer mobile;
+    private Set<String> mobileSet;
 
     private Integer webBackend;
-
-    private Integer document;
+    private Set<String> webBackendSet;
 
     private Integer systemProgramming;
+    private Set<String> systemProgrammingSet;
 
     private Integer algorithm;
+    private Set<String> algorithmSet;
 
     private Integer game;
+    private Set<String> gameSet;
 
 
 }

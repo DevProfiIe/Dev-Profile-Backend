@@ -53,14 +53,22 @@ public class MainController {
         if (userDataEntity != null) {
             userDTO.setKeywordSet(userDataEntity.getKeywordSet());
             userDTO.setAi(userDataEntity.getAi());
+            userDTO.setAiSet(userDataEntity.getAiSet());
             userDTO.setDataScience(userDataEntity.getDataScience());
+            userDTO.setDataScienceSet(userDataEntity.getDataScienceSet());
             userDTO.setDatabase(userDataEntity.getDatabase());
+            userDTO.setDatabaseSet(userDataEntity.getDatabaseSet());
             userDTO.setMobile(userDataEntity.getMobile());
+            userDTO.setMobileSet(userDataEntity.getMobileSet());
             userDTO.setWebBackend(userDataEntity.getWebBackend());
-            userDTO.setDocument(userDataEntity.getDocument());
+            userDTO.setWebBackendSet((userDataEntity.getWebBackendSet()));
             userDTO.setSystemProgramming(userDataEntity.getSystemProgramming());
+            userDTO.setSystemProgrammingSet(userDataEntity.getSystemProgrammingSet());
             userDTO.setAlgorithm(userDataEntity.getAlgorithm());
+            userDTO.setAlgorithmSet(userDataEntity.getAlgorithmSet());
             userDTO.setGame(userDataEntity.getGame());
+            userDTO.setGameSet(userDataEntity.getGameSet());
+//            userDTO.setDocument(userDataEntity.getDocument());
         }
 
         return userDTO;
@@ -106,13 +114,11 @@ public class MainController {
         return "index";
     }
 
-
     @GetMapping("/response_test")
     public ResponseEntity<ApiResponse<Object>> responseApiTest(@RequestParam String userName) {
         List<CommitEntity> allCommitEntities = commitRepository.findAll();
         Map<String, CommitKeywordsDTO> oidAndKeywordsMap = new HashMap<>();
         Map<LocalDate, Integer> calender = new HashMap<>();
-
 
         for (CommitEntity commitEntity : allCommitEntities) {
             Optional<CommitKeywordsDTO> keywords = responseService.getFeatureFramework(commitEntity.getCommitOid());
