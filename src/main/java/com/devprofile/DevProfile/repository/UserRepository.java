@@ -12,4 +12,5 @@ public interface UserRepository extends JpaRepository<UserEntity, Integer> {
     boolean existsById(Integer id);
 
     UserEntity findByLogin(String login);
+    UserEntity findByJwtRefreshToken(String jwtRefreshToken);
 }

@@ -18,11 +18,13 @@ public class JwtProvider {
     public static final Logger logger = LoggerFactory.getLogger(JwtProvider.class);
     private final String jwtSecret;
     private final long jwtExpirationMs;
+    private final long jwtRefreshExpirationMs;
 
 
-    public JwtProvider(@Value("${jwt.secret}") String jwtSecret,@Value("${jwt.expirationMs}") long jwtExpirationMs) {
+    public JwtProvider(@Value("${jwt.secret}") String jwtSecret,@Value("${jwt.expirationMs}") long jwtExpirationMs, @Value("${jwt.refreshExpirationMs}") long jwtRefreshExpirationMs) {
         this.jwtSecret = jwtSecret;
         this.jwtExpirationMs = jwtExpirationMs;
+        this.jwtRefreshExpirationMs = jwtRefreshExpirationMs;
     }
 
     public String createJwt(@NotNull UserEntity user) {
@@ -32,6 +34,18 @@ public class JwtProvider {
 
         return Jwts.builder()
                 .setSubject(user.getId().toString())
+                .setIssuedAt(new Date())
+                .setExpiration(expiryDate)
+                .signWith(SignatureAlgorithm.HS512, jwtSecret)
+                .compact();
+    }
+
+    public String createRefreshJwt() {
+
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtRefreshExpirationMs);
+
+        return Jwts.builder()
                 .setIssuedAt(new Date())
                 .setExpiration(expiryDate)
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)
