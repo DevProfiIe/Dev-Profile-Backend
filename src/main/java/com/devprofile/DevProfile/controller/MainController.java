@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
 
-@CrossOrigin
+
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -65,6 +65,8 @@ public class MainController {
 
         return userDTO;
     }
+
+
     @GetMapping("/main")
     public Mono<Void> main(@RequestHeader String Authorization) throws IOException {
         jwtProvider.validateToken(Authorization);
@@ -77,6 +79,7 @@ public class MainController {
 
     }
 
+
     @GetMapping("/user/keyword")
     public ResponseEntity<ApiResponse> giveKeywords(@RequestParam String userName) {
         ApiResponse<Set<String>> apiResponse = new ApiResponse<>();
@@ -87,11 +90,15 @@ public class MainController {
         return ResponseEntity.ok(apiResponse);
     }
 
+
+
+
     @PostMapping("/test/gpt")
     public String testGpt(@RequestParam String userName) {
         gptPatchService.processAllEntities(userName);
         return "index";
     }
+
 
     @PostMapping("/test/gpt/score")
     public String testGptScore(@RequestParam String userName, @RequestParam String commitOid) {
@@ -99,12 +106,14 @@ public class MainController {
         return "index";
     }
 
+
     @PostMapping("/test")
     public String test(@RequestParam String userName) {
         List<PatchEntity> patchEntities = patchRepository.findByCommitOid("6e380e3a22b01d67038cecb6ffd943d6305ec346");
         patchEntities.forEach(patchEntity -> gptPatchService.generateKeyword(userName, patchEntity));
         return "index";
     }
+
 
 
     @GetMapping("/response_test")
@@ -167,6 +176,7 @@ public class MainController {
 
         return ResponseEntity.ok(apiResponse);
     }
+
 
 
     @GetMapping("/user_keyword")
