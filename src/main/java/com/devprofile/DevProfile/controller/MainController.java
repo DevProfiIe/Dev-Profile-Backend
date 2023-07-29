@@ -164,6 +164,7 @@ public class MainController {
         combinedData.put("userInfo", userDTO);
         combinedData.put("repositoryInfo", extendedEntities);
 
+
         ApiResponse<Object> apiResponse = new ApiResponse<>();
         apiResponse.setResult(userDTO != null && !extendedEntities.isEmpty());
         apiResponse.setData(combinedData);

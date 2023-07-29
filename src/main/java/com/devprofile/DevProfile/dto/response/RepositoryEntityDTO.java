@@ -14,6 +14,7 @@ import java.util.Set;
 public class RepositoryEntityDTO {
     private Long id;
     private String repoName;
+    private String repoDesc;
     private LocalDate startDate;
     private LocalDate endDate;
     private Integer totalCommitCnt;

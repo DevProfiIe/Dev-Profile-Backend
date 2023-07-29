@@ -46,15 +46,15 @@ public class LoginController {
         UserEntity user = gitLoginService.getUserInfo(accessToken);
         //수정
         String jwtToken = jwtProvider.createJwt(user);
+        String jwtRefreshToken = jwtProvider.createRefreshJwt();
 
-        user.setJwtToken(jwtToken);
+        user.setJwtRefreshToken(jwtRefreshToken);
         user.setGitHubToken(accessToken);
 
         if(!userRepository.existsById(user.getId())){
             userRepository.save(user);
         }
 
-        user.setJwtToken(null);
         user.setGitHubToken(null);
 
         apiResponse.setToken(jwtToken);
@@ -62,6 +62,25 @@ public class LoginController {
         apiResponse.setResult(true);
         apiResponse.setMessage(null);
         // 정상적으로 Access Token을 받아왔다면, 이를 반환합니다.
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse> refreshToken(@RequestHeader String authentication){
+        ApiResponse<String> apiResponse = new ApiResponse<>();
+        if(!jwtProvider.validateToken(authentication)) {
+            apiResponse.setMessage("Invalid Refresh Token");
+            apiResponse.setToken(null);
+            apiResponse.setResult(false);
+            apiResponse.setData(null);
+            return ResponseEntity.ok(apiResponse);
+        }
+        String newToken = jwtProvider.createJwt(userRepository.findByJwtRefreshToken(authentication));
+        apiResponse.setResult(true);
+        apiResponse.setData(null);
+        apiResponse.setToken(newToken);
+        apiResponse.setMessage(null);
+
         return ResponseEntity.ok(apiResponse);
     }
 }

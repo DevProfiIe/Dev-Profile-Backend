@@ -6,7 +6,6 @@ import com.devprofile.DevProfile.entity.CommitEntity;
 import com.devprofile.DevProfile.repository.CommitRepository;
 import com.devprofile.DevProfile.service.patch.PatchService;
 import com.devprofile.DevProfile.service.search.SearchService;
-import com.devprofile.DevProfile.similaritySearch.Embedding;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -29,9 +28,6 @@ public class SearchController {
     CommitRepository commitRepository;
 
     @Autowired
-    Embedding embedding;
-
-    @Autowired
     SearchService searchService;
 
 
@@ -40,12 +36,6 @@ public class SearchController {
 
     public SearchController(PatchService patchService) {
         this.patchService = patchService;
-    }
-
-    @GetMapping("/startModel")
-    public ResponseEntity<?> startModel() {
-        embedding.loadModel();
-        return ResponseEntity.ok(null);
     }
 
 
