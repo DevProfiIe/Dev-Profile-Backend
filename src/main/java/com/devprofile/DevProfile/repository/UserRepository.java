@@ -13,4 +13,17 @@ public interface UserRepository extends JpaRepository<UserEntity, Integer> {
 
     UserEntity findByLogin(String login);
     UserEntity findByJwtRefreshToken(String jwtRefreshToken);
+
+
+    class UserNotFoundException extends RuntimeException {
+        public UserNotFoundException(String message) {
+            super(message);
+        }
+    }
+
+    class UserExistsException extends RuntimeException {
+        public UserExistsException(String message) {
+            super(message);
+        }
+    }
 }

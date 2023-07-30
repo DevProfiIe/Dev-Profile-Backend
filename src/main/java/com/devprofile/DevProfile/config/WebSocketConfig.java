@@ -1,22 +1,34 @@
 package com.devprofile.DevProfile.config;
 
-import com.devprofile.DevProfile.handler.SocketHandler;
+import com.devprofile.DevProfile.handler.StompHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.config.ChannelRegistration;
+import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
-import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
-import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
+import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
+import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
 @Configuration
 @RequiredArgsConstructor
 @EnableWebSocket
-public class WebSocketConfig implements WebSocketConfigurer {
+public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    private final SocketHandler socketHandler;
+    private final StompHandler stompHandler;
 
     @Override
-    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+    public void configureMessageBroker(MessageBrokerRegistry registry) {
+        registry.enableSimpleBroker("/sub");
+        registry.setApplicationDestinationPrefixes("/pub");
+    }
 
-        registry.addHandler(socketHandler, "ws/chat").setAllowedOrigins("*");
+    @Override
+    public void registerStompEndpoints(StompEndpointRegistry registry) {
+        registry.addEndpoint("/stomp/chat") // ex ) ws://localhost:9000/stomp/chat
+                .setAllowedOriginPatterns("*").withSockJS();
+    }
+    @Override
+    public void configureClientInboundChannel (ChannelRegistration registration){
+        registration.interceptors(stompHandler);
     }
 }
