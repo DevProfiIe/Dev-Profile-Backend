@@ -2,11 +2,13 @@ package com.devprofile.DevProfile.controller;
 
 
 import com.devprofile.DevProfile.dto.response.ApiResponse;
+import com.devprofile.DevProfile.dto.response.SearchResultDTO;
 import com.devprofile.DevProfile.entity.CommitEntity;
 import com.devprofile.DevProfile.repository.CommitRepository;
 import com.devprofile.DevProfile.service.patch.PatchService;
 import com.devprofile.DevProfile.service.search.SearchService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.util.Pair;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,12 +39,6 @@ public class SearchController {
         this.patchService = patchService;
     }
 
-//    @GetMapping("/startModel")
-//    public ResponseEntity<?> startModel() {
-//        embedding.loadModel();
-//        return ResponseEntity.ok(null);
-//    }
-
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse> searchCommit(@RequestParam String query) {
@@ -59,12 +55,17 @@ public class SearchController {
 
     @GetMapping("/search/similarity")
     public ResponseEntity<ApiResponse> searchSimilarCommit(@RequestParam String query) {
-        ApiResponse<List<CommitEntity>> apiResponse = new ApiResponse<>();
+        ApiResponse<List<SearchResultDTO>> apiResponse = new ApiResponse<>();
 
-        List<CommitEntity> searchResultList =new ArrayList<>();
-        for(String oid : searchService.getTop10LevenshteinSimilarEntity(query)){
-
-            searchResultList.add(commitRepository.findByCommitOid(oid).orElseThrow());
+        List<SearchResultDTO> searchResultList =new ArrayList<>();
+        for(Pair<String, String> oidKeyword : searchService.getTop10LevenshteinSimilarEntity(query)){
+            SearchResultDTO searchResultDTO = new SearchResultDTO();
+            CommitEntity commitEntity = commitRepository.findByCommitOid(oidKeyword.getFirst()).orElseThrow();
+            searchResultDTO.setCommitDate(commitEntity.getCommitDate());
+            searchResultDTO.setCommitMessage(commitEntity.getCommitMessage());
+            searchResultDTO.setRepoName(commitEntity.getRepoName());
+            searchResultDTO.setKeywordSet(oidKeyword.getSecond());
+            searchResultList.add(searchResultDTO);
         }
         apiResponse.setMessage(null);
         apiResponse.setData(searchResultList);
