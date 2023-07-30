@@ -16,6 +16,8 @@ public interface GitRepository extends JpaRepository<RepositoryEntity, Long> {
     @Query("SELECT r.repoNodeId FROM RepositoryEntity r WHERE r.repoNodeId IN :repoNodeIds")
     List<String> findExistingRepoNodeIds(@Param("repoNodeIds") List<String> repoNodeIds);
 
+    List<RepositoryEntity> findByUserId(Integer userId);
+
     @Modifying
     @Query("update RepositoryEntity ur set ur.startDate = (select min(uc.commitDate) from CommitEntity uc where uc.repoName = ur.repoName), ur.endDate = (select max(uc.commitDate) from CommitEntity uc where uc.repoName = ur.repoName)")
     void updateStartDateEndDate();

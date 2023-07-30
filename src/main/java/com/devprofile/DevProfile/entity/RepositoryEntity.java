@@ -34,7 +34,6 @@ public class RepositoryEntity {
     private LocalDate startDate;
     private LocalDate endDate;
     private Integer userId;
-
     private Integer totalCommitCnt;
     private Integer myCommitCnt;
     private Integer totalContributors;

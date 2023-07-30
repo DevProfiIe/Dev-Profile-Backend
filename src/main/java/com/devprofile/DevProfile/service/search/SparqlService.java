@@ -9,18 +9,27 @@ import org.springframework.stereotype.Service;
 public class SparqlService {
 
     public void sparqlTest(){
-        String sparqlQueryString =
-                "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
-                        "PREFIX dbo: <http://dbpedia.org/ontology/>\n" +
-                        "SELECT ?software WHERE {?software rdf:type dbo:Software .} LIMIT 10";
-        Query query = QueryFactory.create(sparqlQueryString);
+        String sparqlEndpoint = "http://dbpedia.org/sparql";
+        String sparqlQuery =
+                "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                        "PREFIX dbr: <http://dbpedia.org/resource/> " +
+                        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+                        "SELECT ?framework ?label " +
+                        "WHERE { " +
+                        "?framework a dbo:SoftwareFramework . " +
+                        "?framework dbo:genre dbr:Application_framework . " +
+                        "?framework rdfs:label ?label . " +
+                        "FILTER (langMatches(lang(?label), \"EN\")) " +
+                        "}";
 
-        QueryExecution qe = QueryExecution.service("http://dbpedia.org/sparql").query(query).build();
-        ResultSet results = qe.execSelect();
-
-        ResultSetFormatter.out(System.out, results, query);
-
-        qe.close();
+        Query query = QueryFactory.create(sparqlQuery);
+        try (QueryExecution qexec = QueryExecutionFactory.sparqlService(sparqlEndpoint, query)) {
+            ResultSet results = qexec.execSelect();
+            while (results.hasNext()) {
+                QuerySolution soln = results.nextSolution();
+                System.out.println(soln.get("label").toString());
+            }
+        }
     }
 
 }
