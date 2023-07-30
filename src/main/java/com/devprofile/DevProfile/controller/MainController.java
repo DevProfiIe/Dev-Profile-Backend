@@ -8,6 +8,7 @@ import com.devprofile.DevProfile.service.gpt.GptCommitService;
 import com.devprofile.DevProfile.service.gpt.GptPatchService;
 import com.devprofile.DevProfile.service.graphql.GraphOrgService;
 import com.devprofile.DevProfile.service.graphql.GraphUserService;
+import com.devprofile.DevProfile.service.search.SparqlService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -40,6 +41,7 @@ public class MainController {
     private final GptPatchService gptPatchService;
     private final GptCommitService gptCommitService;
     private final RepositoryService repositoryService;
+    private final SparqlService sparqlService;
 
 
 
@@ -188,6 +190,12 @@ public class MainController {
         apiResponse.setMessage(null);
 
         return ResponseEntity.ok(apiResponse);
+    }
+
+    @GetMapping("/test")
+    public ResponseEntity<String> test(){
+        sparqlService.sparqlTest();
+        return ResponseEntity.ok("");
     }
 }
 
