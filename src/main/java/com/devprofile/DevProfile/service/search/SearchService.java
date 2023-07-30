@@ -9,6 +9,7 @@ import com.devprofile.DevProfile.search.JaccardSimilarity;
 import com.devprofile.DevProfile.search.LevenshteinDistance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -45,30 +46,37 @@ public class SearchService {
         return sortedCommits.size() > 10 ? sortedCommits.subList(0, 10) : sortedCommits;
     }
 
-    public List<String> getTop10LevenshteinSimilarEntity(String word) {
-        Map<String, Integer> commitSimilarities = new HashMap<>();
+    public List<Pair<String,String>> getTop10LevenshteinSimilarEntity(String word) {
+        Map<Pair<String, String>, Integer> commitSimilarities = new HashMap<>();
 
         for (CommitKeywordsEntity commit : commitKeywordsRepository.findAll()) {
             int minSimilarity = 100;
+            String mostSimilarKeyword = null;
+            Map<String, String> commitKeyword = new HashMap<>();
 
             if (commit.getCs() != null) {
                 for (String keyword : commit.getCs()) {
                     int similarity = LevenshteinDistance.levenshteinDistance(keyword,word);
-                    minSimilarity = Math.min(minSimilarity, similarity);
+                    if(similarity < minSimilarity){
+                        mostSimilarKeyword = keyword;
+                        minSimilarity = similarity;
+                    }
                 }
             }
-
             if (commit.getLangFramework() != null) {
                 for (String keyword : commit.getLangFramework()) {
                     int similarity = LevenshteinDistance.levenshteinDistance(keyword,word);
-                    minSimilarity = Math.min(minSimilarity, similarity);
+                    if(similarity < minSimilarity){
+                        mostSimilarKeyword = keyword;
+                        minSimilarity = similarity;
+                    }
                 }
             }
-
-            commitSimilarities.put(commit.getOid(), minSimilarity);
+            Pair<String, String> oidKeyword = Pair.of(commit.getOid(), mostSimilarKeyword);
+            commitSimilarities.put(Pair.of(commit.getOid(), mostSimilarKeyword), minSimilarity);
         }
 
-        List<String> sortedCommits = new ArrayList<>(commitSimilarities.keySet());
+        List<Pair<String, String>> sortedCommits = new ArrayList<>(commitSimilarities.keySet());
         sortedCommits.sort(Comparator.comparingInt(commitSimilarities::get));
 
         return sortedCommits.size() > 10 ? sortedCommits.subList(0, 10) : sortedCommits;
