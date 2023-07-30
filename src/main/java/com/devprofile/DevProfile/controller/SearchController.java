@@ -9,7 +9,6 @@ import com.devprofile.DevProfile.service.search.SearchService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,7 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@CrossOrigin
+
 @Controller
 public class SearchController {
 
@@ -37,6 +36,12 @@ public class SearchController {
     public SearchController(PatchService patchService) {
         this.patchService = patchService;
     }
+
+//    @GetMapping("/startModel")
+//    public ResponseEntity<?> startModel() {
+//        embedding.loadModel();
+//        return ResponseEntity.ok(null);
+//    }
 
 
     @GetMapping("/search")
@@ -67,6 +72,7 @@ public class SearchController {
         apiResponse.setResult(true);
         return ResponseEntity.ok(apiResponse);
     }
+
 
     @GetMapping("/search/commits")
     public Mono<ResponseEntity<ApiResponse<Map<String, Object>>>> searchDetailCommits(@RequestParam String commitOid, @RequestHeader String Authorization) {

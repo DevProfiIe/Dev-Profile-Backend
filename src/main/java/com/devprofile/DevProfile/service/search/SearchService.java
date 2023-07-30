@@ -50,14 +50,21 @@ public class SearchService {
 
         for (CommitKeywordsEntity commit : commitKeywordsRepository.findAll()) {
             int minSimilarity = 100;
-            for (String keyword : commit.getCs()) {
-                int similarity = LevenshteinDistance.levenshteinDistance(keyword,word);
-                minSimilarity = Math.min(minSimilarity, similarity);
+
+            if (commit.getCs() != null) {
+                for (String keyword : commit.getCs()) {
+                    int similarity = LevenshteinDistance.levenshteinDistance(keyword,word);
+                    minSimilarity = Math.min(minSimilarity, similarity);
+                }
             }
-            for (String keyword : commit.getLangFramework()) {
-                int similarity = LevenshteinDistance.levenshteinDistance(keyword,word);
-                minSimilarity = Math.min(minSimilarity, similarity);
+
+            if (commit.getLangFramework() != null) {
+                for (String keyword : commit.getLangFramework()) {
+                    int similarity = LevenshteinDistance.levenshteinDistance(keyword,word);
+                    minSimilarity = Math.min(minSimilarity, similarity);
+                }
             }
+
             commitSimilarities.put(commit.getOid(), minSimilarity);
         }
 
