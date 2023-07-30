@@ -4,8 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -18,14 +17,14 @@ public class ChatRoom {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "user1_id")
-    private UserEntity user1;
+    @JoinColumn(name = "send_id")
+    private UserEntity send;
 
     @ManyToOne
-    @JoinColumn(name = "user2_id")
-    private UserEntity user2;
+    @JoinColumn(name = "receive_id")
+    private UserEntity receive;
 
     @Column(name = "created_at")
-    private Instant createdAt;
+    private LocalDateTime createdAt;
 
 }
