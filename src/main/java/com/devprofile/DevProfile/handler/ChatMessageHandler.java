@@ -1,6 +1,7 @@
 package com.devprofile.DevProfile.handler;
 
 import com.devprofile.DevProfile.dto.ChatMessageDto;
+import com.devprofile.DevProfile.dto.UserEntityDto;
 import com.devprofile.DevProfile.entity.ChatMessage;
 import com.devprofile.DevProfile.entity.ChatRoom;
 import com.devprofile.DevProfile.entity.UserEntity;
@@ -8,31 +9,33 @@ import com.devprofile.DevProfile.repository.ChatMessageRepository;
 import com.devprofile.DevProfile.repository.ChatRoomRepository;
 import com.devprofile.DevProfile.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
-
 import java.io.IOException;
-import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Controller
 public class ChatMessageHandler {
 
-    @Autowired
-    private ChatRoomRepository chatRoomRepository;
+    private final ChatRoomRepository chatRoomRepository;
+    private final UserRepository userRepository;
+    private final ChatMessageRepository chatMessageRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private ChatMessageRepository chatMessageRepository;
-
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
+    public ChatMessageHandler(ChatRoomRepository chatRoomRepository,
+                              UserRepository userRepository,
+                              ChatMessageRepository chatMessageRepository,
+                              SimpMessagingTemplate messagingTemplate) {
+        this.chatRoomRepository = chatRoomRepository;
+        this.userRepository = userRepository;
+        this.chatMessageRepository = chatMessageRepository;
+        this.messagingTemplate = messagingTemplate;
+    }
 
     @MessageMapping("/chat")
     public void handleChat(@Payload String chatMessageDtoStr, SimpMessageHeaderAccessor headerAccessor) {
@@ -42,24 +45,38 @@ public class ChatMessageHandler {
             ChatMessageDto chatMessageDto = mapper.readValue(chatMessageDtoStr, ChatMessageDto.class);
 
             // 채팅방과 사용자 정보를 조회
-            ChatRoom chatRoom = chatRoomRepository.findById(Long.parseLong(chatMessageDto.getChatRoomId()))
+            ChatRoom chatRoom = chatRoomRepository.findById(chatMessageDto.getId())
                     .orElseThrow(() -> new RuntimeException("채팅방 정보를 찾을 수 없습니다."));
-            UserEntity sender = userRepository.findByLogin(chatMessageDto.getSenderId());
+            Optional<UserEntity> senderOpt = userRepository.findById(chatMessageDto.getSender().getId());
+            if (!senderOpt.isPresent()) {
+                throw new RuntimeException("사용자 정보를 찾을 수 없습니다.");
+            }
+            UserEntity sender = senderOpt.get();
 
-            // 메시지를 생성하고 저장
             ChatMessage chatMessage = new ChatMessage();
             chatMessage.setChatRoom(chatRoom);
-            chatMessage.setChatId(chatMessageDto.getFrom());
             chatMessage.setSender(sender);
-            chatMessage.setMessage(chatMessageDto.getText());
-            chatMessage.setTimestamp(Instant.now());
-            chatMessageRepository.save(chatMessage);
+            chatMessage.setMessage(chatMessageDto.getMessage());
+            chatMessage.setTimestamp(LocalDateTime.now());
+            ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
+
+            ChatMessageDto chatMessageDtoResponse = new ChatMessageDto();
+            chatMessageDtoResponse.setId(savedMessage.getId());
+            chatMessageDtoResponse.setMessage(savedMessage.getMessage());
+            chatMessageDtoResponse.setTimestamp(savedMessage.getTimestamp());
+
+            UserEntityDto userEntityDto = new UserEntityDto();
+            userEntityDto.setId(savedMessage.getSender().getId());
+            userEntityDto.setLogin(savedMessage.getSender().getLogin());
+
+            chatMessageDtoResponse.setSender(userEntityDto);
 
             // 메시지를 브로커에 전달
-            messagingTemplate.convertAndSend("/topic/messages", chatMessageDto);
+            messagingTemplate.convertAndSend("/topic/messages", chatMessageDtoResponse);
 
         } catch (IOException e) {
             throw new RuntimeException("메시지 파싱에 실패하였습니다.", e);
         }
     }
+
 }

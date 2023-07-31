@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 
 @Entity
@@ -21,8 +21,6 @@ public class ChatMessage {
     @JoinColumn(name = "chat_room_id")
     private ChatRoom chatRoom;
 
-    @Column(name = "chat_id")
-    private String chatId;
     @ManyToOne
     @JoinColumn(name = "sender_id")
     private UserEntity sender;
@@ -31,7 +29,7 @@ public class ChatMessage {
     private String message;
 
     @Column(name = "timestamp")
-    private Instant timestamp;
+    private LocalDateTime timestamp;
 
 }
 
