@@ -1,8 +1,8 @@
 package com.devprofile.DevProfile.controller;
 
 import com.devprofile.DevProfile.dto.response.ApiResponse;
-import com.devprofile.DevProfile.dto.response.UserDTO;
-import com.devprofile.DevProfile.dto.response.UserPageDTO;
+import com.devprofile.DevProfile.dto.response.analyze.UserPageDTO;
+import com.devprofile.DevProfile.entity.LanguageDuration;
 import com.devprofile.DevProfile.entity.RepositoryEntity;
 import com.devprofile.DevProfile.entity.UserDataEntity;
 import com.devprofile.DevProfile.entity.UserEntity;
@@ -10,19 +10,12 @@ import com.devprofile.DevProfile.repository.GitRepository;
 import com.devprofile.DevProfile.repository.UserDataRepository;
 import com.devprofile.DevProfile.repository.UserRepository;
 import com.devprofile.DevProfile.service.userData.UserDataService;
-import com.fasterxml.jackson.databind.BeanProperty;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
-
 
 @Controller
 public class BoardController {
@@ -53,10 +46,10 @@ public class BoardController {
             List<RepositoryEntity> repositoryEntities = gitRepository.findByUserId(userEntity.getId());
             Map<String, Long> langUsage = new HashMap<>();
             for(RepositoryEntity repositoryEntity :repositoryEntities){
-                Set<String> langList = repositoryEntity.getRepoLanguages();
-                if(repositoryEntity.getStartDate() ==null || repositoryEntity.getEndDate() ==null) continue;
-                Long usage = ChronoUnit.DAYS.between(repositoryEntity.getEndDate(), repositoryEntity.getStartDate());
-                for(String lang : langList){
+                List<LanguageDuration> languageDurations = repositoryEntity.getLanguageDurations();
+                for(LanguageDuration languageDuration : languageDurations){
+                    String lang = languageDuration.getLanguage();
+                    Long usage = languageDuration.getDuration().longValue();
                     Long currentValue = langUsage.getOrDefault(lang, 0L);
                     langUsage.put(lang, currentValue + usage);
                 }

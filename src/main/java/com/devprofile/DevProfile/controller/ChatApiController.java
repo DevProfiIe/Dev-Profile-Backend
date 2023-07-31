@@ -1,13 +1,16 @@
 package com.devprofile.DevProfile.controller;
 
 import com.devprofile.DevProfile.component.JwtProvider;
-import com.devprofile.DevProfile.dto.ChatMessageDto;
-import com.devprofile.DevProfile.dto.ChatRoomDto;
-import com.devprofile.DevProfile.dto.UserEntityDto;
 import com.devprofile.DevProfile.dto.response.ApiResponse;
+import com.devprofile.DevProfile.dto.response.chat.ChatMessageDto;
+import com.devprofile.DevProfile.dto.response.chat.ChatRoomDto;
+import com.devprofile.DevProfile.dto.response.chat.ChatRoomListDto;
+import com.devprofile.DevProfile.dto.response.chat.UserEntityDto;
 import com.devprofile.DevProfile.entity.ChatMessage;
 import com.devprofile.DevProfile.entity.ChatRoom;
 import com.devprofile.DevProfile.entity.UserEntity;
+import com.devprofile.DevProfile.exception.ChatRoomNotFoundException;
+import com.devprofile.DevProfile.exception.UserNotFoundException;
 import com.devprofile.DevProfile.repository.ChatMessageRepository;
 import com.devprofile.DevProfile.repository.ChatRoomRepository;
 import com.devprofile.DevProfile.repository.UserRepository;
@@ -49,11 +52,9 @@ public class ChatApiController {
 
         jwtProvider.validateToken(authorization);
         String primaryId = jwtProvider.getIdFromJWT(authorization);
-        UserEntity user = userRepository.findById(Integer.parseInt(primaryId))
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        UserEntity send = userRepository.findById(Integer.parseInt(primaryId))
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        String currentUserName = user.getLogin();
-        UserEntity send = userRepository.findByLogin(currentUserName);
         UserEntity receive = userRepository.findByLogin(userName);
 
         // 채팅방이 이미 존재하는지 확인
@@ -94,7 +95,7 @@ public class ChatApiController {
         }
 
         ChatRoom chatRoom = chatRoomRepository.findById(message.getChatRoom().getId())
-                .orElseThrow(() -> new RuntimeException("ChatRoom not found"));
+                .orElseThrow(() -> new ChatRoomNotFoundException("ChatRoom not found"));
         message.setSender(send);
         message.setChatRoom(chatRoom);
         message.setTimestamp(LocalDateTime.now());
@@ -134,6 +135,7 @@ public class ChatApiController {
             messageDto.setId(message.getId());
             messageDto.setMessage(message.getMessage());
             messageDto.setTimestamp(message.getTimestamp());
+            messageDto.setChatRoomId(chatRoom.getId());
 
             UserEntityDto senderDto = new UserEntityDto();
             senderDto.setId(message.getSender().getId());
@@ -166,15 +168,36 @@ public class ChatApiController {
         return chatRoomDto;
     }
 
-    @GetMapping("/user/{userId}/chatrooms")
-    public ResponseEntity<ApiResponse<List<ChatRoomDto>>> getUserChatRooms(@PathVariable Integer userId) {
-        ApiResponse<List<ChatRoomDto>> apiResponse = new ApiResponse<>();
-        UserEntity user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+    @GetMapping("/user/{userName}/chatrooms")
+    public ResponseEntity<ApiResponse<List<ChatRoomListDto>>> getUserChatRooms(@PathVariable String userName) {
+        ApiResponse<List<ChatRoomListDto>> apiResponse = new ApiResponse<>();
+        UserEntity user = userRepository.findByLogin(userName);
+
+        if (user == null) {
+            apiResponse.setResult(false);
+            apiResponse.setMessage("User not found");
+            return ResponseEntity.ok(apiResponse);
+        }
 
         List<ChatRoom> chatRooms = chatRoomRepository.findBySendOrReceive(user, user);
-        List<ChatRoomDto> chatRoomDtos = new ArrayList<>();
+        List<ChatRoomListDto> chatRoomDtos = new ArrayList<>();
         for (ChatRoom chatRoom : chatRooms) {
-            chatRoomDtos.add(transformChatRoomToDto(chatRoom));
+            ChatRoomListDto chatRoomDto = new ChatRoomListDto();
+
+            UserEntity opponent = chatRoom.getReceive();
+            if(opponent.getLogin().equals(userName)) {
+                opponent = chatRoom.getSend();
+            }
+
+            UserEntityDto opponentDto = new UserEntityDto();
+            opponentDto.setId(opponent.getId());
+            opponentDto.setLogin(opponent.getLogin());
+
+            chatRoomDto.setId(chatRoom.getId());
+            chatRoomDto.setOpponent(opponentDto);
+            chatRoomDto.setCreatedAt(chatRoom.getCreatedAt());
+
+            chatRoomDtos.add(chatRoomDto);
         }
 
         apiResponse.setResult(true);

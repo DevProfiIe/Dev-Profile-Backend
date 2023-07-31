@@ -1,5 +1,7 @@
-package com.devprofile.DevProfile.dto.response;
+package com.devprofile.DevProfile.service;
 
+import com.devprofile.DevProfile.dto.response.analyze.CommitKeywordsDTO;
+import com.devprofile.DevProfile.dto.response.analyze.RepositoryEntityDTO;
 import com.devprofile.DevProfile.entity.CommitEntity;
 import com.devprofile.DevProfile.entity.RepositoryEntity;
 import org.springframework.stereotype.Service;
@@ -32,7 +34,7 @@ public class RepositoryService {
             dto.setTotalCommitCnt(repositoryEntity.getTotalCommitCnt());
             dto.setMyCommitCnt(repositoryEntity.getMyCommitCnt());
             dto.setTotalContributors(repositoryEntity.getTotalContributors());
-            dto.setRepoLanguages(repositoryEntity.getRepoLanguages());
+            dto.setLanguageDurations(repositoryEntity.getLanguageDurations());
             dto.setRepoDesc(repositoryEntity.getRepoDesc());
 
             for (Map.Entry<String, CommitKeywordsDTO> entry : oidAndKeywordsMap.entrySet()) {

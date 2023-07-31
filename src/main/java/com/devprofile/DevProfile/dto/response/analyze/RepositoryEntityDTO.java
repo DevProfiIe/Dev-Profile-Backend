@@ -1,12 +1,10 @@
-package com.devprofile.DevProfile.dto.response;
+package com.devprofile.DevProfile.dto.response.analyze;
 
-import com.devprofile.DevProfile.entity.RepositoryEntity;
+import com.devprofile.DevProfile.entity.LanguageDuration;
 import lombok.Data;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 
@@ -24,4 +22,6 @@ public class RepositoryEntityDTO {
     private List<String> featured;
     private List<String> langFramework;
 
+    public void setLanguageDurations(List<LanguageDuration> languageDurations) {
+    }
 }

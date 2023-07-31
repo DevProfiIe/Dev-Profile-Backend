@@ -1,5 +1,6 @@
-package com.devprofile.DevProfile.dto.response;
+package com.devprofile.DevProfile.dto.response.analyze;
 
+import com.devprofile.DevProfile.dto.response.ApiResponse;
 import lombok.Data;
 
 import java.util.List;

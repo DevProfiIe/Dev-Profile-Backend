@@ -1,16 +1,13 @@
-package com.devprofile.DevProfile.dto.response;
+package com.devprofile.DevProfile.service;
 
+import com.devprofile.DevProfile.dto.response.analyze.CommitKeywordsDTO;
 import com.devprofile.DevProfile.entity.CommitEntity;
 import com.devprofile.DevProfile.entity.CommitKeywordsEntity;
-import com.devprofile.DevProfile.entity.RepositoryEntity;
 import com.devprofile.DevProfile.repository.CommitKeywordsRepository;
 import com.devprofile.DevProfile.repository.CommitRepository;
-import com.devprofile.DevProfile.repository.GitRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 @Service
 public class ResponseService {

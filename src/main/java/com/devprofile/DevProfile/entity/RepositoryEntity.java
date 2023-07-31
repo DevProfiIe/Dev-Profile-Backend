@@ -3,15 +3,11 @@ package com.devprofile.DevProfile.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.cglib.core.Local;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Entity
 @Getter
@@ -39,11 +35,9 @@ public class RepositoryEntity {
     private Integer totalContributors;
 
 
-    @ElementCollection
-    @CollectionTable(name = "repo_language", joinColumns = @JoinColumn(name = "repoNodeId"))
-    @Column(name = "language")
-    private Set<String> repoLanguages = new HashSet<>();
-
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "repoNodeId")
+    private List<LanguageDuration> languageDurations;
 
     public RepositoryEntity(Integer userId, String repoName, String repoNodeId, String repoCreated, String repoUpdated, String repoDesc, String repoUrl) {
         this.userId = userId;

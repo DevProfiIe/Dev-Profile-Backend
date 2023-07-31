@@ -2,7 +2,7 @@ package com.devprofile.DevProfile.controller;
 
 
 import com.devprofile.DevProfile.dto.response.ApiResponse;
-import com.devprofile.DevProfile.dto.response.SearchResultDTO;
+import com.devprofile.DevProfile.dto.response.analyze.SearchResultDTO;
 import com.devprofile.DevProfile.entity.CommitEntity;
 import com.devprofile.DevProfile.repository.CommitRepository;
 import com.devprofile.DevProfile.service.patch.PatchService;

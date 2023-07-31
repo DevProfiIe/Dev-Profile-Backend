@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebSocket Demo</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.2/sockjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+  <script type="text/javascript">
+    let socket = new SockJS('http://15.165.41.192:8080/ws/chat'); // 서버 URL 변경 필요
+    let stompClient = Stomp.over(socket);
+
+    stompClient.connect({}, function (frame) {
+      console.log('Connected: ' + frame);
+      stompClient.subscribe('/topic/chatroom/1', function (messageOutput) { // 주의: 여기의 '1'은 채팅방 ID입니다. 실제 채팅방 ID로 변경해야 합니다.
+        let messageBody = JSON.parse(messageOutput.body);
+        let message = document.createElement('li');
+        message.appendChild(document.createTextNode(messageBody.message));
+        document.getElementById('message-list').appendChild(message);
+      });
+    });
+
+    function sendMessage() {
+      let messageInput = document.getElementById('message-input');
+      let message = {
+        chatRoomId: '1', // 여기에 실제 채팅방 ID를 입력
+        message: messageInput.value,
+        sender: {
+          id: '75676309', // 여기에 실제 사용자 ID를 입력
+          login: 'dbscks97' // 여기에 실제 사용자 로그인을 입력
+        },
+        timestamp: new Date().toISOString() // 현재 시간을 ISO 형식의 문자열로 변환
+      };
+      stompClient.send("/app/chat", {}, JSON.stringify(message)); // JSON.stringify를 사용하여 객체를 문자열로 변환
+      messageInput.value = '';
+    }
+  </script>
+</head>
+<body>
+<ul id="message-list"></ul>
+<input type="text" id="message-input" />
+<button onclick="sendMessage()">Send</button>
+</body>
+</html>
