@@ -2,25 +2,35 @@ package com.devprofile.DevProfile.service.gpt;
 
 
 import com.devprofile.DevProfile.entity.PatchEntity;
+import com.devprofile.DevProfile.entity.WordEntity;
 import com.devprofile.DevProfile.repository.PatchRepository;
+import com.devprofile.DevProfile.repository.WordRepository;
+import com.devprofile.DevProfile.search.LevenshteinDistance;
 import com.devprofile.DevProfile.service.commit.CommitKeywordsService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static com.devprofile.DevProfile.search.LevenshteinDistance.levenshteinDistance;
 
 
 @Slf4j
@@ -32,6 +42,8 @@ public class GptPatchService {
     private final CommitKeywordsService commitKeywordsService;
 
     private final PatchRepository patchRepository;
+
+    private final WordRepository wordRepository;
 
     String systemPrompt =
             """
@@ -59,6 +71,28 @@ public class GptPatchService {
     private String key;
 
 
+
+    public WordEntity getClosestWord(String inputWord) {
+
+        inputWord = inputWord.toLowerCase();
+        char firstChar = inputWord.charAt(0);
+        List<WordEntity> candidateWords = wordRepository.findByFirstChar(firstChar);
+
+        WordEntity closestWord = null;
+        int smallestDistance = Integer.MAX_VALUE;
+
+        for (WordEntity wordEntity : candidateWords) {
+            int currentDistance = levenshteinDistance(inputWord, wordEntity.getKeyword().toLowerCase());
+            if (currentDistance < smallestDistance) {
+                smallestDistance = currentDistance;
+                closestWord = wordEntity;
+            }
+        }
+
+        return closestWord;
+    }
+
+
     @Transactional(readOnly = true)
     public void processAllEntities(String userName) {
         List<PatchEntity> patchEntities = patchRepository.findAll();
@@ -71,8 +105,6 @@ public class GptPatchService {
             return;
         }
         WebClient webClient = createWebClient();
-
-
         List<Map<String, String>> messages = createMessageObjects(patch);
 
         try {
