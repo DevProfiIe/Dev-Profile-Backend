@@ -16,4 +16,5 @@ public class SearchResultDTO {
     private LocalDate commitDate;
     private String keywordSet;
     private String repoName;
+    private String commitOid;
 }
