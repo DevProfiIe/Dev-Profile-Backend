@@ -82,13 +82,14 @@ public class SearchController {
         List<Map<String, Object>> diffList = new ArrayList<>();
 
         return patchService.getPatchesByCommitOid(commitOid)
-                .concatMap(patch -> {
+                .flatMap(patch -> {
                     String contentsUrl = patch.getContentsUrl();
-
                     return patchService.fetchCode(contentsUrl, Authorization)
                             .map(decodedCode -> {
                                 Map<String, Object> diff = patchService.analyzeDiff(patch.getPatch(), decodedCode);
-                                diffList.add(diff);
+                                synchronized (diffList) {
+                                    diffList.add(diff);
+                                }
                                 return diff;
                             });
                 })

@@ -76,8 +76,8 @@ public class ChatApiController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @PostMapping("/chatroom/{userName}/message")
-    public ResponseEntity<ApiResponse<ChatMessageDto>> sendMessage(@PathVariable String userName, @RequestBody ChatMessage message, @RequestHeader("Authorization") String authorization) {
+    @PostMapping("/chatroom/message")
+    public ResponseEntity<ApiResponse<ChatMessageDto>> sendMessage(@RequestBody ChatMessage message, @RequestHeader("Authorization") String authorization) {
         ApiResponse<ChatMessageDto> apiResponse = new ApiResponse<>();
 
         jwtProvider.validateToken(authorization);
@@ -85,7 +85,6 @@ public class ChatApiController {
         UserEntity user = userRepository.findById(Integer.parseInt(primaryId)).orElseThrow(() -> new RuntimeException("User not found"));
         String currentUserName = user.getLogin();
         UserEntity send = userRepository.findByLogin(currentUserName);
-        UserEntity receive = userRepository.findByLogin(userName);
 
         Optional<ChatRoom> chatRoomOptional = chatRoomRepository.findById(message.getChatRoom().getId());
         if (!chatRoomOptional.isPresent()) {
@@ -94,7 +93,8 @@ public class ChatApiController {
             return new ResponseEntity<>(apiResponse, HttpStatus.BAD_REQUEST);
         }
 
-        ChatRoom chatRoom = chatRoomOptional.get();
+        ChatRoom chatRoom = chatRoomRepository.findById(message.getChatRoom().getId())
+                .orElseThrow(() -> new RuntimeException("ChatRoom not found"));
         message.setSender(send);
         message.setChatRoom(chatRoom);
         message.setTimestamp(LocalDateTime.now());
@@ -105,6 +105,7 @@ public class ChatApiController {
         chatMessageDto.setId(savedMessage.getId());
         chatMessageDto.setMessage(savedMessage.getMessage());
         chatMessageDto.setTimestamp(savedMessage.getTimestamp());
+        chatMessageDto.setChatRoomId(savedMessage.getChatRoom().getId());
 
         UserEntityDto userEntityDto = new UserEntityDto();
         userEntityDto.setId(savedMessage.getSender().getId());
@@ -116,6 +117,7 @@ public class ChatApiController {
         apiResponse.setData(chatMessageDto);
         return ResponseEntity.ok(apiResponse);
     }
+
 
     @GetMapping("/chatroom/{chatRoomId}/messages")
     public ResponseEntity<ApiResponse<List<ChatMessageDto>>> getChatRoomMessages(@PathVariable Long chatRoomId) {
@@ -163,4 +165,21 @@ public class ChatApiController {
 
         return chatRoomDto;
     }
+
+    @GetMapping("/user/{userId}/chatrooms")
+    public ResponseEntity<ApiResponse<List<ChatRoomDto>>> getUserChatRooms(@PathVariable Integer userId) {
+        ApiResponse<List<ChatRoomDto>> apiResponse = new ApiResponse<>();
+        UserEntity user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<ChatRoom> chatRooms = chatRoomRepository.findBySendOrReceive(user, user);
+        List<ChatRoomDto> chatRoomDtos = new ArrayList<>();
+        for (ChatRoom chatRoom : chatRooms) {
+            chatRoomDtos.add(transformChatRoomToDto(chatRoom));
+        }
+
+        apiResponse.setResult(true);
+        apiResponse.setData(chatRoomDtos);
+        return ResponseEntity.ok(apiResponse);
+    }
+
 }

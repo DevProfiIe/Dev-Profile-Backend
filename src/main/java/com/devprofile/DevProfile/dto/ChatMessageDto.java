@@ -10,4 +10,5 @@ public class ChatMessageDto {
     private String message;
     private LocalDateTime timestamp;
     private UserEntityDto sender;
+    private Long chatRoomId;
 }

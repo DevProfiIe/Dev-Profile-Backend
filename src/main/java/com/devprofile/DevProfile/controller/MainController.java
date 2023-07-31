@@ -74,12 +74,17 @@ public class MainController {
         jwtProvider.validateToken(Authorization);
         String primaryId = jwtProvider.getIdFromJWT(Authorization);
         log.info(primaryId);
-        UserEntity user = userRepository.findById(Integer.parseInt(primaryId)).orElseThrow();
-        System.out.println("accessToken = " + user.getGitHubToken());
 
-        return Mono.when(userService.userOwnedRepositories(user), orgService.orgOwnedRepositories(user));
+        if (primaryId != null && !primaryId.isEmpty()) {
+            UserEntity user = userRepository.findById(Integer.parseInt(primaryId)).orElseThrow();
 
+            System.out.println("accessToken = " + user.getGitHubToken());
+            return Mono.when(userService.userOwnedRepositories(user), orgService.orgOwnedRepositories(user));
+        } else {
+            throw new IllegalArgumentException("The primaryId is null or empty");
+        }
     }
+
 
 
     @GetMapping("/user/keyword")
