@@ -65,6 +65,7 @@ public class SearchController {
             searchResultDTO.setCommitMessage(commitEntity.getCommitMessage());
             searchResultDTO.setRepoName(commitEntity.getRepoName());
             searchResultDTO.setKeywordSet(oidKeyword.getSecond());
+            searchResultDTO.setCommitOid(oidKeyword.getFirst());
             searchResultList.add(searchResultDTO);
         }
         apiResponse.setMessage(null);

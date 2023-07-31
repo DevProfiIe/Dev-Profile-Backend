@@ -194,8 +194,7 @@ public class MainController {
 
     @GetMapping("/test")
     public ResponseEntity<String> test(){
-        sparqlService.sparqlTest();
-        return ResponseEntity.ok("");
+        return ResponseEntity.ok(sparqlService.sparqlCategory().toString());
     }
 }
 

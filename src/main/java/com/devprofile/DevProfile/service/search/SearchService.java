@@ -72,7 +72,6 @@ public class SearchService {
                     }
                 }
             }
-            Pair<String, String> oidKeyword = Pair.of(commit.getOid(), mostSimilarKeyword);
             commitSimilarities.put(Pair.of(commit.getOid(), mostSimilarKeyword), minSimilarity);
         }
 
