@@ -168,10 +168,15 @@ public class ChatApiController {
         return chatRoomDto;
     }
 
-    @GetMapping("/user/{userName}/chatrooms")
-    public ResponseEntity<ApiResponse<List<ChatRoomListDto>>> getUserChatRooms(@PathVariable String userName) {
+    @GetMapping("/user/chatrooms")
+    public ResponseEntity<ApiResponse<List<ChatRoomListDto>>> getUserChatRooms(@RequestHeader("Authorization") String authorization) {
         ApiResponse<List<ChatRoomListDto>> apiResponse = new ApiResponse<>();
-        UserEntity user = userRepository.findByLogin(userName);
+
+        jwtProvider.validateToken(authorization);
+        String primaryId = jwtProvider.getIdFromJWT(authorization);
+        UserEntity user = userRepository.findById(Integer.parseInt(primaryId)).orElseThrow(() -> new RuntimeException("User not found"));
+        String currentUserName = user.getLogin();
+
 
         if (user == null) {
             apiResponse.setResult(false);
@@ -185,7 +190,7 @@ public class ChatApiController {
             ChatRoomListDto chatRoomDto = new ChatRoomListDto();
 
             UserEntity opponent = chatRoom.getReceive();
-            if(opponent.getLogin().equals(userName)) {
+            if(opponent.getLogin().equals(currentUserName)) {
                 opponent = chatRoom.getSend();
             }
 
