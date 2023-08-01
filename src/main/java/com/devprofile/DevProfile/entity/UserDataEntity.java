@@ -22,19 +22,29 @@ public class UserDataEntity {
 
     private Integer ai;
 
-    private Integer dataScience;
+    private Set<String> aiSet;
 
     private Integer database;
 
+    private Set<String> databaseSet;
+
     private Integer mobile;
+
+    private Set<String> mobileSet;
 
     private Integer webBackend;
 
-    private Integer document;
+    private Set<String> webBackendSet;
+
+    private Integer webFrontend;
+
+    private Set<String> webFrontendSet;
 
     private Integer systemProgramming;
 
-    private Integer algorithm;
+    private Set<String> systemProgrammingSet;
 
     private Integer game;
+
+    private Set<String> gameSet;
 }

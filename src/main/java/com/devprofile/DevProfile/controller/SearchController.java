@@ -39,7 +39,6 @@ public class SearchController {
         this.patchService = patchService;
     }
 
-
     @GetMapping("/search")
     public ResponseEntity<ApiResponse> searchCommit(@RequestParam String query) {
         query = "%" + query + "%";

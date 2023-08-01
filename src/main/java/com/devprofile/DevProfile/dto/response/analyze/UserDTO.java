@@ -25,19 +25,15 @@ public class UserDTO {
 
     private Integer ai;
 
-    private Integer dataScience;
-
     private Integer database;
 
     private Integer mobile;
 
     private Integer webBackend;
 
-    private Integer document;
+    private Integer webFrontend;
 
     private Integer systemProgramming;
-
-    private Integer algorithm;
 
     private Integer game;
 

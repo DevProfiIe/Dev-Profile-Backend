@@ -25,5 +25,7 @@ public class CommitKeywordsEntity {
 
     private Set<String> featured;
 
+    private Set<String> field;
+
     private Integer tokens;
 }
