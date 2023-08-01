@@ -10,6 +10,7 @@ import java.util.List;
 public interface FrameworkRepository extends JpaRepository<FrameworkEntity, Long> {
 
     List<FrameworkEntity> findAllByFrameworkNameIn(List<String> frameworkNames);
+    FrameworkEntity findByFrameworkName(String frameworkName);
     List<FrameworkEntity> findAll();
 
 }

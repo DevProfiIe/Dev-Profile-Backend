@@ -12,6 +12,9 @@ import java.util.List;
 @Data
 public class UserPageDTO {
     private String userName;
-    private List<String> techStack;
+    private List<String> language;
+    private List<String> framework;
     private String field;
+    private String avatarUrl;
+
 }

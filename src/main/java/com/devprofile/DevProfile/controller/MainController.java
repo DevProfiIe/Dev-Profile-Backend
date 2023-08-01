@@ -49,8 +49,6 @@ public class MainController {
     private final SparqlService sparqlService;
 
 
-
-
     private UserDTO convertToDTO(UserEntity userEntity, UserDataEntity userDataEntity) {
         UserDTO userDTO = new UserDTO();
         userDTO.setAvatar_url(userEntity.getAvatar_url());
@@ -87,6 +85,7 @@ public class MainController {
             throw new IllegalArgumentException("The primaryId is null or empty");
         }
     }
+
     @GetMapping("/chat2")
     public String chat() {
         return "chat2";
@@ -136,15 +135,13 @@ public class MainController {
         Map<String, CommitKeywordsDTO> oidAndKeywordsMap = new HashMap<>();
         Map<LocalDate, Integer> calender = new HashMap<>();
 
-
         for (CommitEntity commitEntity : allCommitEntities) {
             Optional<CommitKeywordsDTO> keywords = responseService.getFeatureFramework(commitEntity.getCommitOid());
             if (keywords.isPresent()) {
                 oidAndKeywordsMap.put(commitEntity.getCommitOid(), keywords.get());
             }
             LocalDate day = commitEntity.getCommitDate();
-            Integer length = commitEntity.getLength();
-            calender.merge(day, length, Integer::sum);
+            calender.merge(day, 1, Integer::sum);
         }
         List<Map<String, Object>> calenderData = new ArrayList<>();
         LocalDate firstDate = LocalDate.now();
@@ -153,8 +150,8 @@ public class MainController {
             if(firstDate.isAfter(day)) firstDate = day;
             if(lastDate.isBefore(day)) lastDate = day;
             Map<String, Object> oneDay = new HashMap<>();
-            oneDay.put("day", day);
-            oneDay.put("value", calender.get(day));
+            oneDay.put("x", day);
+            oneDay.put("y", calender.get(day));
             calenderData.add(oneDay);
         }
 
