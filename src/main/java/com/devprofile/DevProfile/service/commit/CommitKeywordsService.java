@@ -9,7 +9,6 @@ import com.devprofile.DevProfile.repository.WordRepository;
 import com.devprofile.DevProfile.service.search.SparqlService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -21,8 +20,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.devprofile.DevProfile.search.LevenshteinDistance.levenshteinDistance;
 
 @Service
 public class CommitKeywordsService {
@@ -69,7 +66,7 @@ public class CommitKeywordsService {
         FrameworkEntity closestFramework = null;
         double maxSimilarity = 0.85;
         for(FrameworkEntity framework : wordEntities){
-            double similarity = StringUtils.getJaroWinklerDistance(framework.getFramework_name().toLowerCase(), inputWord);
+            double similarity = StringUtils.getJaroWinklerDistance(framework.getFrameworkName().toLowerCase(), inputWord);
             System.out.println("similarity = " + similarity);
             if(maxSimilarity <= similarity){
                 maxSimilarity = similarity;
@@ -168,8 +165,8 @@ public class CommitKeywordsService {
                     System.out.println("skip");
                     continue;
                 }
-                update.addToSet("langFramework", framework.getFramework_name());
-                updateUser.addToSet("keywordSet", framework.getFramework_name());
+                update.addToSet("langFramework", framework.getFrameworkName());
+                updateUser.addToSet("keywordSet", framework.getFrameworkName());
             }
         }
     }
