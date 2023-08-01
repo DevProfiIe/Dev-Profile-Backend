@@ -45,13 +45,9 @@ public class GptPatchService {
 
     private final PatchRepository patchRepository;
 
-    private final WordRepository wordRepository;
-
     private final CommitKeywordsRepository commitKeywordsRepository;
 
     private final CommitRepository commitRepository;
-
-    private final UserDataRepository userDataRepository;
 
     private final MongoTemplate mongoTemplate;
 

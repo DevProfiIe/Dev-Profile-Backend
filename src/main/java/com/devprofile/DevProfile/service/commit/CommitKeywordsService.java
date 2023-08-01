@@ -38,11 +38,11 @@ public class CommitKeywordsService {
         List<WordEntity> candidateWords = wordRepository.findByFirstChar(firstChar);
 
         WordEntity closestWord = null;
-        double maxSimilarity = 0;
+        double maxSimilarity = 0.65;
 
         for (WordEntity wordEntity : candidateWords) {
             double currentDistance = StringUtils.getJaroWinklerDistance(inputWord, wordEntity.getKeyword().toLowerCase());
-            if (maxSimilarity < currentDistance) {
+            if (maxSimilarity <= currentDistance) {
                 maxSimilarity = currentDistance;
                 closestWord = wordEntity;
             }
@@ -107,10 +107,11 @@ public class CommitKeywordsService {
         try {
             JsonNode keywordsJson = mapper.readTree(keywords);
             processKeywords(update, updateUser, keywordsJson);
+            update.addToSet("userName", userName);
             Query query = new Query(Criteria.where("oid").is(oid));
             Query queryUser = new Query(Criteria.where("userName").is(userName));
-            mongoTemplate.upsert(queryUser, updateUser, UserDataEntity.class);
             mongoTemplate.upsert(query, update, CommitKeywordsEntity.class);
+            mongoTemplate.upsert(queryUser, updateUser, UserDataEntity.class);
             return Mono.empty();
         } catch (Exception e) {
             e.printStackTrace();
@@ -149,7 +150,9 @@ public class CommitKeywordsService {
     private void addCsKeywords(Update update, Update updateUser, JsonNode csNode) {
         if (csNode != null) {
             for (JsonNode cs : csNode) {
-                String keyword = sparqlService.findRedirect(getClosestWord(cs.asText()));
+                WordEntity closestWord = getClosestWord(cs.asText());
+                if(closestWord == null) continue;
+                String keyword = sparqlService.findRedirect(closestWord);
                 System.out.println("keyword = " + keyword);
                 update.addToSet("cs", keyword);
                 updateUser.addToSet("keywordSet", keyword);
@@ -161,10 +164,7 @@ public class CommitKeywordsService {
         if (langFrameNode != null) {
             for (JsonNode langFrame : langFrameNode) {
                 FrameworkEntity framework= getClosestFramework(langFrame.asText());
-                if(framework == null) {
-                    System.out.println("skip");
-                    continue;
-                }
+                if(framework == null) continue;
                 update.addToSet("langFramework", framework.getFrameworkName());
                 updateUser.addToSet("keywordSet", framework.getFrameworkName());
             }
@@ -175,8 +175,8 @@ public class CommitKeywordsService {
         List<String> featureList = new ArrayList<>();
         if (featureNode != null) {
             for (JsonNode feature : featureNode) {
-                update.addToSet("featured", feature.asText());
-                featureList.add(feature.asText());
+                update.addToSet("featured", feature.asText().toLowerCase());
+                featureList.add(feature.asText().toLowerCase());
             }
         }
         return featureList;
