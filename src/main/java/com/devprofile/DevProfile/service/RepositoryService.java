@@ -94,6 +94,11 @@ public class RepositoryService {
                                     RepositoryEntity repositoryEntity = optionalRepositoryEntity.get();
                                     Long duration = ChronoUnit.DAYS.between(repositoryEntity.getStartDate(), repositoryEntity.getEndDate());
                                     repoFrameworkEntity.setRepoDuration(duration);
+
+                                    Long repositoryId = repositoryEntity.getId();
+                                    repoFrameworkEntity.setRepoId(repositoryId);
+
+
                                 }
 
                                 repoFrameworkRepository.save(repoFrameworkEntity);

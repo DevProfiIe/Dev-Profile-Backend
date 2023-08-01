@@ -7,6 +7,7 @@ import com.devprofile.DevProfile.dto.response.analyze.RepositoryEntityDTO;
 import com.devprofile.DevProfile.dto.response.analyze.UserDTO;
 import com.devprofile.DevProfile.entity.*;
 import com.devprofile.DevProfile.repository.*;
+import com.devprofile.DevProfile.service.FilterService;
 import com.devprofile.DevProfile.service.RepositoryService;
 import com.devprofile.DevProfile.service.ResponseService;
 import com.devprofile.DevProfile.service.gpt.GptCommitService;
@@ -51,6 +52,7 @@ public class MainController {
     private final RepositoryService repositoryService;
     private final SparqlService sparqlService;
     private final CommitKeywordsRepository commitKeywordsRepository;
+    private final FilterService filterService;
 
 
     private UserDTO convertToDTO(UserEntity userEntity, UserDataEntity userDataEntity) {
@@ -83,7 +85,11 @@ public class MainController {
             UserEntity user = userRepository.findById(Integer.parseInt(primaryId)).orElseThrow();
 
             System.out.println("accessToken = " + user.getGitHubToken());
-            return Mono.when(userService.userOwnedRepositories(user), orgService.orgOwnedRepositories(user));
+            Mono<Void> mono = Mono.when(userService.userOwnedRepositories(user), orgService.orgOwnedRepositories(user));
+
+            filterService.createAndSaveFilter(user.getName());
+
+            return mono;
         } else {
             throw new IllegalArgumentException("The primaryId is null or empty");
         }

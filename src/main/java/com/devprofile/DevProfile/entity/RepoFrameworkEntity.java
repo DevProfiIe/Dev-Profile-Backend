@@ -18,6 +18,7 @@ public class RepoFrameworkEntity {
     private String repoName;
     private String framework;
     private Long repoDuration;
+    private Long repoId;
 
     public void setRepoDuration(Long repoDuration) {
         this.repoDuration = repoDuration;
