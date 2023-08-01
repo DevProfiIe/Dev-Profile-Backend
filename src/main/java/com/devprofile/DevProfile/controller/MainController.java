@@ -61,7 +61,6 @@ public class MainController {
             userDTO.setKeywordSet(userDataEntity.getKeywordSet());
             userDTO.setAi(userDataEntity.getAi());
             userDTO.setDatabase(userDataEntity.getDatabase());
-            userDTO.setMobile(userDataEntity.getMobile());
             userDTO.setWebBackend(userDataEntity.getWebBackend());
             userDTO.setSystemProgramming(userDataEntity.getSystemProgramming());
             userDTO.setWebBackend(userDataEntity.getWebFrontend());
