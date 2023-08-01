@@ -7,9 +7,6 @@ import com.devprofile.DevProfile.repository.PatchRepository;
 import com.devprofile.DevProfile.repository.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.difflib.DiffUtils;
-import com.github.difflib.patch.AbstractDelta;
-import com.github.difflib.patch.Patch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatusCode;
@@ -92,7 +89,8 @@ public class PatchService {
     public Mono<String> fetchCode(String contentsUrl, String Authorization) {
         jwtProvider.validateToken(Authorization);
         String primaryId = jwtProvider.getIdFromJWT(Authorization);
-        UserEntity user = userRepository.findById(Integer.parseInt(primaryId)).orElseThrow();
+        UserEntity user = userRepository.findById(Integer.parseInt(primaryId))
+                .orElseThrow(() -> new IllegalArgumentException("No user found with id: " + primaryId));
 
         return webClient.get()
                 .uri(URI.create(contentsUrl)) // 변경된 부분

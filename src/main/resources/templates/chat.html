@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Application</title>
+    <style>
+        #messageArea {
+            height: 200px;
+            width: 300px;
+            border: 1px solid black;
+            padding: 10px;
+            overflow-y: scroll;
+        }
+        #messageInput {
+            width: 200px;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+<h1>Chat Room</h1>
+
+<div id="messageArea">
+</div>
+<input id="messageInput" type="text" placeholder="Type your message here...">
+<button onclick="send()">Send</button>
+
+<script>
+    var socket = new SockJS('http://localhost:8080/ws/chat');
+    var stompClient = Stomp.over(socket);
+
+    stompClient.connect({}, function (frame) {
+        console.log('Connected: ' + frame);
+        stompClient.subscribe('/topic/chatroom/1', function (message) { // "/topic/chatroom/1"를 실제 채팅방 ID로 바꾸세요
+            showMessage(JSON.parse(message.body));
+        });
+    });
+
+    function send() {
+        var messageInput = document.getElementById('messageInput');
+        stompClient.send("/app/chatroom/message", {}, JSON.stringify({ 'message': messageInput.value }));
+        messageInput.value = '';
+    }
+
+    function showMessage(message) {
+        var messageArea = document.getElementById('messageArea');
+        messageArea.innerHTML += '<p>' + message.message + '</p>'; // 적절하게 수정해야 함
+    }
+</script>
+</body>
+</html>

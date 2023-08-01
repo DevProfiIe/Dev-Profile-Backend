@@ -1,4 +1,4 @@
-package com.devprofile.DevProfile.dto.response;
+package com.devprofile.DevProfile.dto.response.analyze;
 
 import lombok.Data;
 

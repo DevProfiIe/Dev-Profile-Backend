@@ -1,4 +1,4 @@
-package com.devprofile.DevProfile.dto;
+package com.devprofile.DevProfile.dto.response.chat;
 
 import lombok.Data;
 

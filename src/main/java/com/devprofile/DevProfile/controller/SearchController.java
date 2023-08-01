@@ -2,7 +2,7 @@ package com.devprofile.DevProfile.controller;
 
 
 import com.devprofile.DevProfile.dto.response.ApiResponse;
-import com.devprofile.DevProfile.dto.response.SearchResultDTO;
+import com.devprofile.DevProfile.dto.response.analyze.SearchResultDTO;
 import com.devprofile.DevProfile.entity.CommitEntity;
 import com.devprofile.DevProfile.repository.CommitRepository;
 import com.devprofile.DevProfile.service.patch.PatchService;
@@ -83,13 +83,14 @@ public class SearchController {
         List<Map<String, Object>> diffList = new ArrayList<>();
 
         return patchService.getPatchesByCommitOid(commitOid)
-                .concatMap(patch -> {
+                .flatMap(patch -> {
                     String contentsUrl = patch.getContentsUrl();
-
                     return patchService.fetchCode(contentsUrl, Authorization)
                             .map(decodedCode -> {
                                 Map<String, Object> diff = patchService.analyzeDiff(patch.getPatch(), decodedCode);
-                                diffList.add(diff);
+                                synchronized (diffList) {
+                                    diffList.add(diff);
+                                }
                                 return diff;
                             });
                 })

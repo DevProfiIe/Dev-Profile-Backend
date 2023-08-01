@@ -2,8 +2,13 @@ package com.devprofile.DevProfile.controller;
 
 import com.devprofile.DevProfile.component.JwtProvider;
 import com.devprofile.DevProfile.dto.response.*;
+import com.devprofile.DevProfile.dto.response.analyze.CommitKeywordsDTO;
+import com.devprofile.DevProfile.dto.response.analyze.RepositoryEntityDTO;
+import com.devprofile.DevProfile.dto.response.analyze.UserDTO;
 import com.devprofile.DevProfile.entity.*;
 import com.devprofile.DevProfile.repository.*;
+import com.devprofile.DevProfile.service.RepositoryService;
+import com.devprofile.DevProfile.service.ResponseService;
 import com.devprofile.DevProfile.service.gpt.GptCommitService;
 import com.devprofile.DevProfile.service.gpt.GptPatchService;
 import com.devprofile.DevProfile.service.graphql.GraphOrgService;
@@ -72,12 +77,21 @@ public class MainController {
         jwtProvider.validateToken(Authorization);
         String primaryId = jwtProvider.getIdFromJWT(Authorization);
         log.info(primaryId);
-        UserEntity user = userRepository.findById(Integer.parseInt(primaryId)).orElseThrow();
-        System.out.println("accessToken = " + user.getGitHubToken());
 
-        return Mono.when(userService.userOwnedRepositories(user), orgService.orgOwnedRepositories(user));
+        if (primaryId != null && !primaryId.isEmpty()) {
+            UserEntity user = userRepository.findById(Integer.parseInt(primaryId)).orElseThrow();
 
+            System.out.println("accessToken = " + user.getGitHubToken());
+            return Mono.when(userService.userOwnedRepositories(user), orgService.orgOwnedRepositories(user));
+        } else {
+            throw new IllegalArgumentException("The primaryId is null or empty");
+        }
     }
+    @GetMapping("/chat2")
+    public String chat() {
+        return "chat2";
+    }
+
 
 
     @GetMapping("/user/keyword")
