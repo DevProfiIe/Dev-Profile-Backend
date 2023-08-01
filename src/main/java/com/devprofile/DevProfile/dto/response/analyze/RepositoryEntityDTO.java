@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 
@@ -21,6 +22,7 @@ public class RepositoryEntityDTO {
     private Set<String> repoLanguages;
     private List<String> featured;
     private List<String> langFramework;
+    private Map<String, String> frameworkUrls;
 
     public void setLanguageDurations(List<LanguageDuration> languageDurations) {
     }

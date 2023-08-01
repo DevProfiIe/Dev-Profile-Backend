@@ -42,11 +42,10 @@ public class LanguageService {
                 LocalDate startDate = repoEntity.getStartDate();
                 LocalDate endDate = repoEntity.getEndDate();
 
-                int totalMonths = Period.between(startDate, endDate).getMonths()
-                        + Period.between(startDate, endDate).getYears() * 12;
+                Integer totalDays = Period.between(startDate, endDate).getDays();
 
                 response.fieldNames().forEachRemaining(language -> {
-                    languageDurations.add(new LanguageDuration(language, totalMonths));
+                    languageDurations.add(new LanguageDuration(language, totalDays));
                 });
 
                 repoEntity.setLanguageDurations(languageDurations);
@@ -74,11 +73,10 @@ public class LanguageService {
                         LocalDate startDate = repoEntity.getStartDate();
                         LocalDate endDate = repoEntity.getEndDate();
 
-                        int totalMonths = Period.between(startDate, endDate).getMonths()
-                                + Period.between(startDate, endDate).getYears() * 12;
+                        Integer totalDays = Period.between(startDate, endDate).getDays();
 
                         response.fieldNames().forEachRemaining(language -> {
-                            languageDurations.add(new LanguageDuration(language, totalMonths));
+                            languageDurations.add(new LanguageDuration(language, totalDays));
                         });
 
                         repoEntity.setLanguageDurations(languageDurations);

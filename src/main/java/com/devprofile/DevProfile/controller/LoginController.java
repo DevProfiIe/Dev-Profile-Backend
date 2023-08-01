@@ -44,6 +44,7 @@ public class LoginController {
         }
 
         UserEntity user = gitLoginService.getUserInfo(accessToken);
+
         //수정
         String jwtToken = jwtProvider.createJwt(user);
         String jwtRefreshToken = jwtProvider.createRefreshJwt();

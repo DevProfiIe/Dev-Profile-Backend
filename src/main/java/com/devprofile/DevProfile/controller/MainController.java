@@ -160,7 +160,9 @@ public class MainController {
             calenderData.add(oneDay);
         }
 
+        repositoryService.saveFrameworksToNewTable(allCommitEntities, oidAndKeywordsMap);
         List<RepositoryEntity> repositoryEntities = gitRepository.findWithCommitAndEndDate();
+
         List<RepositoryEntityDTO> extendedEntities = repositoryService.createRepositoryEntityDTOs(repositoryEntities, allCommitEntities, oidAndKeywordsMap);
 
         UserEntity userEntity = userRepository.findByLogin(userName);
