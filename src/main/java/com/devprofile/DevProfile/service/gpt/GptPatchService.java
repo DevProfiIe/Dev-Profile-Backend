@@ -1,10 +1,8 @@
 package com.devprofile.DevProfile.service.gpt;
 
 
-import com.devprofile.DevProfile.entity.PatchEntity;
-import com.devprofile.DevProfile.entity.WordEntity;
-import com.devprofile.DevProfile.repository.PatchRepository;
-import com.devprofile.DevProfile.repository.WordRepository;
+import com.devprofile.DevProfile.entity.*;
+import com.devprofile.DevProfile.repository.*;
 import com.devprofile.DevProfile.search.LevenshteinDistance;
 import com.devprofile.DevProfile.service.commit.CommitKeywordsService;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -12,6 +10,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
@@ -23,12 +25,12 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
+
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.devprofile.DevProfile.search.LevenshteinDistance.levenshteinDistance;
 
@@ -45,17 +47,26 @@ public class GptPatchService {
 
     private final WordRepository wordRepository;
 
+    private final CommitKeywordsRepository commitKeywordsRepository;
+
+    private final CommitRepository commitRepository;
+
+    private final UserDataRepository userDataRepository;
+
+    private final MongoTemplate mongoTemplate;
+
     String systemPrompt =
             """
-                     Answer in English.
-                    1.cs: Provide three to five keywords, each consisting of a word, that describe the computer science principles or concepts applied in this code, excluding specific languages or frameworks.
-                    2.langFrame: Provide the framework used in this code.
-                    3.feature:Provide a concise description of the feature implemented by this provided code in 10-20 characters.
-                    4.field: Select the most relevant keyword from the following list: Game, System Programming, AI, Database, Mobile, Web Backend, Web Frontend.\s
-                    If the accuracy significantly decreases, it's acceptable to omit the 3rd and 4th keywords.\s
-                    Regardless of the length of the response, please ensure that it is provided in JSON format and strictly conforms to the specified schema.
-                    {"type":"object","properties":{"cs":{"type":"array", "items":{"type":"string"}},"langFrame":{"type":"array", "items":{"type":"string"}},"feature":{"type":"array","items":{"type":"string"}},"field":{"type":"array","items":{"type":"string"}}}}
-                    """;
+             Answer in English.
+             1.cs: Provide three to five keywords, each consisting of a word, that describe the computer science principles or concepts applied in this code, excluding specific languages or frameworks.
+             2.langFrame: Provide the framework used in this code.
+             3.feature:Provide a concise description of the feature implemented by this provided code in 10-20 characters.
+             4.field: Select the most relevant keyword from the following list: Game, System Programming, AI, Database, Mobile, Web Backend, Web Frontend
+             If the accuracy significantly decreases, it's acceptable to omit the 3rd and 4th keywords
+             Write keywords only the label of the entity in dbpedia.     \s
+             Regardless of the length of the response, please ensure that it is provided in JSON format and strictly conforms to the specified schema.
+             {"type":"object","properties":{"cs":{"type":"array", "items":{"type":"string"}},"langFrame":{"type":"array", "items":{"type":"string"}},"feature":{"type":"array","items":{"type":"string"}},"field":{"type":"array","items":{"type":"string"}}}}
+            """;
 /*    String systemPrompt = "Answer in English.\n" +
             "1.cs: Provide three to five keywords, each consisting of 1-2 words, that describe the computer science principles or concepts applied in this code, excluding specific languages or frameworks.\n" +
             "2.frameLang: Provide the framework used in this code.\n" +
@@ -70,16 +81,26 @@ public class GptPatchService {
     @Value("${gpt.secret}")
     private String key;
 
-
-
-
-
-    @Transactional(readOnly = true)
+    @Transactional
     public void processAllEntities(String userName) {
-        List<PatchEntity> patchEntities = patchRepository.findAll();
-        patchEntities.forEach(patchEntity -> this.generateKeyword(userName, patchEntity));
+        List<CommitEntity> commitEntities = commitRepository.findAll();
+        List<PatchEntity> patchEntities;
+        Query query = new Query(Criteria.where("userName").is(userName));
+        for(CommitEntity commitEntity : commitEntities){
+            patchEntities = patchRepository.findByCommitOid(commitEntity.getCommitOid());
+            if(patchEntities.isEmpty())continue;
+            patchEntities.forEach(patchEntity -> this.generateKeyword(userName, patchEntity));
+            CommitKeywordsEntity commitKeywords =commitKeywordsRepository.findByOid(commitEntity.getCommitOid());
+            Set<String> fields= commitKeywords.getField();
+            Update update = new Update();
+            if(fields == null) continue;
+            for(String field : fields) update.inc(field);
+            mongoTemplate.updateFirst(query, update, UserDataEntity.class);
+        }
+
     }
 
+    @Transactional
     public void generateKeyword(String userName, PatchEntity patchEntity) {
         String patch = patchEntity.getPatch();
         if (patch == null) {
@@ -88,12 +109,15 @@ public class GptPatchService {
         WebClient webClient = createWebClient();
         List<Map<String, String>> messages = createMessageObjects(patch);
 
+
         try {
             JsonNode jsonNode = postToGptService(webClient, messages);
             processJsonNode(jsonNode, userName, patchEntity.getCommitOid());
+
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
+
     }
 
     private WebClient createWebClient() {

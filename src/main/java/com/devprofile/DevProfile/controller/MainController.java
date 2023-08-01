@@ -204,10 +204,10 @@ public class MainController {
         return ResponseEntity.ok(apiResponse);
     }
 
-//    @GetMapping("/test")
-//    public ResponseEntity<String> test(){
-//        sparqlService.sparqlEntity();
-//        return ResponseEntity.ok(" ");
-//    }
+    @GetMapping("/test")
+    public ResponseEntity<String> test(){
+        sparqlService.sparqlEntity();
+        return ResponseEntity.ok(" ");
+    }
 }
 

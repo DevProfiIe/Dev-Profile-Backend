@@ -41,16 +41,15 @@ public class CommitKeywordsService {
         List<WordEntity> candidateWords = wordRepository.findByFirstChar(firstChar);
 
         WordEntity closestWord = null;
-        int smallestDistance = Integer.MAX_VALUE;
+        double maxSimilarity = 0;
 
         for (WordEntity wordEntity : candidateWords) {
-            int currentDistance = levenshteinDistance(inputWord, wordEntity.getKeyword().toLowerCase());
-            if (currentDistance < smallestDistance) {
-                smallestDistance = currentDistance;
+            double currentDistance = StringUtils.getJaroWinklerDistance(inputWord, wordEntity.getKeyword().toLowerCase());
+            if (maxSimilarity < currentDistance) {
+                maxSimilarity = currentDistance;
                 closestWord = wordEntity;
             }
         }
-
         return closestWord;
     }
 
@@ -68,9 +67,10 @@ public class CommitKeywordsService {
 
         List<FrameworkEntity> wordEntities = frameworkRepository.findAll();
         FrameworkEntity closestFramework = null;
-        double maxSimilarity = 0.7;
+        double maxSimilarity = 0.85;
         for(FrameworkEntity framework : wordEntities){
-            double similarity = StringUtils.getJaroWinklerDistance(framework.getFramework_name(), inputWord);
+            double similarity = StringUtils.getJaroWinklerDistance(framework.getFramework_name().toLowerCase(), inputWord);
+            System.out.println("similarity = " + similarity);
             if(maxSimilarity <= similarity){
                 maxSimilarity = similarity;
                 closestFramework = framework;
@@ -146,7 +146,7 @@ public class CommitKeywordsService {
         addCsKeywords(update, updateUser, keywordsJson.get("cs"));
         addLangFrameKeywords(update, updateUser, keywordsJson.get("langFrame"));
         List<String> featureList = addFeatureKeywords(update, keywordsJson.get("feature"));
-        addFieldKeywords(featureList, updateUser, keywordsJson.get("field"));
+        addFieldKeywords(featureList, updateUser, update,keywordsJson.get("field"));
     }
 
     private void addCsKeywords(Update update, Update updateUser, JsonNode csNode) {
@@ -164,7 +164,10 @@ public class CommitKeywordsService {
         if (langFrameNode != null) {
             for (JsonNode langFrame : langFrameNode) {
                 FrameworkEntity framework= getClosestFramework(langFrame.asText());
-                if(framework == null) continue;
+                if(framework == null) {
+                    System.out.println("skip");
+                    continue;
+                }
                 update.addToSet("langFramework", framework.getFramework_name());
                 updateUser.addToSet("keywordSet", framework.getFramework_name());
             }
@@ -182,41 +185,37 @@ public class CommitKeywordsService {
         return featureList;
     }
 
-    private void addFieldKeywords(List<String> featureList,Update updateUser, JsonNode fieldNode) {
+    private void addFieldKeywords(List<String> featureList,Update updateUser, Update update, JsonNode fieldNode) {
         if (fieldNode != null) {
             for (JsonNode field : fieldNode) {
                 switch (field.asText()) {
                     case ("Game"):
-                        updateUser.inc("game");
-                        for(String feature: featureList) updateUser.addToSet("gameSet",feature );
+                        update.addToSet("field", "game");
+                        for(String feature: featureList) updateUser.addToSet("gameSet",feature);
                         break;
                     case ("Web Backend"):
-                        updateUser.inc("webBackend");
+                        update.addToSet("field", "webBackend");
                         for(String feature: featureList) updateUser.addToSet("webBackendSet", feature);
                         break;
                     case ("Web Frontend"):
-                        updateUser.inc("webFrontend");
+                        update.addToSet("field", "webFrontend");
                         for(String feature: featureList) updateUser.addToSet("webFrontendSet", feature);
                         break;
                     case ("Database"):
-                        updateUser.inc("database");
+                        update.addToSet("field", "database");
                         for(String feature: featureList) updateUser.addToSet("databaseSet", feature);
-
                         break;
                     case ("Mobile"):
-                        updateUser.inc("mobile");
+                        update.addToSet("field", "mobile");
                         for(String feature: featureList) updateUser.addToSet("mobileSet", feature);
-
                         break;
                     case ("System Programming"):
-                        updateUser.inc("systemProgramming");
+                        update.addToSet("field", "systemProgramming");
                         for(String feature: featureList) updateUser.addToSet("systemProgrammingSet", feature);
-
                         break;
                     case ("AI"):
-                        updateUser.inc("ai");
+                        update.addToSet("field", "ai");
                         for(String feature: featureList) updateUser.addToSet("aiSet", feature);
-
                         break;
                 }
             }
