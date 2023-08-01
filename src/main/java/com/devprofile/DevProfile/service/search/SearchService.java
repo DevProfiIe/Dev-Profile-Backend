@@ -51,7 +51,7 @@ public class SearchService {
 
         for (CommitKeywordsEntity commit : commitKeywordsRepository.findAll()) {
             int minSimilarity = 100;
-            String mostSimilarKeyword = null;
+            String mostSimilarKeyword = "";
             Map<String, String> commitKeyword = new HashMap<>();
 
             if (commit.getCs() != null) {
@@ -72,6 +72,7 @@ public class SearchService {
                     }
                 }
             }
+
             commitSimilarities.put(Pair.of(commit.getOid(), mostSimilarKeyword), minSimilarity);
         }
 

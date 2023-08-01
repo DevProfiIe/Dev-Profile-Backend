@@ -55,13 +55,11 @@ public class MainController {
         if (userDataEntity != null) {
             userDTO.setKeywordSet(userDataEntity.getKeywordSet());
             userDTO.setAi(userDataEntity.getAi());
-            userDTO.setDataScience(userDataEntity.getDataScience());
             userDTO.setDatabase(userDataEntity.getDatabase());
             userDTO.setMobile(userDataEntity.getMobile());
             userDTO.setWebBackend(userDataEntity.getWebBackend());
-            userDTO.setDocument(userDataEntity.getDocument());
             userDTO.setSystemProgramming(userDataEntity.getSystemProgramming());
-            userDTO.setAlgorithm(userDataEntity.getAlgorithm());
+            userDTO.setWebBackend(userDataEntity.getWebFrontend());
             userDTO.setGame(userDataEntity.getGame());
         }
 
@@ -111,7 +109,7 @@ public class MainController {
 
     @PostMapping("/test")
     public String test(@RequestParam String userName) {
-        List<PatchEntity> patchEntities = patchRepository.findByCommitOid("6e380e3a22b01d67038cecb6ffd943d6305ec346");
+        List<PatchEntity> patchEntities = patchRepository.findByCommitOid("d394b3b52e18f89773ed02af5163d91d62cfd797");
         patchEntities.forEach(patchEntity -> gptPatchService.generateKeyword(userName, patchEntity));
         return "index";
     }
@@ -192,10 +190,10 @@ public class MainController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @GetMapping("/test")
-    public ResponseEntity<String> test(){
-        sparqlService.sparqlEntity();
-        return ResponseEntity.ok(" ");
-    }
+//    @GetMapping("/test")
+//    public ResponseEntity<String> test(){
+//        sparqlService.sparqlEntity();
+//        return ResponseEntity.ok(" ");
+//    }
 }
 

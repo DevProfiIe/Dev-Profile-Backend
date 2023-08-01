@@ -47,15 +47,15 @@ public class GptPatchService {
 
     String systemPrompt =
             """
-            Answer in English.
-            1.cs: Provide three to five keywords, each consisting of 1-2 words, that describe the computer science principles or concepts applied in this code, excluding specific languages or frameworks.
-            2.langFrame: Provide the framework used in this code.
-            3.feature:Provide a concise 1-2 line description of the feature implemented by this provided code.
-            4.field: Select the most relevant keyword from the following list: Game, System Programming, AI, Data Science, Database, Mobile, Web Backend, Web Frontend, Document. 
-            If the accuracy significantly decreases, it's acceptable to omit the 3rd and 4th keywords. 
-            Regardless of the length of the response, please ensure that it is provided in JSON format and strictly conforms to the specified schema.
-            {"type":"object","properties":{"cs":{"type":"array", "items":{"type":"string"}},"langFrame":{"type":"array", "items":{"type":"string"}},"feature":{"type":"array","items":{"type":"string"}},"field":{"type":"array","items":{"type":"string"}}}}
-            """;
+                     Answer in English.
+                    1.cs: Provide three to five keywords, each consisting of a word, that describe the computer science principles or concepts applied in this code, excluding specific languages or frameworks.
+                    2.langFrame: Provide the framework used in this code.
+                    3.feature:Provide a concise description of the feature implemented by this provided code in 10-20 characters.
+                    4.field: Select the most relevant keyword from the following list: Game, System Programming, AI, Database, Mobile, Web Backend, Web Frontend.\s
+                    If the accuracy significantly decreases, it's acceptable to omit the 3rd and 4th keywords.\s
+                    Regardless of the length of the response, please ensure that it is provided in JSON format and strictly conforms to the specified schema.
+                    {"type":"object","properties":{"cs":{"type":"array", "items":{"type":"string"}},"langFrame":{"type":"array", "items":{"type":"string"}},"feature":{"type":"array","items":{"type":"string"}},"field":{"type":"array","items":{"type":"string"}}}}
+                    """;
 /*    String systemPrompt = "Answer in English.\n" +
             "1.cs: Provide three to five keywords, each consisting of 1-2 words, that describe the computer science principles or concepts applied in this code, excluding specific languages or frameworks.\n" +
             "2.frameLang: Provide the framework used in this code.\n" +
@@ -72,25 +72,6 @@ public class GptPatchService {
 
 
 
-    public WordEntity getClosestWord(String inputWord) {
-
-        inputWord = inputWord.toLowerCase();
-        char firstChar = inputWord.charAt(0);
-        List<WordEntity> candidateWords = wordRepository.findByFirstChar(firstChar);
-
-        WordEntity closestWord = null;
-        int smallestDistance = Integer.MAX_VALUE;
-
-        for (WordEntity wordEntity : candidateWords) {
-            int currentDistance = levenshteinDistance(inputWord, wordEntity.getKeyword().toLowerCase());
-            if (currentDistance < smallestDistance) {
-                smallestDistance = currentDistance;
-                closestWord = wordEntity;
-            }
-        }
-
-        return closestWord;
-    }
 
 
     @Transactional(readOnly = true)

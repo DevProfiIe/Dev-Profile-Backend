@@ -5,6 +5,7 @@ package com.devprofile.DevProfile.service.search;
 import com.devprofile.DevProfile.entity.WordEntity;
 import com.devprofile.DevProfile.repository.WordRepository;
 import org.apache.jena.query.*;
+import org.apache.jena.rdf.model.RDFNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,26 @@ public class SparqlService {
         word.setQueryWord(title.replace(" ", "_")); // 띄어쓰기를 "_"로 변경
 
         return word;
+    }
+
+    public String findRedirect(WordEntity word){
+        System.out.println("word = " + word.getKeyword());
+        String queryStr =
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                        "PREFIX dbo: <http://dbpedia.org/ontology/>\n" +
+                        "\n" +
+                        "SELECT ?subject ?label \n" +
+                        "WHERE {\n" +
+                        "  BIND(<http://dbpedia.org/resource/"+word.getQueryWord()+"> AS ?subject)\n" +
+                        "  OPTIONAL { ?subject dbo:wikiPageRedirects ?redirect .\n" +
+                        "             ?redirect rdfs:label ?label . \n" +
+                        "             FILTER (lang(?label) = \"en\") }\n" +
+                        "  OPTIONAL { ?subject rdfs:label ?label .\n" +
+                        "             FILTER (lang(?label) = \"en\") }\n" +
+                        "}";
+        String result = executeSparqlQuery(queryStr).get(0).getKeyword();
+        System.out.println("result = " + result);
+        return result;
     }
 
     public Queue<String> makeStartData(){
@@ -87,13 +108,17 @@ public class SparqlService {
             ResultSet results = qe.execSelect();
             while (results.hasNext()) {
                 QuerySolution qs = results.next();
-                WordEntity wordEntity = cleanTitle(qs.get("?label").toString());
-                labels.add(wordEntity);
+                RDFNode labelNode = qs.get("?label");
+                if (labelNode != null) {
+                    WordEntity wordEntity = cleanTitle(labelNode.toString());
+                    labels.add(wordEntity);
+                }
             }
         }
 
         return labels;
     }
+
 
     public void sparqlEntity(){
         Queue<String> computerKeywordDeque = makeStartData();
