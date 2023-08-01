@@ -3,32 +3,35 @@ package com.devprofile.DevProfile.service;
 import com.devprofile.DevProfile.dto.response.analyze.CommitKeywordsDTO;
 import com.devprofile.DevProfile.dto.response.analyze.RepositoryEntityDTO;
 import com.devprofile.DevProfile.entity.CommitEntity;
+import com.devprofile.DevProfile.entity.LanguageDuration;
 import com.devprofile.DevProfile.entity.RepoFrameworkEntity;
 import com.devprofile.DevProfile.entity.RepositoryEntity;
 import com.devprofile.DevProfile.repository.CommitKeywordsRepository;
 import com.devprofile.DevProfile.repository.CommitRepository;
+import com.devprofile.DevProfile.repository.GitRepository;
 import com.devprofile.DevProfile.repository.RepoFrameworkRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
 public class RepositoryService {
     private final RepoFrameworkRepository repoFrameworkRepository;
+    private final GitRepository gitRepository;
     private final CommitRepository commitRepository;
     private final CommitKeywordsRepository commitKeywordsRepository;
     private final FrameworkService frameworkService;
 
-    public RepositoryService(RepoFrameworkRepository repoFrameworkRepository, CommitRepository commitRepository, CommitKeywordsRepository commitKeywordsRepository, FrameworkService frameworkService) {
+
+    public RepositoryService(RepoFrameworkRepository repoFrameworkRepository, CommitRepository commitRepository, CommitKeywordsRepository commitKeywordsRepository, FrameworkService frameworkService,GitRepository gitRepository) {
         this.repoFrameworkRepository = repoFrameworkRepository;
         this.commitRepository = commitRepository;
         this.commitKeywordsRepository = commitKeywordsRepository;
         this.frameworkService = frameworkService;
+        this.gitRepository = gitRepository;
     }
 
     public List<RepositoryEntityDTO> createRepositoryEntityDTOs(List<RepositoryEntity> repositoryEntities, List<CommitEntity> commitEntities, Map<String, CommitKeywordsDTO> oidAndKeywordsMap) {
@@ -37,9 +40,6 @@ public class RepositoryService {
         if (commitEntities == null || repositoryEntities == null || oidAndKeywordsMap == null) {
             return extendedEntities;
         }
-
-        Map<String, CommitEntity> oidAndCommitMap = commitEntities.stream()
-                .collect(Collectors.toMap(CommitEntity::getCommitOid, Function.identity()));
 
         for (RepositoryEntity repositoryEntity : repositoryEntities) {
             RepositoryEntityDTO dto = new RepositoryEntityDTO();
@@ -53,16 +53,11 @@ public class RepositoryService {
             dto.setTotalContributors(repositoryEntity.getTotalContributors());
             dto.setLanguageDurations(repositoryEntity.getLanguageDurations());
             dto.setRepoDesc(repositoryEntity.getRepoDesc());
+            List<String> repoLanguages = repositoryEntity.getLanguageDurations().stream()
+                    .map(LanguageDuration::getLanguage)
+                    .collect(Collectors.toList());
 
-            for (Map.Entry<String, CommitKeywordsDTO> entry : oidAndKeywordsMap.entrySet()) {
-                CommitEntity commitEntity = oidAndCommitMap.get(entry.getKey());
-
-                if (commitEntity != null && commitEntity.getRepoName().equals(repositoryEntity.getRepoName())) {
-                    dto.setFeatured(entry.getValue().getFeatured() != null ? new ArrayList<>(entry.getValue().getFeatured()) : new ArrayList<>());
-                    dto.setLangFramework(entry.getValue().getLangFramework() != null ? new ArrayList<>(entry.getValue().getLangFramework()) : new ArrayList<>());
-                    break;
-                }
-            }
+            dto.setRepoLanguages(repoLanguages);
 
             List<RepoFrameworkEntity> repoFrameworks = repoFrameworkRepository.findAllByRepoName(repositoryEntity.getRepoName());
             List<String> frameworkNames = repoFrameworks.stream().map(RepoFrameworkEntity::getFramework).collect(Collectors.toList());
@@ -88,10 +83,21 @@ public class RepositoryService {
                 if (langFrameworks != null) {
                     for (String langFramework : langFrameworks) {
                         if (existingFrameworks.contains(langFramework)) {
-                            RepoFrameworkEntity repoFrameworkEntity = new RepoFrameworkEntity();
-                            repoFrameworkEntity.setRepoName(commitEntity.getRepoName());
-                            repoFrameworkEntity.setFramework(langFramework);
-                            repoFrameworkRepository.save(repoFrameworkEntity);
+                            if (!repoFrameworkRepository.existsByRepoNameAndFramework(commitEntity.getRepoName(), langFramework)) {
+                                RepoFrameworkEntity repoFrameworkEntity = new RepoFrameworkEntity();
+                                repoFrameworkEntity.setRepoName(commitEntity.getRepoName());
+                                repoFrameworkEntity.setFramework(langFramework);
+
+                                Optional<RepositoryEntity> optionalRepositoryEntity = gitRepository.findByRepoName(commitEntity.getRepoName());
+
+                                if (optionalRepositoryEntity.isPresent()) {
+                                    RepositoryEntity repositoryEntity = optionalRepositoryEntity.get();
+                                    Long duration = ChronoUnit.DAYS.between(repositoryEntity.getStartDate(), repositoryEntity.getEndDate());
+                                    repoFrameworkEntity.setRepoDuration(duration);
+                                }
+
+                                repoFrameworkRepository.save(repoFrameworkEntity);
+                            }
                         }
                     }
                 }

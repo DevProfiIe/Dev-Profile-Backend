@@ -1,9 +1,7 @@
 package com.devprofile.DevProfile.entity;
 
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,7 +11,16 @@ import lombok.Setter;
 @Table(name = "repo_framework")
 public class RepoFrameworkEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column
     private String repoName;
     private String framework;
+    private Long repoDuration;
+
+    public void setRepoDuration(Long repoDuration) {
+        this.repoDuration = repoDuration;
+    }
 
 }

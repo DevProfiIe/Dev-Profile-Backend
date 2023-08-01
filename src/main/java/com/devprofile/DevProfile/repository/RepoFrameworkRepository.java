@@ -9,5 +9,7 @@ import java.util.List;
 @Repository
 public interface RepoFrameworkRepository extends JpaRepository<RepoFrameworkEntity, Long> {
     List<RepoFrameworkEntity> findAllByRepoName(String repoName);
+
+    boolean existsByRepoNameAndFramework(String repoName, String langFramework);
 }
 
