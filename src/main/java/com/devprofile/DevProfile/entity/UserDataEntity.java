@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.List;
 import java.util.Set;
 
 
@@ -28,9 +27,6 @@ public class UserDataEntity {
 
     private Set<String> databaseSet;
 
-    private Integer mobile;
-
-    private Set<String> mobileSet;
 
     private Integer webBackend;
 
