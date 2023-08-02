@@ -4,6 +4,8 @@ import com.devprofile.DevProfile.dto.response.ApiResponse;
 import com.devprofile.DevProfile.dto.response.analyze.UserPageDTO;
 import com.devprofile.DevProfile.entity.*;
 import com.devprofile.DevProfile.repository.*;
+import com.devprofile.DevProfile.service.search.SearchService;
+import com.devprofile.DevProfile.service.search.SparqlService;
 import com.devprofile.DevProfile.service.userData.UserDataService;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -25,15 +27,19 @@ public class BoardController {
     private final UserRepository userRepository;
     private final GitRepository gitRepository;
     private final UserDataService userDataService;
+    private final SearchService searchService;
     private final RepoFrameworkRepository repoFrameworkRepository;
     private final FrameworkRepository frameworkRepository;
+    private final SparqlService sparqlService;
 
     @GetMapping("/board")
     public ResponseEntity<ApiResponse> userBoardData(
             @RequestParam(required = false) List<String> languageFilters,
             @RequestParam(required = false) List<String> frameworkFilters,
             @RequestParam(required = false) Long languageDurationFilter,
-            @RequestParam(required = false) Long frameworkDurationFilter) {
+            @RequestParam(required = false) Long frameworkDurationFilter,
+            @RequestParam(required = false) List<String> keywordsFilter
+    ) {
 
         ApiResponse<List<UserPageDTO>> apiResponse = new ApiResponse<>();
         ModelMapper modelMapper = new ModelMapper();
@@ -104,4 +110,14 @@ public class BoardController {
         return ResponseEntity.ok(apiResponse);
     }
 
+    @GetMapping("/autoKeyword")
+    public ResponseEntity<ApiResponse<List<String>>> makeKeyword(@RequestParam String query){
+        List<String> keywords = searchService.getCloseWords(query);
+        ApiResponse<List<String>> apiResponse = new ApiResponse<>();
+        apiResponse.setMessage(null);
+        apiResponse.setToken(null);
+        apiResponse.setResult(true);
+        apiResponse.setData(keywords);
+        return ResponseEntity.ok(apiResponse);
+    }
 }
