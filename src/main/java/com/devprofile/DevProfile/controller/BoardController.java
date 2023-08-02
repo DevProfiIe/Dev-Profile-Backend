@@ -33,7 +33,9 @@ public class BoardController {
             @RequestParam(required = false) List<String> languageFilters,
             @RequestParam(required = false) List<String> frameworkFilters,
             @RequestParam(required = false) Long languageDurationFilter,
-            @RequestParam(required = false) Long frameworkDurationFilter) {
+            @RequestParam(required = false) Long frameworkDurationFilter,
+            @RequestParam(required = false) String field,
+            @RequestParam(required = false) Integer fieldScore){
 
         ApiResponse<List<UserPageDTO>> apiResponse = new ApiResponse<>();
         ModelMapper modelMapper = new ModelMapper();
@@ -46,8 +48,35 @@ public class BoardController {
             boolean isFrameworkMatched = frameworkFilters == null || frameworkFilters.isEmpty();
 
             UserPageDTO userPageDTO = new UserPageDTO();
+
             UserDataEntity userDataEntity = userDataRepository.findByUserName(userEntity.getLogin());
             if (userDataEntity == null) continue;
+
+
+            if (field != null && fieldScore != null) {
+                Integer userFieldScore = null;
+                switch (field) {
+                    case "ai":
+                        userFieldScore = userDataEntity.getAi();
+                        break;
+                    case "database":
+                        userFieldScore = userDataEntity.getDatabase();
+                        break;
+                    case "webBackend":
+                        userFieldScore = userDataEntity.getWebBackend();
+                        break;
+                    case "webFrontend":
+                        userFieldScore = userDataEntity.getWebFrontend();
+                        break;
+                    case "game":
+                        userFieldScore = userDataEntity.getGame();
+                        break;
+                    case "systemProgramming":
+                        userFieldScore = userDataEntity.getSystemProgramming();
+                        break;
+                }
+                if (userFieldScore == null || userFieldScore < fieldScore) continue;
+            }
 
             List<RepositoryEntity> repositoryEntities = gitRepository.findByUserId(userEntity.getId());
             Map<String, Long> langUsage = new HashMap<>();
