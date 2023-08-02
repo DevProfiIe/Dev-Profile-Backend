@@ -17,6 +17,7 @@ public class RepoFrameworkEntity {
     @Column
     private String repoName;
     private String framework;
+    private String login;
     private Long repoDuration;
     private Long repoId;
 

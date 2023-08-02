@@ -45,8 +45,9 @@ public class LanguageService {
                 Integer totalDays = Period.between(startDate, endDate).getDays();
 
                 response.fieldNames().forEachRemaining(language -> {
-                    languageDurations.add(new LanguageDuration(language, totalDays));
+                    languageDurations.add(new LanguageDuration(language, totalDays, userName));
                 });
+
 
                 repoEntity.setLanguageDurations(languageDurations);
 
@@ -55,7 +56,7 @@ public class LanguageService {
         });
     }
 
-    public Mono<Void> orgLanguages(Map<String, Map<String, List<String>>> orgRepoCommits, String token) {
+    public Mono<Void> orgLanguages(Map<String, Map<String, List<String>>> orgRepoCommits, String token,String userName) {
         return Mono.fromRunnable(() -> {
             orgRepoCommits.forEach((orgName, repoCommits) -> {
                 repoCommits.keySet().forEach(repoName -> {
@@ -76,7 +77,7 @@ public class LanguageService {
                         Integer totalDays = Period.between(startDate, endDate).getDays();
 
                         response.fieldNames().forEachRemaining(language -> {
-                            languageDurations.add(new LanguageDuration(language, totalDays));
+                            languageDurations.add(new LanguageDuration(language, totalDays, userName));
                         });
 
                         repoEntity.setLanguageDurations(languageDurations);

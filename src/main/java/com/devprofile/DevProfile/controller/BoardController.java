@@ -2,23 +2,19 @@ package com.devprofile.DevProfile.controller;
 
 import com.devprofile.DevProfile.dto.response.ApiResponse;
 import com.devprofile.DevProfile.dto.response.analyze.UserPageDTO;
-import com.devprofile.DevProfile.entity.*;
+import com.devprofile.DevProfile.entity.FilterEntity;
+import com.devprofile.DevProfile.entity.UserDataEntity;
+import com.devprofile.DevProfile.entity.UserEntity;
+import com.devprofile.DevProfile.entity.UserScore;
 import com.devprofile.DevProfile.repository.*;
-import com.devprofile.DevProfile.service.FilterService;
 import com.devprofile.DevProfile.service.search.SearchService;
-import com.devprofile.DevProfile.service.search.SparqlService;
-import com.devprofile.DevProfile.service.userData.UserDataService;
 import lombok.AllArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Controller
 @AllArgsConstructor
@@ -27,115 +23,118 @@ public class BoardController {
     private final UserDataRepository userDataRepository;
     private final UserRepository userRepository;
     private final GitRepository gitRepository;
-    private final UserDataService userDataService;
+    private final FilterRepository filterRepository;
     private final SearchService searchService;
-    private final RepoFrameworkRepository repoFrameworkRepository;
-    private final FrameworkRepository frameworkRepository;
-    private final FilterService filterService;
+    private final UserScoreRepository userScoreRepository;
 
     @GetMapping("/board")
     public ResponseEntity<ApiResponse> userBoardData(
-            @RequestParam(required = false) List<String> languageFilters,
-            @RequestParam(required = false) List<String> frameworkFilters,
-            @RequestParam(required = false) Long languageDurationFilter,
-            @RequestParam(required = false) Long frameworkDurationFilter,
+            @RequestParam(required = false) List<String> lang,
+            @RequestParam(required = false) List<String> frame,
+            @RequestParam(required = false) Long langDuration,
+            @RequestParam(required = false) Long frameDuration,
             @RequestParam(required = false) List<String> keywordsFilter,
             @RequestParam(required = false) String field,
-            @RequestParam(required = false) Integer fieldScore){
-
+            @RequestParam(required = false) Integer fieldScore,
+            @RequestParam String userName) {
 
         ApiResponse<List<UserPageDTO>> apiResponse = new ApiResponse<>();
-        ModelMapper modelMapper = new ModelMapper();
-
         List<UserPageDTO> userList = new ArrayList<>();
-        List<UserEntity> UserEntityList = userRepository.findAll();
+        UserEntity userEntity = userRepository.findByLogin(userName);
 
-        for (UserEntity userEntity : UserEntityList) {
-            boolean isLanguageMatched = languageFilters == null || languageFilters.isEmpty();
-            boolean isFrameworkMatched = frameworkFilters == null || frameworkFilters.isEmpty();
-            UserPageDTO userPageDTO = new UserPageDTO();
-            UserDataEntity userDataEntity = userDataRepository.findByUserName(userEntity.getLogin());
-            if (userDataEntity == null) continue;
-            if (field != null && fieldScore != null) {
-                Integer userFieldScore = null;
-                switch (field) {
-                    case "ai":
-                        userFieldScore = userDataEntity.getAi();
-                        break;
-                    case "database":
-                        userFieldScore = userDataEntity.getDatabase();
-                        break;
-                    case "webBackend":
-                        userFieldScore = userDataEntity.getWebBackend();
-                        break;
-                    case "webFrontend":
-                        userFieldScore = userDataEntity.getWebFrontend();
-                        break;
-                    case "game":
-                        userFieldScore = userDataEntity.getGame();
-                        break;
-                    case "systemProgramming":
-                        userFieldScore = userDataEntity.getSystemProgramming();
-                        break;
-                }
-                if (userFieldScore == null || userFieldScore < fieldScore) continue;
-                if (keywordsFilter != null && !userDataEntity.getKeywordSet().containsAll(keywordsFilter)) continue;
-            }
+        if (userEntity != null) {
+            List<UserScore> userScores = userScoreRepository.findByLogin(userEntity.getLogin());
 
-            List<RepositoryEntity> repositoryEntities = gitRepository.findByUserId(userEntity.getId());
-            Map<String, Long> langUsage = new HashMap<>();
-            Map<String, Long> frameUsage = new HashMap<>();
+            if (userScores != null && !userScores.isEmpty()) {
+                Optional<UserScore> userScore = userScores.stream()
+                        .filter(score -> score.getField().equals(field))
+                        .findFirst();
 
-            for (RepositoryEntity repositoryEntity : repositoryEntities) {
-                List<LanguageDuration> languageDurations = repositoryEntity.getLanguageDurations();
-                List<RepoFrameworkEntity> frameworkDurations = repoFrameworkRepository.findAllByRepoName(repositoryEntity.getRepoName());
-                for (LanguageDuration languageDuration : languageDurations) {
-                    if (languageFilters != null && languageFilters.contains(languageDuration.getLanguage())
-                            && (languageDurationFilter == null || languageDuration.getDuration().longValue() >= languageDurationFilter)) {
-                        isLanguageMatched = true;
+                UserPageDTO userPageDTO = new UserPageDTO();
+                UserDataEntity userDataEntity = userDataRepository.findByUserName(userEntity.getLogin());
+
+                int userFieldScore = userScore.map(UserScore::getScore).orElse(0);
+
+                boolean isLanguageMatched = lang == null || lang.isEmpty();
+                boolean isFrameworkMatched = frame == null || frame.isEmpty();
+
+                if (fieldScore != null) {
+                    if (userFieldScore < fieldScore || (keywordsFilter != null && !userDataEntity.getKeywordSet().containsAll(keywordsFilter))) {
+                        return ResponseEntity.ok(apiResponse);
                     }
-                    String lang = languageDuration.getLanguage();
-                    Long usage = languageDuration.getDuration().longValue();
-                    Long currentValue = langUsage.getOrDefault(lang, 0L);
-                    langUsage.put(lang, currentValue + usage);
                 }
-                for (RepoFrameworkEntity repoFramework : frameworkDurations) {
-                    if (frameworkFilters != null && frameworkFilters.contains(repoFramework.getFramework())
-                            && (frameworkDurationFilter == null || repoFramework.getRepoDuration() >= frameworkDurationFilter)) { // 여기를 수정
-                        isFrameworkMatched = true;
+
+                Map<String, Long> langUsage = new HashMap<>();
+                Map<String, Long> frameUsage = new HashMap<>();
+
+                FilterEntity filterEntity = filterRepository.findByUsername(userEntity.getLogin());
+                if (filterEntity != null) {
+                    Map<String, Integer> languages = filterEntity.getLanguages();
+                    Map<String, Integer> frameworks = filterEntity.getFrameworks();
+
+                    for (Map.Entry<String, Integer> languageEntry : languages.entrySet()) {
+                        String langKey = languageEntry.getKey();
+                        Integer langValue = languageEntry.getValue() / 30;
+
+                        if (lang != null && lang.contains(langKey) && (langValue >= (langDuration != null ? langDuration : 0))) {
+                            isLanguageMatched = true;
+                        }
+
+                        Long currentValue = langUsage.getOrDefault(langKey, 0L);
+                        langUsage.put(langKey, currentValue + langValue);
                     }
-                    String framework = repoFramework.getFramework();
-                    String frameworkUrl = frameworkRepository.findByFrameworkName(framework).getFrameworkUrl();
-                    Long usage = repoFramework.getRepoDuration();
-                    Long currentValue = frameUsage.getOrDefault(frameworkUrl, 0L);
-                    frameUsage.put(frameworkUrl, currentValue + usage);
+
+                    for (Map.Entry<String, Integer> frameworkEntry : frameworks.entrySet()) {
+                        String frameKey = frameworkEntry.getKey();
+                        Integer frameValue = frameworkEntry.getValue() / 30;
+
+                        if (frame != null && frame.contains(frameKey) && (frameValue >= (frameDuration != null ? frameDuration : 0))) {
+                            isFrameworkMatched = true;
+                        }
+
+                        Long currentValue = frameUsage.getOrDefault(frameKey, 0L);
+                        frameUsage.put(frameKey, currentValue + frameValue);
+                    }
                 }
-            }
-            List<String> language = new ArrayList<>();
-            List<String> framework = new ArrayList<>();
-            langUsage.entrySet().stream()
-                    .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                    .limit(3)
-                    .forEach(entry -> language.add(entry.getKey()));
-            frameUsage.entrySet().stream()
-                    .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                    .limit(3)
-                    .forEach(entry -> framework.add(entry.getKey()));
-            if (isLanguageMatched && isFrameworkMatched) {
-                userPageDTO.setLanguage(language);
-                userPageDTO.setFramework(framework);
-                userPageDTO.setUserName(userEntity.getName());
-                userPageDTO.setField(userDataService.findMaxFieldInList(userDataEntity.getUserName()));
-                userPageDTO.setAvatarUrl(userEntity.getAvatar_url());
-                userList.add(userPageDTO);
+
+                UserScore maxScoreUserScore = userScores.stream()
+                        .max(Comparator.comparing(UserScore::getScore))
+                        .orElse(null);
+
+                if (maxScoreUserScore == null) {
+                    return ResponseEntity.ok(apiResponse);
+                }
+
+                String maxField = maxScoreUserScore.getField();
+
+                List<String> language = new ArrayList<>();
+                List<String> framework = new ArrayList<>();
+                langUsage.entrySet().stream()
+                        .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                        .limit(3)
+                        .forEach(entry -> language.add(entry.getKey()));
+                frameUsage.entrySet().stream()
+                        .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                        .limit(3)
+                        .forEach(entry -> framework.add(entry.getKey()));
+                if (isLanguageMatched && isFrameworkMatched) {
+                    userPageDTO.setLanguage(language);
+                    userPageDTO.setFramework(framework);
+                    userPageDTO.setUserName(userEntity.getName());
+                    userPageDTO.setField(maxField);
+                    userPageDTO.setAvatarUrl(userEntity.getAvatar_url());
+                    userList.add(userPageDTO);
+                }
             }
         }
+
         apiResponse.setMessage(null);
         apiResponse.setToken(null);
         apiResponse.setResult(true);
         apiResponse.setData(userList);
         return ResponseEntity.ok(apiResponse);
     }
+
 
     @GetMapping("/autoKeyword")
     public ResponseEntity<ApiResponse<List<String>>> makeKeyword(@RequestParam String query){

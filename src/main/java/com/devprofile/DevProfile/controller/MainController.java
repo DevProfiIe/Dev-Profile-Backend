@@ -53,6 +53,7 @@ public class MainController {
     private final SparqlService sparqlService;
     private final CommitKeywordsRepository commitKeywordsRepository;
     private final FilterService filterService;
+    private final UserScoreRepository userScoreRepository;
 
 
     private UserDTO convertToDTO(UserEntity userEntity, UserDataEntity userDataEntity) {
@@ -86,7 +87,7 @@ public class MainController {
 
             Mono<Void> mono = Mono.when(userService.userOwnedRepositories(user), orgService.orgOwnedRepositories(user));
 
-            filterService.createAndSaveFilter(user.getName());
+            filterService.createAndSaveFilter(user.getLogin());
 
             return mono;
         } else {
@@ -163,7 +164,7 @@ public class MainController {
             calenderData.add(oneDay);
         }
 
-        repositoryService.saveFrameworksToNewTable(allCommitEntities, oidAndKeywordsMap);
+        repositoryService.saveFrameworksToNewTable(allCommitEntities, oidAndKeywordsMap,userName);
         List<RepositoryEntity> repositoryEntities = gitRepository.findWithCommitAndEndDate();
 
         List<RepositoryEntityDTO> extendedEntities = repositoryService.createRepositoryEntityDTOs(repositoryEntities, allCommitEntities, oidAndKeywordsMap);
@@ -282,7 +283,20 @@ public class MainController {
             double normalizedScoreCount = (rawScoreCount / maxScoreCount) * 50.0;
             double normalizedScoreRecencyLength = (rawScoreRecencyLength / maxScoreRecencyLength) * 50.0;
             String login = (String) resultMap.get("login");
+            String field = (String) resultMap.get("field");
             int finalScore = (int) Math.round(normalizedScoreCount + normalizedScoreRecencyLength);
+
+            UserScore existingUserScore = userScoreRepository.findByFieldAndLogin(field, login);
+            if (existingUserScore != null) {
+                existingUserScore.setScore(finalScore);
+                userScoreRepository.save(existingUserScore);
+            } else {
+                UserScore newUserScore = new UserScore();
+                newUserScore.setField(field);
+                newUserScore.setLogin(login);
+                newUserScore.setScore(finalScore);
+                userScoreRepository.save(newUserScore);
+            }
 
             Map<String, Object> userLogin = new HashMap<>();
             userLogin.put("login", login);

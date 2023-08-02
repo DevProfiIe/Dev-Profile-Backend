@@ -90,7 +90,7 @@ public class GraphOrgService {
                             .flatMap(orgRepoCommits -> {
                                 contributorsOrgService.countCommits(orgRepoCommits, userName, accessToken);
                                 patchOrgService.savePatchs(accessToken, orgRepoCommits);
-                                return languageService.orgLanguages(orgRepoCommits, accessToken)
+                                return languageService.orgLanguages(orgRepoCommits, accessToken,userName)
                                         .then(Mono.just(orgRepoCommits));
                             })
                             .then();

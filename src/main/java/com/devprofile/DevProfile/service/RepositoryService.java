@@ -6,8 +6,6 @@ import com.devprofile.DevProfile.entity.CommitEntity;
 import com.devprofile.DevProfile.entity.LanguageDuration;
 import com.devprofile.DevProfile.entity.RepoFrameworkEntity;
 import com.devprofile.DevProfile.entity.RepositoryEntity;
-import com.devprofile.DevProfile.repository.CommitKeywordsRepository;
-import com.devprofile.DevProfile.repository.CommitRepository;
 import com.devprofile.DevProfile.repository.GitRepository;
 import com.devprofile.DevProfile.repository.RepoFrameworkRepository;
 import lombok.AllArgsConstructor;
@@ -62,7 +60,7 @@ public class RepositoryService {
         return extendedEntities;
     }
 
-    public void saveFrameworksToNewTable(List<CommitEntity> commitEntities, Map<String, CommitKeywordsDTO> oidAndKeywordsMap) {
+    public void saveFrameworksToNewTable(List<CommitEntity> commitEntities, Map<String, CommitKeywordsDTO> oidAndKeywordsMap,String userName) {
         List<String> existingFrameworks = frameworkService.getAllFrameworkNames();
         Map<String, CommitEntity> oidAndCommitMap = commitEntities.stream()
                 .collect(Collectors.toMap(CommitEntity::getCommitOid, Function.identity()));
@@ -80,6 +78,7 @@ public class RepositoryService {
                                 RepoFrameworkEntity repoFrameworkEntity = new RepoFrameworkEntity();
                                 repoFrameworkEntity.setRepoName(commitEntity.getRepoName());
                                 repoFrameworkEntity.setFramework(langFramework);
+                                repoFrameworkEntity.setLogin(userName);
 
                                 Optional<RepositoryEntity> optionalRepositoryEntity = gitRepository.findByRepoName(commitEntity.getRepoName());
 

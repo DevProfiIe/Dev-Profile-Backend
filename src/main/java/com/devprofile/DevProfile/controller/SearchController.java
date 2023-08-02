@@ -56,8 +56,8 @@ public class SearchController {
     public ResponseEntity<ApiResponse> searchSimilarCommit(@RequestParam String userName, @RequestParam String query) {
         ApiResponse<List<SearchResultDTO>> apiResponse = new ApiResponse<>();
 
-        List<SearchResultDTO> searchResultList =new ArrayList<>();
-        for(Pair<String, String> oidKeyword : searchService.getTop10LevenshteinSimilarEntity(query)){
+        List<SearchResultDTO> searchResultList = new ArrayList<>();
+        for (Pair<String, String> oidKeyword : searchService.getTop10LevenshteinSimilarEntity(query)) {
             SearchResultDTO searchResultDTO = new SearchResultDTO();
             CommitEntity commitEntity = commitRepository.findByCommitOid(oidKeyword.getFirst()).orElseThrow();
             searchResultDTO.setCommitDate(commitEntity.getCommitDate());
@@ -88,7 +88,9 @@ public class SearchController {
                     return patchService.fetchCode(contentsUrl, Authorization)
                             .map(decodedCode -> {
                                 Map<String, Object> diff = patchService.analyzeDiff(patch.getPatch(), decodedCode);
-                                diff.put("filename", filename);
+                                String extractedFilename = extractFileName(filename);
+                                diff.put("filename", extractedFilename);
+                                diff.put("filetype", extractFileType(extractedFilename));
                                 synchronized (diffList) {
                                     diffList.add(diff);
                                 }
@@ -102,5 +104,23 @@ public class SearchController {
                     apiResponse.setData(combinedData);
                     return ResponseEntity.ok(apiResponse);
                 });
+    }
+
+    private String extractFileName(String filename) {
+        int lastSlashIndex = filename.lastIndexOf("/");
+        if (lastSlashIndex != -1 && lastSlashIndex < filename.length() - 1) {
+            return filename.substring(lastSlashIndex + 1);
+        } else {
+            return filename;
+        }
+    }
+
+    private String extractFileType(String filename) {
+        int lastDotIndex = filename.lastIndexOf(".");
+        if (lastDotIndex != -1 && lastDotIndex < filename.length() - 1) {
+            return filename.substring(lastDotIndex + 1);
+        } else {
+            return "";
+        }
     }
 }

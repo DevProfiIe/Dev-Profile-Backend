@@ -16,13 +16,16 @@ public class LanguageDuration {
 
     @Column(name = "language")
     private String language;
+    @Column
+    private String login;
 
     @Column(name = "duration")
     private Integer duration;
 
-    public LanguageDuration(String language, Integer duration) {
+    public LanguageDuration(String language, Integer duration, String login) {
         this.language = language;
         this.duration = duration;
+        this.login = login;
     }
 
     public LanguageDuration() {
