@@ -27,15 +27,12 @@ public class UserDTO {
 
     private Integer database;
 
-    private Integer mobile;
-
     private Integer webBackend;
 
     private Integer webFrontend;
+    private Integer game;
 
     private Integer systemProgramming;
-
-    private Integer game;
 
 
 }

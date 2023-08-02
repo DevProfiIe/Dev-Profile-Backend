@@ -12,4 +12,6 @@ public class DevProfileApplication {
 		SpringApplication.run(DevProfileApplication.class, args);
 	}
 
+
+
 }

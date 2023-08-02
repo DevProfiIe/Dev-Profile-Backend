@@ -67,7 +67,7 @@ public class MainController {
             userDTO.setDatabase(userDataEntity.getDatabase());
             userDTO.setWebBackend(userDataEntity.getWebBackend());
             userDTO.setSystemProgramming(userDataEntity.getSystemProgramming());
-            userDTO.setWebBackend(userDataEntity.getWebFrontend());
+            userDTO.setWebFrontend(userDataEntity.getWebFrontend());
             userDTO.setGame(userDataEntity.getGame());
         }
 
@@ -84,7 +84,6 @@ public class MainController {
         if (primaryId != null && !primaryId.isEmpty()) {
             UserEntity user = userRepository.findById(Integer.parseInt(primaryId)).orElseThrow();
 
-            System.out.println("accessToken = " + user.getGitHubToken());
             Mono<Void> mono = Mono.when(userService.userOwnedRepositories(user), orgService.orgOwnedRepositories(user));
 
             filterService.createAndSaveFilter(user.getName());
@@ -159,8 +158,8 @@ public class MainController {
             if(firstDate.isAfter(day)) firstDate = day;
             if(lastDate.isBefore(day)) lastDate = day;
             Map<String, Object> oneDay = new HashMap<>();
-            oneDay.put("x", day);
-            oneDay.put("y", calender.get(day));
+            oneDay.put("day", day);
+            oneDay.put("value", calender.get(day));
             calenderData.add(oneDay);
         }
 
@@ -204,7 +203,6 @@ public class MainController {
         ApiResponse<Object> apiResponse = new ApiResponse<>();
         Map<String, Object> combinedData = new HashMap<>();
 
-        // Get data from userBoardData
         ResponseEntity<ApiResponse> userBoardResponse;
         try {
             userBoardResponse = userBoardData();
@@ -218,7 +216,7 @@ public class MainController {
             return ResponseEntity.ok(apiResponse);
         }
 
-        // Get data from responseApiTest
+
         ResponseEntity<ApiResponse<Object>> responseTest = responseApiTest(userName);
         if (responseTest.getBody() != null && responseTest.getBody().isResult()) {
             combinedData.putAll((Map<? extends String, ?>) responseTest.getBody().getData());
@@ -285,10 +283,16 @@ public class MainController {
             double normalizedScoreRecencyLength = (rawScoreRecencyLength / maxScoreRecencyLength) * 50.0;
             String login = (String) resultMap.get("login");
             int finalScore = (int) Math.round(normalizedScoreCount + normalizedScoreRecencyLength);
-            resultMap.put(login, finalScore);
+
+            Map<String, Object> userLogin = new HashMap<>();
+            userLogin.put("login", login);
+            userLogin.put("score", finalScore);
+
+            resultMap.put("userlogin", userLogin);
             resultMap.remove("rawScoreCount");
             resultMap.remove("rawScoreRecencyLength");
             resultMap.remove("login");
+            resultMap.remove(login);
         }
 
         apiResponse.setMessage(null);

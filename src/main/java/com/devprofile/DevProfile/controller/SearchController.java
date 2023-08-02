@@ -84,9 +84,11 @@ public class SearchController {
         return patchService.getPatchesByCommitOid(commitOid)
                 .flatMap(patch -> {
                     String contentsUrl = patch.getContentsUrl();
+                    String filename = patch.getFileName();
                     return patchService.fetchCode(contentsUrl, Authorization)
                             .map(decodedCode -> {
                                 Map<String, Object> diff = patchService.analyzeDiff(patch.getPatch(), decodedCode);
+                                diff.put("filename", filename);
                                 synchronized (diffList) {
                                     diffList.add(diff);
                                 }

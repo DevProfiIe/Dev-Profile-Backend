@@ -1,13 +1,12 @@
 package com.devprofile.DevProfile.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
 
 @Entity
 @Getter
@@ -21,6 +20,7 @@ public class CommitEntity {
     private Integer userId;
     private String commitOid;
     private String commitMessage;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate commitDate;
     private String userName;
     private String repoNodeId;
@@ -29,9 +29,9 @@ public class CommitEntity {
 
 
     public void setCommitDate(String commitDateStr) {
-        DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
-        LocalDateTime dateTime = LocalDateTime.parse(commitDateStr, formatter);
-        this.commitDate = dateTime.toLocalDate();
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
+        LocalDate date = LocalDate.parse(commitDateStr, formatter);
+        this.commitDate = date;
     }
     public CommitEntity(Integer userId, String commitMessage, String commitDate, String userName, String commitOid) {
         this.userId = userId;

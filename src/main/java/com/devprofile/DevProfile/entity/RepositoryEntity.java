@@ -1,11 +1,11 @@
 package com.devprofile.DevProfile.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -22,12 +22,16 @@ public class RepositoryEntity {
     @Column
     private String repoName;
     private String repoNodeId;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate repoCreated;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate repoUpdated;
     private String repoDesc;
     private String repoUrl;
     private String orgName;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate startDate;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate endDate;
     private Integer userId;
     private Integer totalCommitCnt;
@@ -52,6 +56,7 @@ public class RepositoryEntity {
     public RepositoryEntity() {
 
     }
+
     public void setRepoCreated(String repoCreated) {
         this.repoCreated = convertToLocalDate(repoCreated);
     }
@@ -60,10 +65,10 @@ public class RepositoryEntity {
         this.repoUpdated = convertToLocalDate(repoUpdated);
     }
 
-    private LocalDate convertToLocalDate(String dateTime) {
-        DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
-        LocalDateTime localDateTime = LocalDateTime.parse(dateTime, formatter);
-        return localDateTime.toLocalDate();
+    private LocalDate convertToLocalDate(String dateStr) {
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
+        LocalDate date = LocalDate.parse(dateStr, formatter);
+        return date;
     }
 
 }
