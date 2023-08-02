@@ -159,8 +159,8 @@ public class MainController {
             if(firstDate.isAfter(day)) firstDate = day;
             if(lastDate.isBefore(day)) lastDate = day;
             Map<String, Object> oneDay = new HashMap<>();
-            oneDay.put("x", day);
-            oneDay.put("y", calender.get(day));
+            oneDay.put("date", day);
+            oneDay.put("value", calender.get(day));
             calenderData.add(oneDay);
         }
 
