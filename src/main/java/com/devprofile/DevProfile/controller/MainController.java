@@ -84,7 +84,6 @@ public class MainController {
         if (primaryId != null && !primaryId.isEmpty()) {
             UserEntity user = userRepository.findById(Integer.parseInt(primaryId)).orElseThrow();
 
-            System.out.println("accessToken = " + user.getGitHubToken());
             Mono<Void> mono = Mono.when(userService.userOwnedRepositories(user), orgService.orgOwnedRepositories(user));
 
             filterService.createAndSaveFilter(user.getName());
@@ -204,7 +203,6 @@ public class MainController {
         ApiResponse<Object> apiResponse = new ApiResponse<>();
         Map<String, Object> combinedData = new HashMap<>();
 
-        // Get data from userBoardData
         ResponseEntity<ApiResponse> userBoardResponse;
         try {
             userBoardResponse = userBoardData();
@@ -218,7 +216,7 @@ public class MainController {
             return ResponseEntity.ok(apiResponse);
         }
 
-        // Get data from responseApiTest
+
         ResponseEntity<ApiResponse<Object>> responseTest = responseApiTest(userName);
         if (responseTest.getBody() != null && responseTest.getBody().isResult()) {
             combinedData.putAll((Map<? extends String, ?>) responseTest.getBody().getData());
