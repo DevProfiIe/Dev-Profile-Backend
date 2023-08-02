@@ -67,7 +67,7 @@ public class MainController {
             userDTO.setDatabase(userDataEntity.getDatabase());
             userDTO.setWebBackend(userDataEntity.getWebBackend());
             userDTO.setSystemProgramming(userDataEntity.getSystemProgramming());
-            userDTO.setWebBackend(userDataEntity.getWebFrontend());
+            userDTO.setWebFrontend(userDataEntity.getWebFrontend());
             userDTO.setGame(userDataEntity.getGame());
         }
 
@@ -159,7 +159,7 @@ public class MainController {
             if(firstDate.isAfter(day)) firstDate = day;
             if(lastDate.isBefore(day)) lastDate = day;
             Map<String, Object> oneDay = new HashMap<>();
-            oneDay.put("date", day);
+            oneDay.put("day", day);
             oneDay.put("value", calender.get(day));
             calenderData.add(oneDay);
         }
@@ -285,10 +285,16 @@ public class MainController {
             double normalizedScoreRecencyLength = (rawScoreRecencyLength / maxScoreRecencyLength) * 50.0;
             String login = (String) resultMap.get("login");
             int finalScore = (int) Math.round(normalizedScoreCount + normalizedScoreRecencyLength);
-            resultMap.put(login, finalScore);
+
+            Map<String, Object> userLogin = new HashMap<>();
+            userLogin.put("login", login);
+            userLogin.put("score", finalScore);
+
+            resultMap.put("userlogin", userLogin);
             resultMap.remove("rawScoreCount");
             resultMap.remove("rawScoreRecencyLength");
             resultMap.remove("login");
+            resultMap.remove(login);
         }
 
         apiResponse.setMessage(null);
