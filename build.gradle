@@ -62,6 +62,26 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
+	//itext for pdf
+	implementation files('build/libs/svg-8.0.0.jar')
+	implementation files('build/libs/barcodes-8.0.0.jar')
+	implementation files('build/libs/bouncy-castle-adapter-8.0.0.jar')
+	implementation files('build/libs/bouncy-castle-connector-8.0.0.jar')
+	implementation files('build/libs/bouncy-castle-fips-adapter-8.0.0.jar')
+	implementation files('build/libs/commons-8.0.0.jar')
+	implementation files('build/libs/font-asian-8.0.0.jar')
+	implementation files('build/libs/forms-8.0.0.jar')
+	implementation files('build/libs/html2pdf-3.0.3.jar')
+	implementation files('build/libs/hyph-8.0.0.jar')
+	implementation files('build/libs/io-8.0.0.jar')
+	implementation files('build/libs/kernel-8.0.0.jar')
+	implementation files('build/libs/layout-8.0.0.jar')
+	implementation files('build/libs/pdfa-8.0.0.jar')
+	implementation files('build/libs/pdftest-8.0.0.jar')
+	implementation files('build/libs/sign-8.0.0.jar')
+	implementation files('build/libs/styled-xml-parser-8.0.0.jar')
+
+
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 	annotationProcessor 'org.projectlombok:lombok'

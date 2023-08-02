@@ -47,12 +47,6 @@ public class FilterService {
         return filterRepository.save(filterEntity);
     }
 
-    public List<UserDataEntity> keyWordFilter(List<String> keywords, List<UserDataEntity> userDataEntities){
-        List<UserDataEntity> filteredUserData = new ArrayList<>();
-        for(UserDataEntity userDataEntity : userDataEntities){
-            if(userDataEntity.getKeywordSet().containsAll(keywords))filteredUserData.add(userDataEntity);
-        }
-        return filteredUserData;
-    }
+
 }
 

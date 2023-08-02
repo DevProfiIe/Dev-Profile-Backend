@@ -4,6 +4,7 @@ import com.devprofile.DevProfile.dto.response.ApiResponse;
 import com.devprofile.DevProfile.dto.response.analyze.UserPageDTO;
 import com.devprofile.DevProfile.entity.*;
 import com.devprofile.DevProfile.repository.*;
+import com.devprofile.DevProfile.service.FilterService;
 import com.devprofile.DevProfile.service.search.SearchService;
 import com.devprofile.DevProfile.service.search.SparqlService;
 import com.devprofile.DevProfile.service.userData.UserDataService;
@@ -30,7 +31,7 @@ public class BoardController {
     private final SearchService searchService;
     private final RepoFrameworkRepository repoFrameworkRepository;
     private final FrameworkRepository frameworkRepository;
-    private final SparqlService sparqlService;
+    private final FilterService filterService;
 
     @GetMapping("/board")
     public ResponseEntity<ApiResponse> userBoardData(
@@ -38,8 +39,10 @@ public class BoardController {
             @RequestParam(required = false) List<String> frameworkFilters,
             @RequestParam(required = false) Long languageDurationFilter,
             @RequestParam(required = false) Long frameworkDurationFilter,
-            @RequestParam(required = false) List<String> keywordsFilter
-    ) {
+            @RequestParam(required = false) List<String> keywordsFilter,
+            @RequestParam(required = false) String field,
+            @RequestParam(required = false) Integer fieldScore){
+
 
         ApiResponse<List<UserPageDTO>> apiResponse = new ApiResponse<>();
         ModelMapper modelMapper = new ModelMapper();
@@ -50,10 +53,34 @@ public class BoardController {
         for (UserEntity userEntity : UserEntityList) {
             boolean isLanguageMatched = languageFilters == null || languageFilters.isEmpty();
             boolean isFrameworkMatched = frameworkFilters == null || frameworkFilters.isEmpty();
-
             UserPageDTO userPageDTO = new UserPageDTO();
             UserDataEntity userDataEntity = userDataRepository.findByUserName(userEntity.getLogin());
             if (userDataEntity == null) continue;
+            if (field != null && fieldScore != null) {
+                Integer userFieldScore = null;
+                switch (field) {
+                    case "ai":
+                        userFieldScore = userDataEntity.getAi();
+                        break;
+                    case "database":
+                        userFieldScore = userDataEntity.getDatabase();
+                        break;
+                    case "webBackend":
+                        userFieldScore = userDataEntity.getWebBackend();
+                        break;
+                    case "webFrontend":
+                        userFieldScore = userDataEntity.getWebFrontend();
+                        break;
+                    case "game":
+                        userFieldScore = userDataEntity.getGame();
+                        break;
+                    case "systemProgramming":
+                        userFieldScore = userDataEntity.getSystemProgramming();
+                        break;
+                }
+                if (userFieldScore == null || userFieldScore < fieldScore) continue;
+                if (keywordsFilter != null && !userDataEntity.getKeywordSet().containsAll(keywordsFilter)) continue;
+            }
 
             List<RepositoryEntity> repositoryEntities = gitRepository.findByUserId(userEntity.getId());
             Map<String, Long> langUsage = new HashMap<>();
