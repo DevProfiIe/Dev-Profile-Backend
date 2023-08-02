@@ -10,6 +10,7 @@ import com.devprofile.DevProfile.repository.CommitKeywordsRepository;
 import com.devprofile.DevProfile.repository.CommitRepository;
 import com.devprofile.DevProfile.repository.GitRepository;
 import com.devprofile.DevProfile.repository.RepoFrameworkRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.temporal.ChronoUnit;
@@ -18,21 +19,13 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class RepositoryService {
     private final RepoFrameworkRepository repoFrameworkRepository;
     private final GitRepository gitRepository;
-    private final CommitRepository commitRepository;
-    private final CommitKeywordsRepository commitKeywordsRepository;
     private final FrameworkService frameworkService;
 
 
-    public RepositoryService(RepoFrameworkRepository repoFrameworkRepository, CommitRepository commitRepository, CommitKeywordsRepository commitKeywordsRepository, FrameworkService frameworkService,GitRepository gitRepository) {
-        this.repoFrameworkRepository = repoFrameworkRepository;
-        this.commitRepository = commitRepository;
-        this.commitKeywordsRepository = commitKeywordsRepository;
-        this.frameworkService = frameworkService;
-        this.gitRepository = gitRepository;
-    }
 
     public List<RepositoryEntityDTO> createRepositoryEntityDTOs(List<RepositoryEntity> repositoryEntities, List<CommitEntity> commitEntities, Map<String, CommitKeywordsDTO> oidAndKeywordsMap) {
         List<RepositoryEntityDTO> extendedEntities = new ArrayList<>();

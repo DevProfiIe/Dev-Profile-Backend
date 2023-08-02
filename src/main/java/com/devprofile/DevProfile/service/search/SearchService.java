@@ -7,6 +7,7 @@ import com.devprofile.DevProfile.repository.CommitKeywordsRepository;
 import com.devprofile.DevProfile.repository.CommitRepository;
 import com.devprofile.DevProfile.search.JaccardSimilarity;
 import com.devprofile.DevProfile.search.LevenshteinDistance;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.util.Pair;
@@ -16,14 +17,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class SearchService {
 
-
-    @Autowired
-    private CommitRepository commitRepository;
-    @Autowired
-    private MongoTemplate mongoTemplate;
-    @Autowired
     private CommitKeywordsRepository commitKeywordsRepository;
 
     public List<String> getTop10JaccardSimilarEntity(String word) {
@@ -52,19 +48,9 @@ public class SearchService {
         for (CommitKeywordsEntity commit : commitKeywordsRepository.findAll()) {
             int minSimilarity = 100;
             String mostSimilarKeyword = "";
-            Map<String, String> commitKeyword = new HashMap<>();
 
             if (commit.getCs() != null) {
                 for (String keyword : commit.getCs()) {
-                    int similarity = LevenshteinDistance.levenshteinDistance(keyword,word);
-                    if(similarity < minSimilarity){
-                        mostSimilarKeyword = keyword;
-                        minSimilarity = similarity;
-                    }
-                }
-            }
-            if (commit.getLangFramework() != null) {
-                for (String keyword : commit.getLangFramework()) {
                     int similarity = LevenshteinDistance.levenshteinDistance(keyword,word);
                     if(similarity < minSimilarity){
                         mostSimilarKeyword = keyword;
@@ -81,4 +67,6 @@ public class SearchService {
 
         return sortedCommits.size() > 10 ? sortedCommits.subList(0, 10) : sortedCommits;
     }
+
+
 }

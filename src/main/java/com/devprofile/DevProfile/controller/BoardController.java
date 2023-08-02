@@ -78,4 +78,5 @@ public class BoardController {
         apiResponse.setData(userList);
         return ResponseEntity.ok(apiResponse);
     }
+
 }

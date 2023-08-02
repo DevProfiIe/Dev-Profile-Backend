@@ -53,7 +53,7 @@ public class SearchController {
     }
 
     @GetMapping("/search/similarity")
-    public ResponseEntity<ApiResponse> searchSimilarCommit(@RequestParam String query) {
+    public ResponseEntity<ApiResponse> searchSimilarCommit(@RequestParam String userName, @RequestParam String query) {
         ApiResponse<List<SearchResultDTO>> apiResponse = new ApiResponse<>();
 
         List<SearchResultDTO> searchResultList =new ArrayList<>();
