@@ -6,13 +6,10 @@ import com.devprofile.DevProfile.entity.WordEntity;
 import com.devprofile.DevProfile.repository.WordRepository;
 import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.RDFNode;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @Service

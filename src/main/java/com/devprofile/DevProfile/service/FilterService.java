@@ -3,28 +3,28 @@ package com.devprofile.DevProfile.service;
 import com.devprofile.DevProfile.entity.FilterEntity;
 import com.devprofile.DevProfile.entity.LanguageDuration;
 import com.devprofile.DevProfile.entity.RepoFrameworkEntity;
+import com.devprofile.DevProfile.entity.UserDataEntity;
 import com.devprofile.DevProfile.repository.FilterRepository;
 import com.devprofile.DevProfile.repository.LanguageDurationRepository;
 import com.devprofile.DevProfile.repository.RepoFrameworkRepository;
+import com.devprofile.DevProfile.repository.UserDataRepository;
+import lombok.AllArgsConstructor;
+import org.hibernate.usertype.LoggableUserType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class FilterService {
     private final FilterRepository filterRepository;
     private final RepoFrameworkRepository repoFrameworkRepository;
     private final LanguageDurationRepository languageDurationRepository;
-
-    @Autowired
-    public FilterService(FilterRepository filterRepository, RepoFrameworkRepository repoFrameworkRepository, LanguageDurationRepository languageDurationRepository) {
-        this.filterRepository = filterRepository;
-        this.repoFrameworkRepository = repoFrameworkRepository;
-        this.languageDurationRepository = languageDurationRepository;
-    }
+    private final UserDataRepository userDataRepository;
 
     public FilterEntity createAndSaveFilter(String username) {
         FilterEntity filterEntity = new FilterEntity();
@@ -46,5 +46,7 @@ public class FilterService {
 
         return filterRepository.save(filterEntity);
     }
+
+
 }
 

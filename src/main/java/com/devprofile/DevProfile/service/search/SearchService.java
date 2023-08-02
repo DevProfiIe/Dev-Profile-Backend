@@ -3,10 +3,15 @@ package com.devprofile.DevProfile.service.search;
 
 import com.devprofile.DevProfile.entity.CommitKeywordsEntity;
 
+import com.devprofile.DevProfile.entity.UserEntity;
+import com.devprofile.DevProfile.entity.WordEntity;
 import com.devprofile.DevProfile.repository.CommitKeywordsRepository;
 import com.devprofile.DevProfile.repository.CommitRepository;
+import com.devprofile.DevProfile.repository.WordRepository;
 import com.devprofile.DevProfile.search.JaccardSimilarity;
 import com.devprofile.DevProfile.search.LevenshteinDistance;
+import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.util.Pair;
@@ -15,16 +20,15 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.lang.Double.max;
+
 @Service
+@AllArgsConstructor
 public class SearchService {
 
-
-    @Autowired
-    private CommitRepository commitRepository;
-    @Autowired
-    private MongoTemplate mongoTemplate;
-    @Autowired
     private CommitKeywordsRepository commitKeywordsRepository;
+    private final WordRepository wordRepository;
+    private final SparqlService sparqlService;
 
     public List<String> getTop10JaccardSimilarEntity(String word) {
         Set<String> wordNGrams = JaccardSimilarity.getNGrams(word, 2);
@@ -52,19 +56,9 @@ public class SearchService {
         for (CommitKeywordsEntity commit : commitKeywordsRepository.findAll()) {
             int minSimilarity = 100;
             String mostSimilarKeyword = "";
-            Map<String, String> commitKeyword = new HashMap<>();
 
             if (commit.getCs() != null) {
                 for (String keyword : commit.getCs()) {
-                    int similarity = LevenshteinDistance.levenshteinDistance(keyword,word);
-                    if(similarity < minSimilarity){
-                        mostSimilarKeyword = keyword;
-                        minSimilarity = similarity;
-                    }
-                }
-            }
-            if (commit.getLangFramework() != null) {
-                for (String keyword : commit.getLangFramework()) {
                     int similarity = LevenshteinDistance.levenshteinDistance(keyword,word);
                     if(similarity < minSimilarity){
                         mostSimilarKeyword = keyword;
@@ -80,5 +74,30 @@ public class SearchService {
         sortedCommits.sort(Comparator.comparingInt(commitSimilarities::get));
 
         return sortedCommits.size() > 10 ? sortedCommits.subList(0, 10) : sortedCommits;
+    }
+
+
+    public List<String> getCloseWords(String inputWord) {
+        inputWord = inputWord.toLowerCase();
+        char firstChar = inputWord.charAt(0);
+        List<WordEntity> candidateWords = wordRepository.findByFirstChar(firstChar);
+        Map<String, Double> resultWordList = new HashMap<>();
+
+        for (WordEntity wordEntity : candidateWords) {
+            double minSimilarity = 0.80;
+            double currentDistance = StringUtils.getJaroWinklerDistance(inputWord, wordEntity.getKeyword().toLowerCase());
+            if (minSimilarity <= currentDistance) {
+                String redirectWord = sparqlService.findRedirect(wordEntity);
+                resultWordList.put(redirectWord, max(resultWordList.getOrDefault(redirectWord,0.8),currentDistance));
+            }
+        }
+
+        List<String> sortedWords = resultWordList.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .limit(5)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+
+        return sortedWords;
     }
 }

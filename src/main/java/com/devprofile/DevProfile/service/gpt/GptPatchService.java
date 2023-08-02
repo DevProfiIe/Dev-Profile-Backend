@@ -3,12 +3,10 @@ package com.devprofile.DevProfile.service.gpt;
 
 import com.devprofile.DevProfile.entity.*;
 import com.devprofile.DevProfile.repository.*;
-import com.devprofile.DevProfile.search.LevenshteinDistance;
 import com.devprofile.DevProfile.service.commit.CommitKeywordsService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -17,14 +15,11 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
-
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -93,7 +88,6 @@ public class GptPatchService {
             for(String field : fields) update.inc(field);
             mongoTemplate.updateFirst(query, update, UserDataEntity.class);
         }
-
     }
 
     @Transactional

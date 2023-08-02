@@ -4,6 +4,9 @@ import com.devprofile.DevProfile.dto.response.ApiResponse;
 import com.devprofile.DevProfile.dto.response.analyze.UserPageDTO;
 import com.devprofile.DevProfile.entity.*;
 import com.devprofile.DevProfile.repository.*;
+import com.devprofile.DevProfile.service.FilterService;
+import com.devprofile.DevProfile.service.search.SearchService;
+import com.devprofile.DevProfile.service.search.SparqlService;
 import com.devprofile.DevProfile.service.userData.UserDataService;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -25,8 +28,10 @@ public class BoardController {
     private final UserRepository userRepository;
     private final GitRepository gitRepository;
     private final UserDataService userDataService;
+    private final SearchService searchService;
     private final RepoFrameworkRepository repoFrameworkRepository;
     private final FrameworkRepository frameworkRepository;
+    private final FilterService filterService;
 
     @GetMapping("/board")
     public ResponseEntity<ApiResponse> userBoardData(
@@ -34,8 +39,10 @@ public class BoardController {
             @RequestParam(required = false) List<String> frameworkFilters,
             @RequestParam(required = false) Long languageDurationFilter,
             @RequestParam(required = false) Long frameworkDurationFilter,
+            @RequestParam(required = false) List<String> keywordsFilter,
             @RequestParam(required = false) String field,
             @RequestParam(required = false) Integer fieldScore){
+
 
         ApiResponse<List<UserPageDTO>> apiResponse = new ApiResponse<>();
         ModelMapper modelMapper = new ModelMapper();
@@ -46,13 +53,9 @@ public class BoardController {
         for (UserEntity userEntity : UserEntityList) {
             boolean isLanguageMatched = languageFilters == null || languageFilters.isEmpty();
             boolean isFrameworkMatched = frameworkFilters == null || frameworkFilters.isEmpty();
-
             UserPageDTO userPageDTO = new UserPageDTO();
-
             UserDataEntity userDataEntity = userDataRepository.findByUserName(userEntity.getLogin());
             if (userDataEntity == null) continue;
-
-
             if (field != null && fieldScore != null) {
                 Integer userFieldScore = null;
                 switch (field) {
@@ -76,6 +79,7 @@ public class BoardController {
                         break;
                 }
                 if (userFieldScore == null || userFieldScore < fieldScore) continue;
+                if (keywordsFilter != null && !userDataEntity.getKeywordSet().containsAll(keywordsFilter)) continue;
             }
 
             List<RepositoryEntity> repositoryEntities = gitRepository.findByUserId(userEntity.getId());
@@ -130,6 +134,17 @@ public class BoardController {
         apiResponse.setToken(null);
         apiResponse.setResult(true);
         apiResponse.setData(userList);
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @GetMapping("/autoKeyword")
+    public ResponseEntity<ApiResponse<List<String>>> makeKeyword(@RequestParam String query){
+        List<String> keywords = searchService.getCloseWords(query);
+        ApiResponse<List<String>> apiResponse = new ApiResponse<>();
+        apiResponse.setMessage(null);
+        apiResponse.setToken(null);
+        apiResponse.setResult(true);
+        apiResponse.setData(keywords);
         return ResponseEntity.ok(apiResponse);
     }
 }

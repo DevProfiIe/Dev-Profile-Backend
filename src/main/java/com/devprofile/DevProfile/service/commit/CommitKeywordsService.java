@@ -81,11 +81,9 @@ public class CommitKeywordsService {
         if (str == null || str.isEmpty()) {
             return str;
         }
-
         if (str.charAt(0) == '\"') {
             str = str.substring(1);
         }
-
         if (str.charAt(str.length() - 1) == '\"') {
             str = str.substring(0, str.length() - 1);
         }
@@ -124,7 +122,6 @@ public class CommitKeywordsService {
         contents = contents.replace("\\\"", "\"");
         contents = contents.replace("\\n", "\n");
 
-        System.out.println("contents = " + contents);
         Update updateUser = new Update().set("userName", userName);
         ObjectMapper mapper = new ObjectMapper();
 
@@ -153,7 +150,6 @@ public class CommitKeywordsService {
                 WordEntity closestWord = getClosestWord(cs.asText());
                 if(closestWord == null) continue;
                 String keyword = sparqlService.findRedirect(closestWord);
-                System.out.println("keyword = " + keyword);
                 update.addToSet("cs", keyword);
                 updateUser.addToSet("keywordSet", keyword);
             }
