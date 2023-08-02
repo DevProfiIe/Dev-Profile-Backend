@@ -2,8 +2,10 @@ package com.devprofile.DevProfile.service;
 
 import com.itextpdf.html2pdf.ConverterProperties;
 import com.itextpdf.html2pdf.HtmlConverter;
+import com.itextpdf.html2pdf.resolver.font.DefaultFontProvider;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.font.FontProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -51,6 +53,9 @@ public class HtmlToPdfConverter {
         PdfDocument pdfDocument = new PdfDocument(writer);
 
         ConverterProperties properties = new ConverterProperties();
+        FontProvider fontProvider = new DefaultFontProvider(false, false, false);
+        fontProvider.addFont("/home/ubuntu/server/malgun.ttf");
+        properties.setFontProvider(fontProvider);
         HtmlConverter.convertToPdf(new FileInputStream(htmlFile), pdfDocument, properties);
         pdfDocument.close();
 
