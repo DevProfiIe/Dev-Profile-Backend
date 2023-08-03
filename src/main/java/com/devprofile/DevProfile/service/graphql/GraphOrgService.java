@@ -89,11 +89,10 @@ public class GraphOrgService {
                     return fetchOrganizationRepoCommits(organizations)
                             .flatMap(orgRepoCommits -> {
                                 contributorsOrgService.countCommits(orgRepoCommits, userName, accessToken);
-                                patchOrgService.savePatchs(accessToken, orgRepoCommits);
-                                return languageService.orgLanguages(orgRepoCommits, accessToken,userName)
-                                        .then(Mono.just(orgRepoCommits));
+                                return patchOrgService.savePatchs(accessToken, orgRepoCommits)
+                                        .then(languageService.orgLanguages(orgRepoCommits, accessToken, userName));
                             })
                             .then();
                 });
-}
+    }
 }

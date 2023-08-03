@@ -35,14 +35,14 @@ public class BoardController {
             @RequestParam(required = false) Long frameDuration,
             @RequestParam(required = false) List<String> keywordsFilter,
             @RequestParam(required = false) String field,
-            @RequestParam(required = false) Integer fieldScore,
-            @RequestParam String userName) {
+            @RequestParam(required = false) Integer fieldScore) {
 
         ApiResponse<List<UserPageDTO>> apiResponse = new ApiResponse<>();
         List<UserPageDTO> userList = new ArrayList<>();
-        UserEntity userEntity = userRepository.findByLogin(userName);
 
-        if (userEntity != null) {
+        List<UserEntity> allUsers = userRepository.findAll();
+
+        for (UserEntity userEntity : allUsers) {
             List<UserScore> userScores = userScoreRepository.findByLogin(userEntity.getLogin());
 
             if (userScores != null && !userScores.isEmpty()) {
@@ -52,6 +52,7 @@ public class BoardController {
 
                 UserPageDTO userPageDTO = new UserPageDTO();
                 UserDataEntity userDataEntity = userDataRepository.findByUserName(userEntity.getLogin());
+
 
                 int userFieldScore = userScore.map(UserScore::getScore).orElse(0);
 

@@ -1,7 +1,7 @@
 package com.devprofile.DevProfile.controller;
 
 import com.devprofile.DevProfile.component.JwtProvider;
-import com.devprofile.DevProfile.dto.response.*;
+import com.devprofile.DevProfile.dto.response.ApiResponse;
 import com.devprofile.DevProfile.dto.response.analyze.CommitKeywordsDTO;
 import com.devprofile.DevProfile.dto.response.analyze.RepositoryEntityDTO;
 import com.devprofile.DevProfile.dto.response.analyze.UserDTO;
@@ -21,14 +21,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 
@@ -85,11 +87,8 @@ public class MainController {
         if (primaryId != null && !primaryId.isEmpty()) {
             UserEntity user = userRepository.findById(Integer.parseInt(primaryId)).orElseThrow();
 
-            Mono<Void> mono = Mono.when(userService.userOwnedRepositories(user), orgService.orgOwnedRepositories(user));
-
-            filterService.createAndSaveFilter(user.getLogin());
-
-            return mono;
+            return Mono.when(userService.userOwnedRepositories(user), orgService.orgOwnedRepositories(user))
+                    .then(Mono.fromRunnable(() -> filterService.createAndSaveFilter(user.getLogin())));
         } else {
             throw new IllegalArgumentException("The primaryId is null or empty");
         }
@@ -142,26 +141,26 @@ public class MainController {
     public ResponseEntity<ApiResponse<Object>> responseApiTest(@RequestParam String userName) {
         List<CommitEntity> allCommitEntities = commitRepository.findAll();
         Map<String, CommitKeywordsDTO> oidAndKeywordsMap = new HashMap<>();
-        Map<LocalDate, Integer> calender = new HashMap<>();
+        Map<LocalDate, Integer> calendar = new HashMap<>(); // LocalDateTime 대신 LocalDate 사용
 
         for (CommitEntity commitEntity : allCommitEntities) {
             Optional<CommitKeywordsDTO> keywords = responseService.getFeatureFramework(commitEntity.getCommitOid());
             if (keywords.isPresent()) {
                 oidAndKeywordsMap.put(commitEntity.getCommitOid(), keywords.get());
             }
-            LocalDate day = commitEntity.getCommitDate();
-            calender.merge(day, 1, Integer::sum);
+            LocalDate day = commitEntity.getCommitDate(); // LocalDateTime 대신 LocalDate 사용
+            calendar.merge(day, 1, Integer::sum);
         }
-        List<Map<String, Object>> calenderData = new ArrayList<>();
+        List<Map<String, Object>> calendarData = new ArrayList<>();
         LocalDate firstDate = LocalDate.now();
         LocalDate lastDate = LocalDate.MIN;
-        for( LocalDate day : calender.keySet() ){
-            if(firstDate.isAfter(day)) firstDate = day;
-            if(lastDate.isBefore(day)) lastDate = day;
+        for (LocalDate day : calendar.keySet()) {
+            if (firstDate.isAfter(day)) firstDate = day;
+            if (lastDate.isBefore(day)) lastDate = day;
             Map<String, Object> oneDay = new HashMap<>();
             oneDay.put("day", day);
-            oneDay.put("value", calender.get(day));
-            calenderData.add(oneDay);
+            oneDay.put("value", calendar.get(day));
+            calendarData.add(oneDay);
         }
 
         repositoryService.saveFrameworksToNewTable(allCommitEntities, oidAndKeywordsMap,userName);
@@ -174,7 +173,7 @@ public class MainController {
         UserDTO userDTO = null;
         if (userEntity != null) {
             userDTO = convertToDTO(userEntity, userDataEntity);
-            userDTO.setCommitCalender(calenderData);
+            userDTO.setCommitCalender(calendarData);
             userDTO.setCommitStart(firstDate);
             userDTO.setCommitEnd(lastDate);
         }
@@ -189,7 +188,6 @@ public class MainController {
         Map<String, Object> combinedData = new HashMap<>();
         combinedData.put("userInfo", userDTO);
         combinedData.put("repositoryInfo", extendedEntities);
-
 
         ApiResponse<Object> apiResponse = new ApiResponse<>();
         apiResponse.setResult(userDTO != null && !extendedEntities.isEmpty());
@@ -339,7 +337,7 @@ public class MainController {
         List<CommitKeywordsEntity> commitKeywords = commitKeywordsRepository.findByFieldContaining(field);
 
         double recencyLengthScore = 0;
-        LocalDateTime oneYearAgo = LocalDateTime.now().minusYears(1);
+        LocalDate oneYearAgo = LocalDate.now().minusYears(1);
         double maxCommitLength = 1000.0;
 
         for (CommitKeywordsEntity commitKeyword : commitKeywords) {
@@ -347,11 +345,10 @@ public class MainController {
             CommitEntity commitEntity = commitRepository.findByCommitOid(oid).orElse(null);
             if (commitEntity == null) continue;
 
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime commitDate = commitEntity.getCommitDate().atStartOfDay();
-
+            LocalDate now = LocalDate.now();
+            LocalDate commitDate = commitEntity.getCommitDate();
             if (commitDate.isAfter(oneYearAgo)) {
-                long daysBetween = Duration.between(commitDate, now).toDays();
+                long daysBetween = ChronoUnit.DAYS.between(commitDate, now);
                 double recencyRatio = (365 - daysBetween) / 365.0;
 
                 double lengthRatio = commitEntity.getLength() / maxCommitLength;

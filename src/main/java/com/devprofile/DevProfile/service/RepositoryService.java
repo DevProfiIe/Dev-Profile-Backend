@@ -52,7 +52,7 @@ public class RepositoryService {
 
             List<RepoFrameworkEntity> repoFrameworks = repoFrameworkRepository.findAllByRepoName(repositoryEntity.getRepoName());
             List<String> frameworkNames = repoFrameworks.stream().map(RepoFrameworkEntity::getFramework).collect(Collectors.toList());
-            Map<String, String> frameworkUrls = frameworkService.getFrameworkUrls(frameworkNames);
+            List<Map<String, String>> frameworkUrls = frameworkService.getFrameworkUrls(frameworkNames);
             dto.setFrameworkUrls(frameworkUrls);
 
             extendedEntities.add(dto);

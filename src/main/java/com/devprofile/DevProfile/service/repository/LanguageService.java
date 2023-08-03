@@ -42,16 +42,20 @@ public class LanguageService {
                 LocalDate startDate = repoEntity.getStartDate();
                 LocalDate endDate = repoEntity.getEndDate();
 
-                Integer totalDays = Period.between(startDate, endDate).getDays();
+                if (startDate != null && endDate != null) {
+                    Integer totalDays = Period.between(startDate, endDate).getDays();
 
-                response.fieldNames().forEachRemaining(language -> {
-                    languageDurations.add(new LanguageDuration(language, totalDays, userName));
-                });
+                    response.fieldNames().forEachRemaining(language -> {
+                        languageDurations.add(new LanguageDuration(language, totalDays, userName));
+                    });
 
 
-                repoEntity.setLanguageDurations(languageDurations);
+                    repoEntity.setLanguageDurations(languageDurations);
 
-                gitRepository.save(repoEntity);
+                    gitRepository.save(repoEntity);
+                } else {
+                    log.warn("Start date or end date is null for repository: " + repoName);
+                }
             });
         });
     }
