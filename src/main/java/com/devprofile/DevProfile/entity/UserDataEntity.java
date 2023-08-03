@@ -27,7 +27,6 @@ public class UserDataEntity {
 
     private Set<String> databaseSet;
 
-
     private Integer webBackend;
 
     private Set<String> webBackendSet;
@@ -35,14 +34,14 @@ public class UserDataEntity {
     private Integer webFrontend;
 
     private Set<String> webFrontendSet;
+
     private Integer game;
 
     private Set<String> gameSet;
-
 
     private Integer systemProgramming;
 
     private Set<String> systemProgrammingSet;
 
-
+    private Set<String> userStyle;
 }

@@ -19,7 +19,7 @@ public class RepositoryEntityDTO {
     private Integer myCommitCnt;
     private Integer totalContributors;
     private List<String> repoLanguages;
-    private Map<String, String> frameworkUrls;
+    private List<Map<String, String>> frameworkUrls;
 
     public void setLanguageDurations(List<LanguageDuration> languageDurations) {
     }

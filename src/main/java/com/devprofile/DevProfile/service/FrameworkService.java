@@ -5,6 +5,8 @@ import com.devprofile.DevProfile.repository.FrameworkRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -19,8 +21,15 @@ public class FrameworkService {
         List<FrameworkEntity> frameworkEntities = frameworkRepository.findAll();
         return frameworkEntities.stream().map(FrameworkEntity::getFrameworkName).collect(Collectors.toList());
     }
-    public Map<String, String> getFrameworkUrls(List<String> frameworkNames) {
+    public List<Map<String, String>> getFrameworkUrls(List<String> frameworkNames) {
         List<FrameworkEntity> frameworks = frameworkRepository.findAllByFrameworkNameIn(frameworkNames);
-        return frameworks.stream().collect(Collectors.toMap(FrameworkEntity::getFrameworkName, FrameworkEntity::getFrameworkUrl));
+        List<Map<String, String>> frameworksDTO = new ArrayList<>();
+        for(FrameworkEntity framework :frameworks){
+            Map<String, String> frameworkDTO = new HashMap<>();
+            frameworkDTO.put("skill" , framework.getFrameworkName());
+            frameworkDTO.put("url", framework.getFrameworkUrl());
+            frameworksDTO.add(frameworkDTO);
+        }
+        return frameworksDTO;
     }
 }
