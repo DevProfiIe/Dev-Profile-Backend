@@ -86,12 +86,14 @@ public class SearchController {
         return patchService.getPatchesByCommitOid(commitOid)
                 .flatMap(patch -> {
                     String contentsUrl = patch.getContentsUrl();
-                    String filename = patch.getFileName(); // 전체 경로 사용
+                    String fullPath = patch.getFileName();
+                    String filename = extractFileName(fullPath);
                     return patchService.fetchCode(contentsUrl, Authorization)
                             .map(decodedCode -> {
                                 Map<String, Object> diff = patchService.analyzeDiffWithContent(patch.getPatch(), decodedCode);
                                 diff.put("filename", filename); // 파일 이름 대신 전체 경로 사용
-                                diff.put("filetype", extractFileType(filename)); // 파일 확장자 추출
+                                diff.put("fullPath", fullPath);
+                                diff.put("filetype", extractFileType(fullPath)); // 파일 확장자 추출
                                 synchronized (diffList) {
                                     diffList.add(diff);
                                 }
@@ -101,8 +103,8 @@ public class SearchController {
                 .then(Mono.just(diffList))
                 .map(diffListData -> {
                     // Build the file tree from filenames
-                    List<String> filenames = diffListData.stream().map(diff -> (String) diff.get("filename")).collect(Collectors.toList());
-                    FileTreeNode fileTree = buildFileTree(filenames); // 전체 경로를 사용하여 트리 구성
+                    List<String> fullPaths = diffListData.stream().map(diff -> (String) diff.get("fullPath")).collect(Collectors.toList());
+                    FileTreeNode fileTree = buildFileTree(fullPaths); // 전체 경로를 사용하여 트리 구성
 
                     combinedData.put("diffs", diffListData);
                     combinedData.put("fileTree", fileTree);
@@ -170,6 +172,10 @@ public class SearchController {
 
 
     private String findCommonPrefix(List<String> filenames) {
+        if (filenames == null || filenames.isEmpty()) {
+            return null;
+        }
+
         String commonPrefix = filenames.get(0);
         for (int i = 1; i < filenames.size(); i++) {
             while (filenames.get(i).indexOf(commonPrefix) != 0) {

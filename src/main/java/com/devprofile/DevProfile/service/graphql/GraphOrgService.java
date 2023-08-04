@@ -6,6 +6,7 @@ import com.devprofile.DevProfile.service.commit.ContributorsOrgService;
 import com.devprofile.DevProfile.service.patch.PatchOrgService;
 import com.devprofile.DevProfile.service.repository.LanguageService;
 import com.devprofile.DevProfile.service.repository.OrgRepoService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,38 +62,47 @@ public class GraphOrgService {
         }
         return Mono.just(orgRepoCommits);
     }
-    public Mono<Void> orgOwnedRepositories(UserEntity user) throws IOException, IOException {
-        Integer userId = user.getId();
-        String userNodeId = user.getNode_id();
-        String userName = user.getLogin();
-        String accessToken = user.getGitHubToken();
+    public Mono<Void> orgOwnedRepositories(UserEntity user) {
+        return Mono.defer(() -> {
+            Integer userId = user.getId();
+            String userNodeId = user.getNode_id();
+            String userName = user.getLogin();
+            String accessToken = user.getGitHubToken();
 
-        String queryTemplate = graphQLService.getGraphQLQuery("org_repositories_query_graphqls");
+            String queryTemplate = null;
+            try {
+                queryTemplate = graphQLService.getGraphQLQuery("org_repositories_query_graphqls");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
 
-        Map<String, Object> variables = new HashMap<>();
-        variables.put("login", userName);
-        variables.put("node_id", userNodeId);
+            Map<String, Object> variables = new HashMap<>();
+            variables.put("login", userName);
+            variables.put("node_id", userNodeId);
 
-        GraphQLService.CustomGraphQLRequest request = new GraphQLService.CustomGraphQLRequest(queryTemplate, variables);
+            GraphQLService.CustomGraphQLRequest request = new GraphQLService.CustomGraphQLRequest(queryTemplate, variables);
 
-        return graphQLService.sendGraphQLRequest(user, request)
-                .flatMap(response -> {
-                    if (response.has("errors")) {
-                        System.out.println("GraphQL Errors: " + response.get("errors"));
-                    }
-                    JsonNode organizations = response.get("data").get("user").get("organizations").get("nodes");
-                    orgRepoService.saveRepositories(organizations, userId, userName);
-                    commitOrgService.saveCommits(organizations, userName, userId);
-                    commitOrgService.updateDates();
+            try {
+                return graphQLService.sendGraphQLRequest(user, request)
+                        .flatMap(response -> {
+                            if (response.has("errors")) {
+                                System.out.println("GraphQL Errors: " + response.get("errors"));
+                            }
+                            JsonNode organizations = response.get("data").get("user").get("organizations").get("nodes");
+                            orgRepoService.saveRepositories(organizations, userId, userName);
+                            commitOrgService.saveCommits(organizations, userName, userId);
+                            commitOrgService.updateDates();
 
-
-                    return fetchOrganizationRepoCommits(organizations)
-                            .flatMap(orgRepoCommits -> {
-                                contributorsOrgService.countCommits(orgRepoCommits, userName, accessToken);
-                                return patchOrgService.savePatchs(accessToken, orgRepoCommits)
-                                        .then(languageService.orgLanguages(orgRepoCommits, accessToken, userName));
-                            })
-                            .then();
-                });
+                            return fetchOrganizationRepoCommits(organizations)
+                                    .flatMap(orgRepoCommits -> {
+                                        contributorsOrgService.countCommits(orgRepoCommits, userName, accessToken);
+                                        return patchOrgService.savePatchs(accessToken, orgRepoCommits)
+                                                .then(languageService.orgLanguages(orgRepoCommits, accessToken, userName));
+                                    });
+                        }).then();
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 }

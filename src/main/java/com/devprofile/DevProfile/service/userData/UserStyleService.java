@@ -1,11 +1,13 @@
 package com.devprofile.DevProfile.service.userData;
 
 
-import com.devprofile.DevProfile.entity.*;
+import com.devprofile.DevProfile.entity.CommitEntity;
+import com.devprofile.DevProfile.entity.PatchEntity;
+import com.devprofile.DevProfile.entity.RepositoryEntity;
+import com.devprofile.DevProfile.entity.UserDataEntity;
 import com.devprofile.DevProfile.repository.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
-import org.apache.catalina.User;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -15,7 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @AllArgsConstructor
@@ -50,9 +55,11 @@ public class UserStyleService {
         for(UserDataEntity userDataEntity : userDataEntities) {
             List<String> styles = new ArrayList<>();
 
-            styles.add(generateContinuous(userDataEntity));
-            styles.add(generateExplain(userDataEntity));
-            styles.add(generateReadMe(userDataEntity, searchUserName));
+            styles.add(generateContinuous(userDataEntity));             //지속적인 개발자
+            styles.add(generateExplain(userDataEntity));                //설명충
+            styles.add(generateReadMe(userDataEntity, searchUserName)); //리드미 리드미
+            styles.add(generateDayCommits(userDataEntity));             //1일 1커밋
+            styles.add(generateNoPointCommits(userDataEntity));         //실속없는 커밋자
 
             addKeywordsToUser(userDataEntity.getUserName(), styles);
         }
@@ -87,6 +94,28 @@ public class UserStyleService {
         return null;
     }
 
+    public String generateDayCommits(UserDataEntity userDataEntity) {
+        String userName = userDataEntity.getUserName();
+        List<CommitEntity> commitEntities = commitRepository.findByUserName(userName);
+        Map<LocalDate, Boolean> visited = new HashMap<>();
+        Integer commitDays = 0;
+
+        LocalDate startDate = LocalDate.now().minusDays(14);
+
+        for (CommitEntity commit : commitEntities) {
+            LocalDate commitDate = commit.getCommitDate();
+            if (commitDate.isAfter(startDate) && commitDate.isBefore(LocalDate.now()) || commitDate.equals(LocalDate.now())) {
+                if (!visited.getOrDefault(commitDate, false)) {
+                    commitDays++;
+                    visited.put(commitDate, true);
+                }
+            }
+        }
+
+        if (commitDays >= 14) return "1일 1커밋";
+        return null;
+    }
+
     public String generateContinuous(UserDataEntity userDataEntity){
 
         String userName = userDataEntity.getUserName();
@@ -103,6 +132,26 @@ public class UserStyleService {
             }
         }
         if(commitDays >= 144) return "지속적인 개발자";
+        return null;
+    }
+
+    public String generateNoPointCommits(UserDataEntity userDataEntity) {
+        String userName = userDataEntity.getUserName();
+        List<CommitEntity> commitEntities = commitRepository.findByUserName(userName);
+        int totalCommits = commitEntities.size();
+        int emptyCommits = 0;
+
+        for (CommitEntity commit : commitEntities) {
+            int length = commit.getLength();
+            if (length <= 5) {
+                emptyCommits++;
+            }
+        }
+
+        if (totalCommits > 0 && ((float) emptyCommits / totalCommits) >= 0.10) {
+            return "실속없는 커밋자";
+        }
+
         return null;
     }
 

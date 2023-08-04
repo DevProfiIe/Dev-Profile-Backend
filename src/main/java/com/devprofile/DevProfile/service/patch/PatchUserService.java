@@ -57,7 +57,6 @@ public class PatchUserService {
                                     patchEntity.setCommitOid(oid);
 
                                     if (patchEntity.getPatch() != null) {
-                                        // Only save the patch if it doesn't already exist in the database
                                         PatchEntity existingPatch = patchRepository.findByPatch(patchEntity.getPatch());
                                         if (existingPatch == null) {
                                             patchRepository.save(patchEntity);
