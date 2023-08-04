@@ -60,14 +60,16 @@ public class UserStyleService {
             styles.add(generateDayCommits(userDataEntity));             //1일 1커밋
             styles.add(generateNoPointCommits(userDataEntity));         //실속없는 커밋자
             styles.add(generateSoloMultiplayer(userDataEntity));        //싱글 멀티 플레이어
-            styles.add(generateRefactor(userDataEntity, searchUserName)); //리팩토리
+            styles.add(generateRefactor(userDataEntity));               //리팩토리
 
 
             addKeywordsToUser(userDataEntity.getUserName(), styles);
         }
     }
 
-    public String generateRefactor(UserDataEntity userDataEntity, String searchUserName){
+
+
+    public String generateRefactor(UserDataEntity userDataEntity){
         String userName = userDataEntity.getUserName();
 
         List<CommitEntity> commits= commitRepository.findByUserName(userName);
