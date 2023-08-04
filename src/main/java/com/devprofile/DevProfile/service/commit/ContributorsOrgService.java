@@ -56,6 +56,7 @@ public class ContributorsOrgService {
                                 repositoryEntity.setRepoName(repoName);
 
                                 RepositoryEntity savedEntity = gitRepository.save(repositoryEntity);
+
                                 return Mono.just(savedEntity);
                             } catch (Exception e) {
                                 return Mono.error(new RuntimeException("Fail", e));

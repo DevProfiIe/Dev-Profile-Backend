@@ -4,6 +4,7 @@ package com.devprofile.DevProfile.controller;
 import com.devprofile.DevProfile.dto.response.ApiResponse;
 import com.devprofile.DevProfile.dto.response.analyze.SearchResultDTO;
 import com.devprofile.DevProfile.entity.CommitEntity;
+import com.devprofile.DevProfile.entity.FileTreeNode;
 import com.devprofile.DevProfile.repository.CommitRepository;
 import com.devprofile.DevProfile.service.patch.PatchService;
 import com.devprofile.DevProfile.service.search.SearchService;
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 
 @Controller
@@ -84,13 +86,12 @@ public class SearchController {
         return patchService.getPatchesByCommitOid(commitOid)
                 .flatMap(patch -> {
                     String contentsUrl = patch.getContentsUrl();
-                    String filename = patch.getFileName();
+                    String filename = patch.getFileName(); // 전체 경로 사용
                     return patchService.fetchCode(contentsUrl, Authorization)
                             .map(decodedCode -> {
-                                Map<String, Object> diff = patchService.analyzeDiff(patch.getPatch(), decodedCode);
-                                String extractedFilename = extractFileName(filename);
-                                diff.put("filename", extractedFilename);
-                                diff.put("filetype", extractFileType(extractedFilename));
+                                Map<String, Object> diff = patchService.analyzeDiffWithContent(patch.getPatch(), decodedCode);
+                                diff.put("filename", filename); // 파일 이름 대신 전체 경로 사용
+                                diff.put("filetype", extractFileType(filename)); // 파일 확장자 추출
                                 synchronized (diffList) {
                                     diffList.add(diff);
                                 }
@@ -99,7 +100,13 @@ public class SearchController {
                 })
                 .then(Mono.just(diffList))
                 .map(diffListData -> {
+                    // Build the file tree from filenames
+                    List<String> filenames = diffListData.stream().map(diff -> (String) diff.get("filename")).collect(Collectors.toList());
+                    FileTreeNode fileTree = buildFileTree(filenames); // 전체 경로를 사용하여 트리 구성
+
                     combinedData.put("diffs", diffListData);
+                    combinedData.put("fileTree", fileTree);
+
                     apiResponse.setResult(true);
                     apiResponse.setData(combinedData);
                     return ResponseEntity.ok(apiResponse);
@@ -122,5 +129,53 @@ public class SearchController {
         } else {
             return "";
         }
+    }
+
+    private FileTreeNode buildFileTree(List<String> filenames) {
+        // 공통 접두사 찾기
+        String commonPrefix = findCommonPrefix(filenames);
+
+        // 루트 노드를 공통 접두사로 설정
+        FileTreeNode root = new FileTreeNode(commonPrefix, "folder");
+
+        for (String filename : filenames) {
+            // 공통 접두사를 제외한 부분을 처리
+            String relativePath = filename.substring(commonPrefix.length());
+            FileTreeNode current = root;
+            String[] parts = relativePath.split("/");
+
+            for (int i = 0; i < parts.length; i++) {
+                String part = parts[i];
+                boolean isFile = (i == parts.length - 1);
+                boolean found = false;
+
+                for (FileTreeNode child : current.children) {
+                    if (child.name.equals(part)) {
+                        current = child;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    FileTreeNode newNode = new FileTreeNode(part, isFile ? "file" : "folder");
+                    current.children.add(newNode);
+                    current = newNode;
+                }
+            }
+        }
+
+        return root;
+    }
+
+
+    private String findCommonPrefix(List<String> filenames) {
+        String commonPrefix = filenames.get(0);
+        for (int i = 1; i < filenames.size(); i++) {
+            while (filenames.get(i).indexOf(commonPrefix) != 0) {
+                commonPrefix = commonPrefix.substring(0, commonPrefix.length() - 1);
+            }
+        }
+        return commonPrefix;
     }
 }

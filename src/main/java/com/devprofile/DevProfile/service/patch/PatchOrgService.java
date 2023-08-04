@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -28,6 +29,8 @@ public class PatchOrgService {
         this.commitRepository = commitRepository;
     }
 
+
+    @Transactional // 트랜잭션 관리 추가
     public Mono<Void> savePatchs(String accessToken, Map<String, Map<String, List<String>>> orgRepoCommits) {
         return Flux.fromIterable(orgRepoCommits.entrySet())
                 .flatMap(orgEntry -> {
@@ -54,12 +57,11 @@ public class PatchOrgService {
                                                             patchEntity.setRawUrl(file.get("raw_url").asText());
                                                         if (file.has("contents_url"))
                                                             patchEntity.setContentsUrl(file.get("contents_url").asText());
-                                                        if (file.has("patch")){
-                                                            String patch =file.get("patch").asText();
+                                                        if (file.has("patch")) {
+                                                            String patch = file.get("patch").asText();
                                                             patchEntity.setPatch(patch);
                                                             commitRepository.updateLength(oid, patch.length());
                                                         }
-
                                                         patchEntity.setCommitOid(oid);
                                                         return patchEntity;
                                                     });
@@ -67,9 +69,11 @@ public class PatchOrgService {
                             });
                 })
                 .filter(patchEntity -> patchEntity.getPatch() != null)
-                .flatMap(patchEntity -> Mono.fromCallable(() -> patchRepository.save(patchEntity)))
-                .doOnError(e -> log.error("Error saving patch: ", e))
-                .onErrorContinue((throwable, o) -> log.error("Error continuing with next patch", throwable))
+                .flatMap(this::savePatchEntity)
+                .collectList()
                 .then();
+    }
+    private Mono<PatchEntity> savePatchEntity(PatchEntity patchEntity) {
+        return Mono.fromCallable(() -> patchRepository.save(patchEntity));
     }
 }

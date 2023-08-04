@@ -36,6 +36,53 @@ public class PatchService {
         this.jwtProvider = jwtProvider;
         this.userRepository = userRepository;
     }
+    public Map<String, Object> analyzeDiffWithContent(String patch, String originalText) {
+        List<String> contentLines = Stream.of(originalText.split("\n")).collect(Collectors.toList());
+        List<String> patchLines = Stream.of(patch.split("\n")).collect(Collectors.toList());
+
+        List<Integer> original = new ArrayList<>();
+        List<Integer> inserted = new ArrayList<>();
+        List<Integer> deleted = new ArrayList<>();
+
+        List<String> modifiedContent = new ArrayList<>(contentLines);
+
+        int contentIndex = 0;
+        int diffIndex = 0;
+
+        while (diffIndex < patchLines.size()) {
+            String line = patchLines.get(diffIndex);
+
+            if (line.startsWith("@@")) {
+                String[] numbers = line.split(" ")[1].substring(1).split(",");
+                contentIndex = Integer.parseInt(numbers[0]) - 1;
+                if (contentIndex < 0) contentIndex = 0;
+            } else if (line.startsWith("+")) {
+                inserted.add(contentIndex + 1);
+                modifiedContent.add(contentIndex, line.substring(1));
+                contentIndex++;
+            } else if (line.startsWith("-")) {
+                deleted.add(contentIndex + 1);
+                modifiedContent.add(contentIndex, line.substring(1));
+                contentIndex++;
+            } else {
+                original.add(contentIndex + 1);
+                contentIndex++;
+            }
+            diffIndex++;
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("content", String.join("\n", modifiedContent));
+        result.put("status", Map.of(
+                "original", original,
+                "inserted", inserted,
+                "deleted", deleted
+        ));
+
+        return result;
+    }
+
+
 
     public Flux<PatchEntity> getPatchesByCommitOid(String commitOid) {
         return Flux.fromIterable(patchRepository.findByCommitOid(commitOid));

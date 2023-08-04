@@ -5,8 +5,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.time.ZoneId;
 import java.util.List;
 
 @Entity
@@ -66,9 +67,10 @@ public class RepositoryEntity {
     }
 
     private LocalDate convertToLocalDate(String dateStr) {
-        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
-        LocalDate date = LocalDate.parse(dateStr, formatter);
+        Instant instant = Instant.parse(dateStr);
+        LocalDate date = instant.atZone(ZoneId.systemDefault()).toLocalDate();
         return date;
     }
+
 
 }

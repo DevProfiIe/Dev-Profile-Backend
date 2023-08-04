@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface PatchRepository extends JpaRepository<PatchEntity,String> {
+public interface PatchRepository extends JpaRepository<PatchEntity,Long> {
     @Query("SELECT c.commitOid FROM CommitEntity c WHERE c.commitOid IN :oids")
     List<String> findExistingOids(@Param("oids") List<String> oids);
 
