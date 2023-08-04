@@ -151,6 +151,15 @@ public class SearchController {
                 boolean isFile = (i == parts.length - 1);
                 boolean found = false;
 
+                if (isFile && part.isEmpty()) {
+                    // 파일 노드이면서 이름이 비어 있을 경우, 그 이후에 자식을 추가하지 않음
+                    break;
+                }
+
+                if (current.children == null) {
+                    current.children = new ArrayList<>();
+                }
+
                 for (FileTreeNode child : current.children) {
                     if (child.name.equals(part)) {
                         current = child;
@@ -169,7 +178,6 @@ public class SearchController {
 
         return root;
     }
-
 
     private String findCommonPrefix(List<String> filenames) {
         if (filenames == null || filenames.isEmpty()) {

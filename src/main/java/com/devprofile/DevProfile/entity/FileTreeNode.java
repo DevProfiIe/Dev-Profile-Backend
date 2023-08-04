@@ -11,6 +11,14 @@ public class FileTreeNode {
     public FileTreeNode(String name, String type) {
         this.name = name;
         this.type = type;
-        this.children = new ArrayList<>();
+        if (this.name.isEmpty()) {
+            this.children = new ArrayList<>();
+        } else {
+            this.children = null;
+        }
+    }
+
+    public List<FileTreeNode> getChildren() {
+        return children != null ? children : new ArrayList<>();
     }
 }

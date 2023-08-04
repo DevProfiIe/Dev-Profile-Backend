@@ -46,4 +46,11 @@ public class CommitEntity {
     public CommitEntity() {
 
     }
+    public Integer getLength() {
+        return length;
+    }
+
+    public void setLength(Integer length) {
+        this.length = length;
+    }
 }

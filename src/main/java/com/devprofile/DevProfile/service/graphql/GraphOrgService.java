@@ -83,26 +83,27 @@ public class GraphOrgService {
             GraphQLService.CustomGraphQLRequest request = new GraphQLService.CustomGraphQLRequest(queryTemplate, variables);
 
             try {
-                return graphQLService.sendGraphQLRequest(user, request)
-                        .flatMap(response -> {
-                            if (response.has("errors")) {
-                                System.out.println("GraphQL Errors: " + response.get("errors"));
-                            }
-                            JsonNode organizations = response.get("data").get("user").get("organizations").get("nodes");
-                            orgRepoService.saveRepositories(organizations, userId, userName);
-                            commitOrgService.saveCommits(organizations, userName, userId);
-                            commitOrgService.updateDates();
+                    return graphQLService.sendGraphQLRequest(user, request)
+                            .flatMap(response -> {
+                                if (response.has("errors")) {
+                                    System.out.println("GraphQL Errors: " + response.get("errors"));
+                                }
+                                JsonNode organizations = response.get("data").get("user").get("organizations").get("nodes");
+                                orgRepoService.saveRepositories(organizations, userId, userName);
+                                commitOrgService.saveCommits(organizations, userName, userId);
+                                commitOrgService.updateDates();
 
-                            return fetchOrganizationRepoCommits(organizations)
-                                    .flatMap(orgRepoCommits -> {
-                                        contributorsOrgService.countCommits(orgRepoCommits, userName, accessToken);
-                                        return patchOrgService.savePatchs(accessToken, orgRepoCommits)
-                                                .then(languageService.orgLanguages(orgRepoCommits, accessToken, userName));
-                                    });
-                        }).then();
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
+                                return fetchOrganizationRepoCommits(organizations)
+                                        .flatMap(orgRepoCommits -> {
+                                            contributorsOrgService.countCommits(orgRepoCommits, userName, accessToken);
+                                            patchOrgService.savePatchs(accessToken, orgRepoCommits); // Call the synchronous method without chaining
+                                            return languageService.orgLanguages(orgRepoCommits, accessToken, userName);
+                                        })
+                                        .then();
+                            });
+            }catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
             }
-        });
-    }
-}
+        }
