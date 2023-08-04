@@ -1,10 +1,7 @@
 package com.devprofile.DevProfile.service.userData;
 
 
-import com.devprofile.DevProfile.entity.CommitEntity;
-import com.devprofile.DevProfile.entity.PatchEntity;
-import com.devprofile.DevProfile.entity.RepositoryEntity;
-import com.devprofile.DevProfile.entity.UserDataEntity;
+import com.devprofile.DevProfile.entity.*;
 import com.devprofile.DevProfile.repository.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
@@ -60,6 +57,8 @@ public class UserStyleService {
             styles.add(generateReadMe(userDataEntity, searchUserName)); //리드미 리드미
             styles.add(generateDayCommits(userDataEntity));             //1일 1커밋
             styles.add(generateNoPointCommits(userDataEntity));         //실속없는 커밋자
+            styles.add(generateSoloMultiplayer(userDataEntity));        //싱글 멀티 플레이어
+
 
             addKeywordsToUser(userDataEntity.getUserName(), styles);
         }
@@ -94,13 +93,40 @@ public class UserStyleService {
         return null;
     }
 
+    public String generateSoloMultiplayer(UserDataEntity userDataEntity){
+        String userName = userDataEntity.getUserName();
+        UserEntity user = userRepository.findByLogin(userName);
+        List<RepositoryEntity> repositories = gitRepository.findByUserId(user.getId());
+        int multiCount = 0;
+        int singleCount = 0;
+        for(RepositoryEntity repo : repositories){
+            if(repo.getTotalContributors() > 1){
+                if(repo.getMyCommitCnt() > 10){
+                    multiCount++;
+                }
+            }else{
+                if(repo.getMyCommitCnt() > 10){
+                    singleCount++;
+                }
+            }
+        }
+        if(singleCount<1 && multiCount<1){
+            return "사용하지 않는 거죠?";
+        }
+        if(singleCount>multiCount) {
+            return "싱글 플레이어";
+        }else{
+            return "멀티 플레이어";
+        }
+    }
+
     public String generateDayCommits(UserDataEntity userDataEntity) {
         String userName = userDataEntity.getUserName();
         List<CommitEntity> commitEntities = commitRepository.findByUserName(userName);
         Map<LocalDate, Boolean> visited = new HashMap<>();
         Integer commitDays = 0;
 
-        LocalDate startDate = LocalDate.now().minusDays(14);
+        LocalDate startDate = LocalDate.now().minusDays(30);
 
         for (CommitEntity commit : commitEntities) {
             LocalDate commitDate = commit.getCommitDate();
