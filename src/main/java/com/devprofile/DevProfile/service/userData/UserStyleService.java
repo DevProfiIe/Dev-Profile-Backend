@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @AllArgsConstructor
@@ -61,10 +63,13 @@ public class UserStyleService {
             styles.add(generateNoPointCommits(userDataEntity));         //실속없는 커밋자
             styles.add(generateSoloMultiplayer(userDataEntity));        //싱글 멀티 플레이어
             styles.add(generateCommitPattern(userDataEntity));          //새벽형 개발자, 아침형 개발자
+            styles.add(generateRefactor(userDataEntity));               //리팩토리
+
 
             addKeywordsToUser(userDataEntity.getUserName(), styles);
         }
     }
+
 
     public String generateCommitPattern(UserDataEntity userDataEntity) {
         String userName = userDataEntity.getUserName();
@@ -75,9 +80,9 @@ public class UserStyleService {
         int earlyMorningCommits = 0;
         int lateNightCommits = 0;
 
-        for(RepositoryEntity repositoryEntity : repositoryEntities) {
+        for (RepositoryEntity repositoryEntity : repositoryEntities) {
             String owner = repositoryEntity.getOrgName();
-            if(owner == null) owner = userName;
+            if (owner == null) owner = userName;
 
             JsonNode commitsResponse = webClient.get()
                     .uri(gitHubApiUrl + "repos/" + owner + "/" + repositoryEntity.getRepoName() + "/commits")
@@ -86,8 +91,8 @@ public class UserStyleService {
                     .bodyToMono(JsonNode.class)
                     .block();
 
-            if(commitsResponse != null) {
-                for(JsonNode commitNode : commitsResponse) {
+            if (commitsResponse != null) {
+                for (JsonNode commitNode : commitsResponse) {
                     String commitTime = commitNode.get("commit").get("author").get("date").asText();
                     LocalDateTime commitDateTime = LocalDateTime.parse(commitTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
                     int hour = commitDateTime.getHour();
@@ -96,21 +101,42 @@ public class UserStyleService {
                         lateNightCommits++;
                     } else if (hour >= 6 && hour < 10) {
                         earlyMorningCommits++;
+
                     }
                 }
             }
         }
-
         if (lateNightCommits > earlyMorningCommits && lateNightCommits > 30) {
             return "새벽형 개발자";
         } else if (earlyMorningCommits > lateNightCommits && earlyMorningCommits > 30) {
             return "아침형 개발자";
         }
-
         return null;
     }
 
+    public String generateRefactor(UserDataEntity userDataEntity){
+        String userName = userDataEntity.getUserName();
+        List<CommitEntity> commits= commitRepository.findByUserName(userName);
+        Integer inserted = 0;
+        Integer deleted = 0;
+        for(CommitEntity commit : commits){
+            List<PatchEntity> patches = patchRepository.findByCommitOid(commit.getCommitOid());
+            for(PatchEntity patch: patches){
+                String patchContent = patch.getPatch();
+                List<String> patchLines = Stream.of(patchContent.split("\n")).toList();
+                for(String line : patchLines) {
+                    if (line.startsWith("+")) {
+                        inserted++;
+                    } else if (line.startsWith("-")) {
+                        deleted++;
+                    }
+                }
+            }
+        }
+        if(inserted*0.5 < deleted) return "ReFactory";
+        return null;
 
+    }
 
     public String generateReadMe(UserDataEntity userDataEntity, String searchUserName){
         String gitHubToken = userRepository.findByLogin(searchUserName).getGitHubToken();
@@ -270,3 +296,4 @@ public class UserStyleService {
         return Pair.of(count, allCount);
     }
 }
+
