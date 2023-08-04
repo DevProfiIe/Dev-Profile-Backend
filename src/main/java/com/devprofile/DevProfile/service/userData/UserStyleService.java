@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -58,11 +60,57 @@ public class UserStyleService {
             styles.add(generateDayCommits(userDataEntity));             //1일 1커밋
             styles.add(generateNoPointCommits(userDataEntity));         //실속없는 커밋자
             styles.add(generateSoloMultiplayer(userDataEntity));        //싱글 멀티 플레이어
-
+            styles.add(generateCommitPattern(userDataEntity));          //새벽형 개발자, 아침형 개발자
 
             addKeywordsToUser(userDataEntity.getUserName(), styles);
         }
     }
+
+    public String generateCommitPattern(UserDataEntity userDataEntity) {
+        String userName = userDataEntity.getUserName();
+        String gitHubToken = userRepository.findByLogin(userName).getGitHubToken();
+        Integer userId = userRepository.findByLogin(userName).getId();
+        List<RepositoryEntity> repositoryEntities = gitRepository.findByUserId(userId);
+
+        int earlyMorningCommits = 0;
+        int lateNightCommits = 0;
+
+        for(RepositoryEntity repositoryEntity : repositoryEntities) {
+            String owner = repositoryEntity.getOrgName();
+            if(owner == null) owner = userName;
+
+            JsonNode commitsResponse = webClient.get()
+                    .uri(gitHubApiUrl + "repos/" + owner + "/" + repositoryEntity.getRepoName() + "/commits")
+                    .header("Authorization", "Bearer " + gitHubToken)
+                    .retrieve()
+                    .bodyToMono(JsonNode.class)
+                    .block();
+
+            if(commitsResponse != null) {
+                for(JsonNode commitNode : commitsResponse) {
+                    String commitTime = commitNode.get("commit").get("author").get("date").asText();
+                    LocalDateTime commitDateTime = LocalDateTime.parse(commitTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+                    int hour = commitDateTime.getHour();
+
+                    if (hour >= 0 && hour < 6) {
+                        lateNightCommits++;
+                    } else if (hour >= 6 && hour < 10) {
+                        earlyMorningCommits++;
+                    }
+                }
+            }
+        }
+
+        if (lateNightCommits > earlyMorningCommits && lateNightCommits > 30) {
+            return "새벽형 개발자";
+        } else if (earlyMorningCommits > lateNightCommits && earlyMorningCommits > 30) {
+            return "아침형 개발자";
+        }
+
+        return null;
+    }
+
+
 
     public String generateReadMe(UserDataEntity userDataEntity, String searchUserName){
         String gitHubToken = userRepository.findByLogin(searchUserName).getGitHubToken();
