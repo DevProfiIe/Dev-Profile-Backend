@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @AllArgsConstructor
@@ -58,10 +60,36 @@ public class UserStyleService {
             styles.add(generateDayCommits(userDataEntity));             //1일 1커밋
             styles.add(generateNoPointCommits(userDataEntity));         //실속없는 커밋자
             styles.add(generateSoloMultiplayer(userDataEntity));        //싱글 멀티 플레이어
+            styles.add(generateRefactor(userDataEntity, searchUserName)); //리팩토리
 
 
             addKeywordsToUser(userDataEntity.getUserName(), styles);
         }
+    }
+
+    public String generateRefactor(UserDataEntity userDataEntity, String searchUserName){
+        String userName = userDataEntity.getUserName();
+
+        List<CommitEntity> commits= commitRepository.findByUserName(userName);
+        Integer inserted = 0;
+        Integer deleted = 0;
+        for(CommitEntity commit : commits){
+            List<PatchEntity> patches = patchRepository.findByCommitOid(commit.getCommitOid());
+            for(PatchEntity patch: patches){
+                String patchContent = patch.getPatch();
+                List<String> patchLines = Stream.of(patchContent.split("\n")).toList();
+                for(String line : patchLines) {
+                    if (line.startsWith("+")) {
+                        inserted++;
+                    } else if (line.startsWith("-")) {
+                        deleted++;
+                    }
+                }
+            }
+        }
+        if(inserted*0.5 < deleted) return "ReFactory";
+        return null;
+
     }
 
     public String generateReadMe(UserDataEntity userDataEntity, String searchUserName){
