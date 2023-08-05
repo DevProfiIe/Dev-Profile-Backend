@@ -14,6 +14,7 @@ import com.devprofile.DevProfile.service.gpt.GptCommitService;
 import com.devprofile.DevProfile.service.gpt.GptPatchService;
 import com.devprofile.DevProfile.service.graphql.GraphOrgService;
 import com.devprofile.DevProfile.service.graphql.GraphUserService;
+import com.devprofile.DevProfile.service.rabbitmq.MessageSenderService;
 import com.devprofile.DevProfile.service.search.SparqlService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +57,7 @@ public class MainController {
     private final CommitKeywordsRepository commitKeywordsRepository;
     private final FilterService filterService;
     private final UserScoreRepository userScoreRepository;
+    private final MessageSenderService messageSenderService;
 
 
     private UserDTO convertToDTO(UserEntity userEntity, UserDataEntity userDataEntity) {
@@ -86,9 +88,11 @@ public class MainController {
 
         if (primaryId != null && !primaryId.isEmpty()) {
             UserEntity user = userRepository.findById(Integer.parseInt(primaryId)).orElseThrow();
-
-            return Mono.when(userService.userOwnedRepositories(user), orgService.orgOwnedRepositories(user))
-                    .then(Mono.fromRunnable(() -> filterService.createAndSaveFilter(user.getLogin())));
+            messageSenderService.MainSendMessage(user);  // send the message
+            return userService.userOwnedRepositories(user)
+                    .flatMap(userRepo -> {
+                        return Mono.fromRunnable(() -> filterService.createAndSaveFilter(user.getLogin()));
+                    });
         } else {
             throw new IllegalArgumentException("The primaryId is null or empty");
         }

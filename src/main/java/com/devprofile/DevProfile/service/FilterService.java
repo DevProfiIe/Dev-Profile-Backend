@@ -6,9 +6,9 @@ import com.devprofile.DevProfile.entity.RepoFrameworkEntity;
 import com.devprofile.DevProfile.repository.FilterRepository;
 import com.devprofile.DevProfile.repository.LanguageDurationRepository;
 import com.devprofile.DevProfile.repository.RepoFrameworkRepository;
-import com.devprofile.DevProfile.repository.UserDataRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -20,8 +20,8 @@ public class FilterService {
     private final FilterRepository filterRepository;
     private final RepoFrameworkRepository repoFrameworkRepository;
     private final LanguageDurationRepository languageDurationRepository;
-    private final UserDataRepository userDataRepository;
 
+    @Transactional
     public FilterEntity createAndSaveFilter(String username) {
         FilterEntity existingFilter = filterRepository.findByUsername(username);
 

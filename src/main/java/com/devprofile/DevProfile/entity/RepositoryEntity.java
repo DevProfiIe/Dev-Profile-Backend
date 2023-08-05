@@ -5,9 +5,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -24,25 +24,25 @@ public class RepositoryEntity {
     private String repoName;
     private String repoNodeId;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-    private LocalDate repoCreated;
+    private LocalDateTime repoCreated;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-    private LocalDate repoUpdated;
+    private LocalDateTime repoUpdated;
     private String repoDesc;
     private String repoUrl;
     private String orgName;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-    private LocalDate startDate;
+    private LocalDateTime startDate;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-    private LocalDate endDate;
+    private LocalDateTime endDate;
     private Integer userId;
     private Integer totalCommitCnt;
     private Integer myCommitCnt;
     private Integer totalContributors;
 
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "repoNodeId")
-    private List<LanguageDuration> languageDurations;
+    private List<LanguageDuration> languageDurations = new ArrayList<>();
 
     public RepositoryEntity(Integer userId, String repoName, String repoNodeId, String repoCreated, String repoUpdated, String repoDesc, String repoUrl) {
         this.userId = userId;
@@ -59,17 +59,17 @@ public class RepositoryEntity {
     }
 
     public void setRepoCreated(String repoCreated) {
-        this.repoCreated = convertToLocalDate(repoCreated);
+        this.repoCreated = convertToLocalDateTime(repoCreated);
     }
 
     public void setRepoUpdated(String repoUpdated) {
-        this.repoUpdated = convertToLocalDate(repoUpdated);
+        this.repoUpdated = convertToLocalDateTime(repoUpdated);
     }
 
-    private LocalDate convertToLocalDate(String dateStr) {
-        Instant instant = Instant.parse(dateStr);
-        LocalDate date = instant.atZone(ZoneId.systemDefault()).toLocalDate();
-        return date;
+    private LocalDateTime convertToLocalDateTime(String dateTimeStr) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssX");
+        LocalDateTime dateTime = LocalDateTime.parse(dateTimeStr, formatter);
+        return dateTime;
     }
 
 

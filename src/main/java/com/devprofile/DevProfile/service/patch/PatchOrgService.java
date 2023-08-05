@@ -55,13 +55,12 @@ public class PatchOrgService {
             PatchEntity patchEntity = new PatchEntity();
             if (file.has("filename"))
                 patchEntity.setFileName(file.get("filename").asText());
-            if (file.has("raw_url"))
-                patchEntity.setRawUrl(file.get("raw_url").asText());
             if (file.has("contents_url"))
                 patchEntity.setContentsUrl(file.get("contents_url").asText());
             if (file.has("patch")) {
                 String patch = file.get("patch").asText();
                 patchEntity.setPatch(patch);
+
                 commitRepository.updateLength(oid,patch.length());
             }
             patchEntity.setCommitOid(oid);

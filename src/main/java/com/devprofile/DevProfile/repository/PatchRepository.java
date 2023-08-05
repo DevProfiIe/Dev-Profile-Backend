@@ -16,6 +16,6 @@ public interface PatchRepository extends JpaRepository<PatchEntity,Long> {
     List<PatchEntity> findByCommitOid(String commitOid);
     PatchEntity findByPatch(String patch);
 
-
+    List<PatchEntity> findAllByPatch(String patch);
 
 }
