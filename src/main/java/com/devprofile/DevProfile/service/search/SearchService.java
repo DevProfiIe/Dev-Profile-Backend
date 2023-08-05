@@ -50,13 +50,15 @@ public class SearchService {
         return sortedCommits.size() > 10 ? sortedCommits.subList(0, 10) : sortedCommits;
     }
 
-    public List<Pair<String,String>> getTop10LevenshteinSimilarEntity(String word) {
-        Map<Pair<String, String>, Integer> commitSimilarities = new HashMap<>();
 
-        for (CommitKeywordsEntity commit : commitKeywordsRepository.findAll()) {
+    //TODO: 소문자로 탐색, userName 붙이기
+    public List<Pair<String,String>> getTop10LevenshteinSimilarEntity(String word, String userName) {
+        Map<Pair<String, String>, Integer> commitSimilarities = new HashMap<>();
+        List<CommitKeywordsEntity> commitKeywordsEntities = commitKeywordsRepository.findAll();
+
+        for (CommitKeywordsEntity commit : commitKeywordsEntities) {
             int minSimilarity = 100;
             String mostSimilarKeyword = "";
-
             if (commit.getCs() != null) {
                 for (String keyword : commit.getCs()) {
                     int similarity = LevenshteinDistance.levenshteinDistance(keyword,word);
@@ -66,7 +68,6 @@ public class SearchService {
                     }
                 }
             }
-
             commitSimilarities.put(Pair.of(commit.getOid(), mostSimilarKeyword), minSimilarity);
         }
 

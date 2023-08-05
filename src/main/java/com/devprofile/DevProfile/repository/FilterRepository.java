@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface FilterRepository extends MongoRepository<FilterEntity, String> {
-    FilterEntity findByUsername(String username);
+    FilterEntity findByUserLogin(String userLogin);
 }

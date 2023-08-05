@@ -130,8 +130,10 @@ public class MainController {
 
     @PostMapping("/test")
     public String test(@RequestParam String userName) {
+        filterService.createAndSaveFilter(userName);
         List<PatchEntity> patchEntities = patchRepository.findByCommitOid("d394b3b52e18f89773ed02af5163d91d62cfd797");
         patchEntities.forEach(patchEntity -> gptPatchService.generateKeyword(userName, patchEntity));
+
         return "index";
     }
 
@@ -242,6 +244,8 @@ public class MainController {
         sparqlService.sparqlEntity();
         return ResponseEntity.ok(" ");
     }
+
+
 
 
     public ResponseEntity<ApiResponse> userBoardData() throws IllegalAccessException, NoSuchFieldException {
