@@ -1,5 +1,6 @@
 package com.devprofile.DevProfile.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import lombok.Getter;
@@ -12,6 +13,7 @@ import java.util.Set;
 @Getter
 @Setter
 @Document(collection = "filter")
+@JsonIgnoreProperties({"_id"})
 public class FilterEntity {
     @Id
     private String id;

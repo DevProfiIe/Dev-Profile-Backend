@@ -1,21 +1,28 @@
 package com.devprofile.DevProfile.controller;
 
+import com.devprofile.DevProfile.component.AggregationFilter;
 import com.devprofile.DevProfile.dto.response.ApiResponse;
 import com.devprofile.DevProfile.dto.response.analyze.UserPageDTO;
 import com.devprofile.DevProfile.entity.*;
 import com.devprofile.DevProfile.repository.*;
 import com.devprofile.DevProfile.service.FilterService;
 import com.devprofile.DevProfile.service.search.SearchService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.data.domain.Pageable;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 @AllArgsConstructor
@@ -24,9 +31,10 @@ public class BoardController {
 
     private final FilterRepository filterRepository;
     private final SearchService searchService;
-    private final UserScoreRepository userScoreRepository;
     private final FrameworkRepository frameworkRepository;
     private final FilterService filterService;
+    private final AggregationFilter aggregationFilter;
+    private final UserStatusRepository userStatusRepository;
 
 
     public Map<String, Object> makeKeywordMap(Integer num, String keyword){
@@ -87,6 +95,7 @@ public class BoardController {
         styleList.add(makeKeywordMap(13,"실속없는 커밋자"));
         filters.put("keyword", styleList);
 
+
         apiResponse.setData(filters);
         apiResponse.setMessage(null);
         apiResponse.setResult(true);
@@ -95,9 +104,34 @@ public class BoardController {
         return ResponseEntity.ok(apiResponse);
     }
 
+    @PostMapping("/board/send")
+    public ResponseEntity<ApiResponse> userSendMsg(@RequestParam String sendUserName,
+                                                   @RequestParam String receiveUserName,
+                                                   @RequestParam List<String> boardUserNames){
+
+        ApiResponse<String> apiResponse = new ApiResponse<>();
+        List<UserStatusEntity> userStatusEntities = new ArrayList<>();
+        for(String boardUserName : boardUserNames){
+            UserStatusEntity userStatus = new UserStatusEntity();
+            userStatus.setBoardUserLogin(boardUserName);
+            userStatus.setSendUserLogin(sendUserName);
+            userStatus.setReceiveUserLogin(receiveUserName);
+            userStatus.setSelectedStatus(false);
+            userStatus.setUserStatus("onGoing");
+            userStatusEntities.add(userStatus);
+        }
+        userStatusRepository.saveAll(userStatusEntities);
+        apiResponse.setData(null);
+        apiResponse.setToken(null);
+        apiResponse.setMessage(null);
+        apiResponse.setResult(true);
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
     @GetMapping("/board")
     public ResponseEntity<ApiResponse> userBoardData(
-            @PageableDefault(size=20) Pageable pageable,
+            @RequestParam int page,
             @RequestParam(required = false) List<String> lang,
             @RequestParam(required = false) List<String> frame,
             @RequestParam(required = false) List<Integer> keywordsFilter,
@@ -107,6 +141,7 @@ public class BoardController {
         List<UserPageDTO> resultEntities = new ArrayList<>();
         List<String> keywords = new ArrayList<>();
         Map<Integer,String> styles = new HashMap<>();
+        ObjectMapper objectMapper= new ObjectMapper();
 
         styles.put(1,"지속적인 개발자");
         styles.put(2,"싱글 플레이어");
@@ -129,20 +164,17 @@ public class BoardController {
                 keywords.add(styles.get(num));
             }
         }
-
-        for(FilterEntity filterEntity: filterEntities){
-            if(frame!= null && !frame.isEmpty() && !filterService.filterByFrameworks(frame,filterEntity))continue;
-            if(lang!= null && !lang.isEmpty() &&!filterService.filterByLanguages(lang, filterEntity))continue;
-            if(keywordsFilter != null&& !keywordsFilter.isEmpty() && !filterService.filterByStyle(keywords,filterEntity))continue;
-            if(field != null && !field.equals("") && !filterEntity.getField().equals(field))continue;
-            resultEntities.add(filterService.filterChangeToDTO(filterEntity));
-        }
+        AggregationResults<Map> results=aggregationFilter.runAggregation(field,frame,lang,keywords, page,20 );
+        resultEntities = results.getMappedResults().stream()
+                .map(map->filterService.filterChangeToDTO(objectMapper.convertValue(map,FilterEntity.class)))
+                .collect(Collectors.toList());
         apiResponse.setMessage(null);
         apiResponse.setToken(null);
         apiResponse.setResult(true);
         apiResponse.setData(resultEntities);
         return ResponseEntity.ok(apiResponse);
     }
+
 
 
     @GetMapping("/autoKeyword")

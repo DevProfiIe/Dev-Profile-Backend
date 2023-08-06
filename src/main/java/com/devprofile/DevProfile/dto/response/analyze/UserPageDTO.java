@@ -18,4 +18,5 @@ public class UserPageDTO {
     private Set<String> styles;
     private String field;
     private String avatarUrl;
+    private Boolean selected = false;
 }
