@@ -5,8 +5,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 @Entity
@@ -31,8 +32,8 @@ public class CommitEntity {
 
     public void setCommitDate(String commitDateStr) {
         DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-        ZonedDateTime date = ZonedDateTime.parse(commitDateStr, formatter);
-        this.commitDate = date.toLocalDate();
+        Instant instant = Instant.from(formatter.parse(commitDateStr));
+        this.commitDate = instant.atZone(ZoneId.systemDefault()).toLocalDate();
     }
 
     public CommitEntity(Integer userId, String commitMessage, String commitDate, String userName, String commitOid) {

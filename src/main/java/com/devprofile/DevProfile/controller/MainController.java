@@ -14,6 +14,7 @@ import com.devprofile.DevProfile.service.gpt.GptCommitService;
 import com.devprofile.DevProfile.service.gpt.GptPatchService;
 import com.devprofile.DevProfile.service.graphql.GraphOrgService;
 import com.devprofile.DevProfile.service.graphql.GraphUserService;
+import com.devprofile.DevProfile.service.rabbitmq.MessageSenderService;
 import com.devprofile.DevProfile.service.search.SparqlService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
@@ -56,6 +58,7 @@ public class MainController {
     private final CommitKeywordsRepository commitKeywordsRepository;
     private final FilterService filterService;
     private final UserScoreRepository userScoreRepository;
+    private final MessageSenderService messageSenderService;
 
 
     private UserDTO convertToDTO(UserEntity userEntity, UserDataEntity userDataEntity) {
@@ -86,9 +89,16 @@ public class MainController {
 
         if (primaryId != null && !primaryId.isEmpty()) {
             UserEntity user = userRepository.findById(Integer.parseInt(primaryId)).orElseThrow();
+            messageSenderService.MainSendMessage(user);
 
-            return Mono.when(userService.userOwnedRepositories(user), orgService.orgOwnedRepositories(user))
+            Mono<Void> userRepos = userService.userOwnedRepositories(user)
                     .then(Mono.fromRunnable(() -> filterService.createAndSaveFilter(user.getLogin())));
+
+            Mono<Void> orgRepos = orgService.orgOwnedRepositories(user)
+                    .then(Mono.fromRunnable(() -> filterService.createAndSaveFilter(user.getLogin())));
+
+            return Flux.merge(userRepos, orgRepos)
+                    .then();
         } else {
             throw new IllegalArgumentException("The primaryId is null or empty");
         }

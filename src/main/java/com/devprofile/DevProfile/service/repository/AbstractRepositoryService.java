@@ -26,10 +26,13 @@ public abstract class AbstractRepositoryService {
         this.webClient = webClientBuilder.baseUrl("https://api.github.com").build();
     }
     @Transactional
-    public void saveRepositories(List<RepositoryEntity> repositories, String userId) {
-        gitRepository.saveAll(repositories);
-        gitRepository.flush();
+    public Mono<Void> saveRepositoryes(List<RepositoryEntity> repositories, String userId) {
+        return Mono.fromRunnable(() -> {
+            gitRepository.saveAll(repositories);
+            gitRepository.flush();
+        });
     }
+
 
     protected Mono<ClientResponse> executeGraphQLQuery(String query, Map<String, Object> variables) {
         Map<String, Object> body = new HashMap<>();

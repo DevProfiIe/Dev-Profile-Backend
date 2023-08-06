@@ -1,15 +1,23 @@
 package com.devprofile.DevProfile.service;
 
+
+import com.devprofile.DevProfile.entity.FilterEntity;
+import com.devprofile.DevProfile.entity.LanguageDuration;
+import com.devprofile.DevProfile.entity.RepoFrameworkEntity;
+import com.devprofile.DevProfile.repository.FilterRepository;
+import com.devprofile.DevProfile.repository.LanguageDurationRepository;
+import com.devprofile.DevProfile.repository.RepoFrameworkRepository;
+
 import com.devprofile.DevProfile.dto.response.analyze.UserPageDTO;
 import com.devprofile.DevProfile.entity.*;
 import com.devprofile.DevProfile.repository.*;
-import com.devprofile.DevProfile.service.userData.UserStyleService;
+
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+
 import java.util.*;
-import java.util.logging.Filter;
 import java.util.stream.Collectors;
 
 @Service
@@ -18,6 +26,7 @@ public class FilterService {
     private final FilterRepository filterRepository;
     private final RepoFrameworkRepository repoFrameworkRepository;
     private final LanguageDurationRepository languageDurationRepository;
+
     private final UserDataRepository userDataRepository;
     private final UserRepository userRepository;
     private final UserScoreRepository userScoreRepository;
@@ -29,6 +38,7 @@ public class FilterService {
         FilterEntity existingFilter = filterRepository.findByUserLogin(userLogin);
         UserEntity user = userRepository.findByLogin(userLogin);
         UserDataEntity userData = userDataRepository.findByUserName(userLogin);
+
         if (existingFilter != null) {
             return existingFilter;
         }

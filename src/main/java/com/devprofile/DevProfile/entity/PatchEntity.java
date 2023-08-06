@@ -19,11 +19,13 @@ public class PatchEntity {
     private String fileName;
 
     @Column(columnDefinition="LONGTEXT")
-    private String rawUrl;
-    @Column(columnDefinition="LONGTEXT")
     private String contentsUrl;
     @Column(columnDefinition="LONGTEXT")
     private String patch;
+
+    @Column
+    private Integer additions;
+    private Integer deletions;
 
 
 }

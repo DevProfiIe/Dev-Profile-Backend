@@ -24,6 +24,7 @@ public interface CommitRepository extends JpaRepository<CommitEntity, String> {
     @Query("UPDATE CommitEntity set length = length + :length where commitOid = :oid" )
     void  updateLength(@Param("oid")String oid, @Param("length") Integer length);
 
+
     @Query("SELECT c FROM CommitEntity c WHERE c.commitOid = :commitOid")
     Optional<CommitEntity> findByCommitOid(@Param("commitOid") String commitOid);
 

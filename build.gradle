@@ -60,7 +60,6 @@ dependencies {
 	implementation 'org.webjars.bower:axios:0.17.1'
 	implementation 'com.google.code.gson:gson:2.8.0'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
 	//itext for pdf
 	implementation files('build/libs/svg-8.0.0.jar')
@@ -81,6 +80,9 @@ dependencies {
 	implementation files('build/libs/sign-8.0.0.jar')
 	implementation files('build/libs/styled-xml-parser-8.0.0.jar')
 
+	//RabbitMQ
+	implementation 'org.springframework.boot:spring-boot-starter-amqp'
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.11.3'
 
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.mysql:mysql-connector-j'

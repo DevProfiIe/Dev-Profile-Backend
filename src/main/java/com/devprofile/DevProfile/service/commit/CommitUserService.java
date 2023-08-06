@@ -3,12 +3,16 @@ package com.devprofile.DevProfile.service.commit;
 import com.devprofile.DevProfile.entity.CommitEntity;
 import com.devprofile.DevProfile.repository.CommitRepository;
 import com.devprofile.DevProfile.repository.GitRepository;
+import com.devprofile.DevProfile.service.rabbitmq.MessageSenderService;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Mono;
 
 import java.util.*;
 
@@ -20,9 +24,11 @@ public class CommitUserService {
 
     private final CommitRepository commitRepository;
     private final GitRepository gitRepository;
+    private final MessageSenderService messageSenderService;
+    private final ObjectMapper objectMapper;
 
-    @Transactional
-    public Map<String, List<String>> saveCommits(JsonNode repositories, String userName, Integer userId) {
+
+    public Mono<Map<String, List<String>>> saveCommits(JsonNode repositories, String userName, Integer userId) {
         Map<String, List<String>> repoOidsMap = new HashMap<>();
         try {
             List<CommitEntity> commits = new ArrayList<>();
@@ -48,6 +54,9 @@ public class CommitUserService {
                     commitEntity.setLength(0);
                     commits.add(commitEntity);
                     oids.add(oid);
+
+                    // send a message after saving each commit
+                    messageSenderService.CommitSendMessage(commitEntity).subscribe(result -> log.info("Sent message: " + result));
                 }
                 repoOidsMap.put(repo.get("name").asText(), oids);
             }
@@ -56,11 +65,29 @@ public class CommitUserService {
         } catch (DataAccessException e) {
             log.error("Error saving commits: ", e);
         }
-        return repoOidsMap;
+        return Mono.just(repoOidsMap);
     }
 
+
+
     @Transactional
-    public void updateDates() {
+    public Mono<Void> updateDates() {
         gitRepository.updateStartDateEndDate();
+
+        try {
+            ObjectNode messageObject = objectMapper.createObjectNode();
+            messageObject.put("message", "Dates updated");
+            String message = messageObject.toString();
+
+            messageSenderService.sendMessage(message).subscribe(result -> log.info("Sent message: " + result));
+        }catch (Exception e) {
+            log.info(e.getMessage());
+            e.printStackTrace();
+        }
+        return Mono.empty();
+    }
+
+
+    public void saveCommits(CommitEntity commitEntity) {
     }
 }
