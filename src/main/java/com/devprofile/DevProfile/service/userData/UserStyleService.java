@@ -58,19 +58,18 @@ public class UserStyleService {
 
             styles.add(generateContinuous(userDataEntity));             //지속적인 개발자
             styles.add(generateExplain(userDataEntity));                //설명충
-            styles.add(generateReadMe(userDataEntity, searchUserName)); //리드미 리드미
+            styles.add(generateReadMe(userDataEntity, searchUserName)); //"리드미" 리드미
             styles.add(generateDayCommits(userDataEntity));             //1일 1커밋
             styles.add(generateNoPointCommits(userDataEntity));         //실속없는 커밋자
             styles.add(generateSoloMultiplayer(userDataEntity));        //싱글 멀티 플레이어
             styles.add(generateCommitPattern(userDataEntity));          //새벽형 개발자, 아침형 개발자
-            styles.add(generateRefactor(userDataEntity));               //리팩토리
+            styles.add(generateRefactor(userDataEntity));               //Refactory
             styles.add(generateInfluence(userDataEntity));              //인기 개발자, 영향력 있는 개발자
             styles.add(generateWeekendCommitter(userDataEntity));       //주말 커밋 전문가, 주말 커밋자
 
             addKeywordsToUser(userDataEntity.getUserName(), styles);
         }
     }
-
 
     public String generateCommitPattern(UserDataEntity userDataEntity) {
         String userName = userDataEntity.getUserName();
@@ -102,7 +101,6 @@ public class UserStyleService {
                         lateNightCommits++;
                     } else if (hour >= 6 && hour < 10) {
                         earlyMorningCommits++;
-
                     }
                 }
             }
@@ -244,10 +242,7 @@ public class UserStyleService {
                 }
             }
         }
-        if(singleCount<1 && multiCount<1){
-            return "사용하지 않는 거죠?";
-        }
-        if(singleCount>multiCount) {
+        if(singleCount > multiCount+2) {
             return "싱글 플레이어";
         }else{
             return "멀티 플레이어";

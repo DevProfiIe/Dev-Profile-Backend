@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -14,7 +15,8 @@ public class UserPageDTO {
     private String userName;
     private List<String> language;
     private List<String> framework;
+    private Set<String> styles;
     private String field;
     private String avatarUrl;
-
+    private Boolean selected = false;
 }

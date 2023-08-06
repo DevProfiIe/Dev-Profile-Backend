@@ -59,7 +59,7 @@ public class SearchController {
         ApiResponse<List<SearchResultDTO>> apiResponse = new ApiResponse<>();
 
         List<SearchResultDTO> searchResultList = new ArrayList<>();
-        for (Pair<String, String> oidKeyword : searchService.getTop10LevenshteinSimilarEntity(query)) {
+        for (Pair<String, String> oidKeyword : searchService.getTop10LevenshteinSimilarEntity(query, userName)) {
             SearchResultDTO searchResultDTO = new SearchResultDTO();
             CommitEntity commitEntity = commitRepository.findByCommitOid(oidKeyword.getFirst()).orElseThrow();
             searchResultDTO.setCommitDate(commitEntity.getCommitDate());
