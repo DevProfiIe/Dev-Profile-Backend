@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +20,7 @@ public interface GitRepository extends JpaRepository<RepositoryEntity, Long> {
     List<RepositoryEntity> findByUserId(Integer userId);
 
     @Modifying
+    @Transactional
     @Query("update RepositoryEntity ur set ur.startDate = (select min(uc.commitDate) from CommitEntity uc where uc.repoName = ur.repoName), ur.endDate = (select max(uc.commitDate) from CommitEntity uc where uc.repoName = ur.repoName)")
     void updateStartDateEndDate();
     Optional<RepositoryEntity> findByRepoName(String repoName);

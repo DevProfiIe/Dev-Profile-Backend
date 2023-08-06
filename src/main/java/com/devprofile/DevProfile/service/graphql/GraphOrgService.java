@@ -11,6 +11,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
@@ -31,7 +33,6 @@ public class GraphOrgService {
     private final PatchOrgService patchOrgService;
     private final LanguageService languageService;
     private final ContributorsOrgService contributorsOrgService;
-
 
 
     private Mono<Map<String, Map<String, List<String>>>> fetchOrganizationRepoCommits(JsonNode organizations) {
@@ -62,48 +63,83 @@ public class GraphOrgService {
         }
         return Mono.just(orgRepoCommits);
     }
+
+    @Transactional
     public Mono<Void> orgOwnedRepositories(UserEntity user) {
-        return Mono.defer(() -> {
-            Integer userId = user.getId();
-            String userNodeId = user.getNode_id();
-            String userName = user.getLogin();
-            String accessToken = user.getGitHubToken();
-
-            String queryTemplate = null;
-            try {
-                queryTemplate = graphQLService.getGraphQLQuery("org_repositories_query_graphqls");
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            Map<String, Object> variables = new HashMap<>();
-            variables.put("login", userName);
-            variables.put("node_id", userNodeId);
-
-            GraphQLService.CustomGraphQLRequest request = new GraphQLService.CustomGraphQLRequest(queryTemplate, variables);
-
-            try {
-                    return graphQLService.sendGraphQLRequest(user, request)
-                            .flatMap(response -> {
-                                if (response.has("errors")) {
-                                    System.out.println("GraphQL Errors: " + response.get("errors"));
-                                }
-                                JsonNode organizations = response.get("data").get("user").get("organizations").get("nodes");
-                                orgRepoService.saveRepositories(organizations, userId, userName);
-                                commitOrgService.saveCommits(organizations, userName, userId);
-                                commitOrgService.updateDates();
-
-                                return fetchOrganizationRepoCommits(organizations)
-                                        .flatMap(orgRepoCommits -> {
-                                            contributorsOrgService.countCommits(orgRepoCommits, userName, accessToken);
-                                            patchOrgService.savePatchs(accessToken, orgRepoCommits); // Call the synchronous method without chaining
-                                            return languageService.orgLanguages(orgRepoCommits, accessToken, userName);
-                                        })
-                                        .then();
-                            });
-            }catch (JsonProcessingException e) {
-                        throw new RuntimeException(e);
-                    }
+        return getQueryTemplate(user)
+                .flatMap(queryTemplate -> executeGraphQLRequest(user, queryTemplate))
+                .flatMap(response -> {
+                    JsonNode organizations = response.get("data").get("user").get("organizations").get("nodes");
+                    String userName = user.getLogin();
+                    String accessToken = user.getGitHubToken();
+                    return saveRepositories(organizations, user.getId(), userName)
+                            .then(saveCommits(organizations, user))
+                            .flatMap(orgRepoCommits -> Flux.merge(
+                                            countCommits(orgRepoCommits, userName, accessToken),
+                                            savePatchs(orgRepoCommits, accessToken),
+                                            orgLanguages(orgRepoCommits, accessToken, userName))
+                                    .then());
                 });
-            }
+    }
+
+    private Mono<String> getQueryTemplate(UserEntity user) {
+        try {
+            return Mono.just(graphQLService.getGraphQLQuery("org_repositories_query_graphqls"));
+        } catch (IOException e) {
+            return Mono.error(new RuntimeException(e));
         }
+    }
+
+    private Mono<JsonNode> executeGraphQLRequest(UserEntity user, String queryTemplate) {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("login", user.getLogin());
+        variables.put("node_id", user.getNode_id());
+        GraphQLService.CustomGraphQLRequest request = new GraphQLService.CustomGraphQLRequest(queryTemplate, variables);
+
+        try {
+            return graphQLService.sendGraphQLRequest(user, request);
+        } catch (JsonProcessingException e) {
+            return Mono.error(new RuntimeException(e));
+        }
+    }
+
+    @Transactional
+    public Mono<Void> saveRepositories(JsonNode organizations, Integer userId, String userName) {
+        return orgRepoService.saveRepositories(organizations, userId, userName)
+                .doOnSuccess(aVoid -> log.info("Repositories saved successfully for user with id {}", userId))
+                .doOnError(e -> log.error("Error while saving repositories for user with id {}", userId, e));
+    }
+
+    @Transactional
+    public Mono<Map<String, Map<String, List<String>>>> saveCommits(JsonNode organizations, UserEntity user) {
+        String userName = user.getLogin();
+        Integer userId = user.getId();
+
+        return commitOrgService.saveCommits(organizations, userName, userId)
+                .doOnSuccess(aVoid -> log.info("Commits saved successfully for organization"))
+                .doOnError(e -> log.error("Error while saving commits for organization", e))
+                .flatMap(aVoid -> commitOrgService.updateDates().thenReturn(aVoid))
+                .then(fetchOrganizationRepoCommits(organizations));
+    }
+
+    @Transactional
+    public Mono<Void> countCommits(Map<String, Map<String, List<String>>> orgRepoCommits, String userName, String accessToken) {
+        return contributorsOrgService.countCommits(orgRepoCommits, userName, accessToken)
+                .doOnSuccess(aVoid -> log.info("Commits counted successfully for organization"))
+                .doOnError(e -> log.error("Error while counting commits for organization", e));
+    }
+
+    @Transactional
+    public Mono<Void> savePatchs(Map<String, Map<String, List<String>>> orgRepoCommits, String accessToken) {
+        return patchOrgService.savePatchs(accessToken, orgRepoCommits)
+                .doOnSuccess(aVoid -> log.info("Patches saved successfully for organization"))
+                .doOnError(e -> log.error("Error while saving patches for organization", e));
+    }
+
+    @Transactional
+    public Mono<Void> orgLanguages(Map<String, Map<String, List<String>>> orgRepoCommits, String accessToken, String userName) {
+        return languageService.orgLanguages(orgRepoCommits, accessToken, userName)
+                .doOnSuccess(aVoid -> log.info("Languages for organization processed successfully"))
+                .doOnError(e -> log.error("Error while processing languages for organization", e));
+    }
+}
