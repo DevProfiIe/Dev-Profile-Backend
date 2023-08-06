@@ -12,8 +12,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 
 @Service
-public class MessageReceiverService {
-
+public class MessageOrgReceiverService {
     @Autowired
     private GraphUserService graphUserService;
 
@@ -26,7 +25,7 @@ public class MessageReceiverService {
     @Autowired
     private CommitUserService commitUserService;
 
-    @RabbitListener(queues = "${rabbitmq.queue}")
+    @RabbitListener(queues = "${rabbitmq.queue2}")
     public void receivedMessage(String message) {
         try {
             JsonNode jsonNode = objectMapper.readTree(message);

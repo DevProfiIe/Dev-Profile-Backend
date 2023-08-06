@@ -14,6 +14,7 @@ import com.devprofile.DevProfile.service.gpt.GptCommitService;
 import com.devprofile.DevProfile.service.gpt.GptPatchService;
 import com.devprofile.DevProfile.service.graphql.GraphOrgService;
 import com.devprofile.DevProfile.service.graphql.GraphUserService;
+import com.devprofile.DevProfile.service.rabbitmq.MessageOrgSenderService;
 import com.devprofile.DevProfile.service.rabbitmq.MessageSenderService;
 import com.devprofile.DevProfile.service.search.SparqlService;
 import lombok.RequiredArgsConstructor;
@@ -59,6 +60,7 @@ public class MainController {
     private final FilterService filterService;
     private final UserScoreRepository userScoreRepository;
     private final MessageSenderService messageSenderService;
+    private final MessageOrgSenderService messageOrgSenderService;
 
 
     private UserDTO convertToDTO(UserEntity userEntity, UserDataEntity userDataEntity) {
@@ -90,6 +92,7 @@ public class MainController {
         if (primaryId != null && !primaryId.isEmpty()) {
             UserEntity user = userRepository.findById(Integer.parseInt(primaryId)).orElseThrow();
             messageSenderService.MainSendMessage(user);
+            messageOrgSenderService.orgMainSendMessage(user);
 
             Mono<Void> userRepos = userService.userOwnedRepositories(user)
                     .then(Mono.fromRunnable(() -> filterService.createAndSaveFilter(user.getLogin())));

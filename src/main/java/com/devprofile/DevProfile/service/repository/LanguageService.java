@@ -3,6 +3,7 @@ package com.devprofile.DevProfile.service.repository;
 import com.devprofile.DevProfile.entity.LanguageDuration;
 import com.devprofile.DevProfile.entity.RepositoryEntity;
 import com.devprofile.DevProfile.repository.GitRepository;
+import com.devprofile.DevProfile.service.rabbitmq.MessageOrgSenderService;
 import com.devprofile.DevProfile.service.rabbitmq.MessageSenderService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
@@ -25,12 +26,15 @@ public class LanguageService {
 
     private GitRepository gitRepository;
     private WebClient webClient;
+    private MessageOrgSenderService messageOrgSenderService;
     private MessageSenderService messageSenderService;
 
-    public LanguageService(GitRepository gitRepository, WebClient.Builder webClientBuilder, MessageSenderService messageSenderService) {
+    public LanguageService(GitRepository gitRepository, WebClient.Builder webClientBuilder, MessageOrgSenderService messageOrgSenderService,MessageSenderService messageSenderService) {
         this.gitRepository = gitRepository;
         this.webClient = webClientBuilder.baseUrl("https://api.github.com").build();
+        this.messageOrgSenderService = messageOrgSenderService;
         this.messageSenderService = messageSenderService;
+
     }
 
 
@@ -44,6 +48,10 @@ public class LanguageService {
                     .header("Authorization", "Bearer " + token)
                     .retrieve()
                     .bodyToMono(JsonNode.class)
+                    .onErrorResume(e -> {
+                        log.error("Error while retrieving language data for repository " + repoName, e);
+                        return Mono.empty();
+                    })
                     .flatMap(response -> {
                         RepositoryEntity repoEntity = gitRepository.findByRepoName(repoName).orElse(new RepositoryEntity());
                         LocalDateTime startDate = repoEntity.getStartDate();
@@ -93,6 +101,10 @@ public class LanguageService {
                         .header("Authorization", "Bearer " + token)
                         .retrieve()
                         .bodyToMono(JsonNode.class)
+                        .onErrorResume(e -> {
+                            log.error("Error while retrieving language data for repository " + repoName, e);
+                            return Mono.empty();
+                        })
                         .flatMap(response -> {
                             RepositoryEntity repoEntity = gitRepository.findByRepoName(repoName).orElse(new RepositoryEntity());
                             LocalDateTime startDate = repoEntity.getStartDate();
@@ -109,7 +121,10 @@ public class LanguageService {
                                         .collect(Collectors.toList());
 
                                 repoEntity.setLanguageDurations(languageDurations);
-                                return Mono.fromRunnable(() -> gitRepository.save(repoEntity)).then();
+                                return Mono.fromRunnable(() -> {
+                                    gitRepository.save(repoEntity);
+                                    messageOrgSenderService.orgRepoSendMessage(repoEntity).subscribe();
+                                }).then();
                             } else {
                                 log.warn("Start date or end date is null for repository: " + repoName);
                                 return Mono.empty();
