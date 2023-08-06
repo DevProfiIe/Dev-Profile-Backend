@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.util.Pair;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -29,7 +30,6 @@ import java.util.stream.Collectors;
 public class BoardController {
 
 
-    private final FilterRepository filterRepository;
     private final SearchService searchService;
     private final FrameworkRepository frameworkRepository;
     private final FilterService filterService;
@@ -136,8 +136,7 @@ public class BoardController {
             @RequestParam(required = false) List<String> frame,
             @RequestParam(required = false) List<Integer> keywordsFilter,
             @RequestParam(required = false) String field) {
-        ApiResponse<List<UserPageDTO>> apiResponse = new ApiResponse<>();
-        List<FilterEntity> filterEntities = filterRepository.findAll();
+        ApiResponse<Map<String,Object>> apiResponse = new ApiResponse<>();
         List<UserPageDTO> resultEntities = new ArrayList<>();
         List<String> keywords = new ArrayList<>();
         Map<Integer,String> styles = new HashMap<>();
@@ -157,21 +156,29 @@ public class BoardController {
         styles.put(12,"주말 커밋자");
         styles.put(13,"실속없는 커밋자");
 
-        System.out.println("field = " + field);
 
         if(keywordsFilter != null && !keywordsFilter.isEmpty()){
             for(Integer num :keywordsFilter){
                 keywords.add(styles.get(num));
             }
         }
-        AggregationResults<Map> results=aggregationFilter.runAggregation(field,frame,lang,keywords, page,20 );
-        resultEntities = results.getMappedResults().stream()
-                .map(map->filterService.filterChangeToDTO(objectMapper.convertValue(map,FilterEntity.class)))
-                .collect(Collectors.toList());
+        Pair<Integer, AggregationResults<Map>> results = aggregationFilter.runAggregation(field,frame,lang,keywords, page,20 );
+        if(results.getSecond().getMappedResults() !=null){
+            resultEntities = results.getSecond().getMappedResults().stream()
+                    .map(map->filterService.filterChangeToDTO(objectMapper.convertValue(map,FilterEntity.class)))
+                    .collect(Collectors.toList());
+        }
+
+        Integer total = results.getFirst();
+
+        Map<String, Object> resultMap = new HashMap<>();
+        resultMap.put("total", total);
+        resultMap.put("content", resultEntities);
+
         apiResponse.setMessage(null);
         apiResponse.setToken(null);
         apiResponse.setResult(true);
-        apiResponse.setData(resultEntities);
+        apiResponse.setData(resultMap);
         return ResponseEntity.ok(apiResponse);
     }
 

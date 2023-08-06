@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
 import lombok.AllArgsConstructor;
 
@@ -29,7 +30,7 @@ public class AggregationFilter {
     private final MongoTemplate mongoTemplate;
 
 
-    public AggregationResults<Map> runAggregation(String field, List<String> frameworks, List<String> languages, List<String> keywords, int page, int size){
+    public Pair<Integer,AggregationResults<Map>> runAggregation(String field, List<String> frameworks, List<String> languages, List<String> keywords, int page, int size){
         // Prepare filters
         List<Criteria> filters = new ArrayList<>();
 
@@ -40,6 +41,7 @@ public class AggregationFilter {
                 filters.add(Criteria.where( "frameworks." + name).gte(duration * 30));
             }
         }
+
         if(languages!=null&&!languages.isEmpty()){
             for(int i = 0; i < languages.size(); i += 2) {
                 String name = languages.get(i);
@@ -47,9 +49,23 @@ public class AggregationFilter {
                 filters.add(Criteria.where("languages." + name).gte(duration * 30));
             }
         }
+
         if(keywords!=null&&!keywords.isEmpty()) filters.add(Criteria.where("styles").all(keywords));
         if(field!=null&&!field.equals(""))filters.add(Criteria.where("field").is(field));
         Aggregation aggregation;
+        Aggregation countAggregation;
+        if(!filters.isEmpty()){
+        countAggregation = newAggregation(
+                match(new Criteria().andOperator(filters.toArray(new Criteria[filters.size()]))),
+                count().as("count"));
+        }
+        else{
+            countAggregation = newAggregation(count().as("count"));
+        }
+
+        AggregationResults<Map> countResult = mongoTemplate.aggregate(countAggregation, "filter", Map.class);
+        int totalCount = (int) countResult.getUniqueMappedResult().get("count");
+
         // Create final aggregation
         int skip = (page - 1) * size;
         if(!filters.isEmpty()){
@@ -69,7 +85,7 @@ public class AggregationFilter {
 
         AggregationResults<Map> result = mongoTemplate.aggregate(aggregation, "filter", Map.class);
 
-        return result;
+        return Pair.of(totalCount, result);
     }
 
 }

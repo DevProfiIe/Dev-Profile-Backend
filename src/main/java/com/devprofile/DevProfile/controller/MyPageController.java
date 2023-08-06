@@ -42,7 +42,7 @@ public class MyPageController {
         for(UserStatusEntity userStatusEntity: userStatusSend){
             FilterEntity filterEntity = filterRepository.findByUserLogin(userStatusEntity.getBoardUserLogin());
             UserPageDTO userPage=filterService.filterChangeToDTO(filterEntity);
-            if(userStatusEntity.getUserStatus().equals("onGoing"))userPageOngoing.add(userPage);
+            if(userStatusEntity.getUserStatus().equals("onGoing")) userPageOngoing.add(userPage);
             else userPageEnd.add(userPage);
         }
         userPageSend.put("onGoing",userPageOngoing);

@@ -61,7 +61,7 @@ public class SearchService {
             String mostSimilarKeyword = "";
             if (commit.getCs() != null) {
                 for (String keyword : commit.getCs()) {
-                    int similarity = LevenshteinDistance.levenshteinDistance(keyword,word);
+                    int similarity = LevenshteinDistance.levenshteinDistance(keyword.toLowerCase(),word.toLowerCase());
                     if(similarity < minSimilarity){
                         mostSimilarKeyword = keyword;
                         minSimilarity = similarity;

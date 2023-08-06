@@ -7,6 +7,7 @@ import com.devprofile.DevProfile.service.userData.UserStyleService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.logging.Filter;
 import java.util.stream.Collectors;
@@ -21,6 +22,8 @@ public class FilterService {
     private final UserRepository userRepository;
     private final UserScoreRepository userScoreRepository;
     private final FrameworkRepository frameworkRepository;
+    private final CommitRepository commitRepository;
+    private final GitRepository gitRepository;
 
     public FilterEntity createAndSaveFilter(String userLogin) {
         FilterEntity existingFilter = filterRepository.findByUserLogin(userLogin);
@@ -34,13 +37,6 @@ public class FilterService {
         filterEntity.setUserName(user.getName());
         filterEntity.setUserLogin(userLogin);
         filterEntity.setStyles(userData.getUserStyle());
-
-        List<UserScore> userScores = userScoreRepository.findByLogin(user.getLogin());
-        UserScore maxScoreUserScore = userScores.stream()
-                .max(Comparator.comparing(UserScore::getScore))
-                .orElse(null);
-
-        filterEntity.setField(maxScoreUserScore.getField());
 
         List<RepoFrameworkEntity> repoFrameworkEntities = repoFrameworkRepository.findAll();
         Map<String, Integer> frameworks = repoFrameworkEntities.stream()
@@ -57,38 +53,23 @@ public class FilterService {
                         Integer::sum));
         filterEntity.setLanguages(languages);
 
+        List<CommitEntity> commitEntities= commitRepository.findByUserName(userLogin);
+        Optional<LocalDate> maxDate = commitEntities.stream()
+                .map(CommitEntity::getCommitDate)
+                .max(LocalDate::compareTo);
+        Optional<LocalDate> minDate = commitEntities.stream()
+                .map(CommitEntity::getCommitDate)
+                .min(LocalDate::compareTo);
+
+        Integer commitDays = minDate.orElseThrow().compareTo(maxDate.orElseThrow());
+        Integer commitCount = commitEntities.size();
+        Integer repoCount = gitRepository.findByUserId(user.getId()).size();
+        filterEntity.setCommitCount(commitCount);
+        filterEntity.setRepoCount(repoCount);
+        filterEntity.setCommitDays(commitDays);
+
 
         return filterRepository.save(filterEntity);
-    }
-
-
-
-    public boolean filterByFrameworks(List<String> frameworkList, FilterEntity filterEntity){
-        Map<String, Integer> frameworks = filterEntity.getFrameworks();
-
-        for(int i =0; i<frameworkList.size(); i += 2){
-            String name = frameworkList.get(i);
-            Integer duration = Integer.parseInt(frameworkList.get(i+1));
-            if(filterEntity.getFrameworks().get(name) < duration * 30){
-                return false;
-            }
-        }
-        return true;
-    }
-    public boolean filterByLanguages(List<String> languageList, FilterEntity filterEntity){
-        Map<String, Integer> languages = filterEntity.getFrameworks();
-        for(int i =0; i<languageList.size(); i += 2){
-            String name = languageList.get(i);
-            Integer duration = Integer.parseInt(languageList.get(i+1));
-            if(filterEntity.getLanguages().get(name) < duration * 30){
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public boolean filterByStyle(List<String> keywordList, FilterEntity filterEntity){
-        return filterEntity.getStyles().containsAll(keywordList);
     }
 
     public UserPageDTO filterChangeToDTO(FilterEntity filter){

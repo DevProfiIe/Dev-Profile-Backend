@@ -136,6 +136,9 @@ public class MockupDataGenerater {
             entity.setStyles(getRandomStyles(styleList));
             entity.setLanguages(getRandomLanguages(languageList));
             entity.setFrameworks(getRandomFrameworks(frameworkList));
+            entity.setRepoCount(new Random().nextInt(50) + 1);
+            entity.setCommitCount(new Random().nextInt(1500) + 1);
+            entity.setCommitDays(new Random().nextInt(2000) + 1);
 
             return entity;
         }
