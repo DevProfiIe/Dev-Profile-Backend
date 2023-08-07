@@ -95,6 +95,9 @@ public class FilterService {
         List<String> language = new ArrayList<>(filter.getLanguages().keySet());
         language.sort(Comparator.comparingInt(filter.getLanguages()::get).reversed());
         userPageDTO.setLanguage(language.size() > 3 ? language.subList(0, 3) : language);
+        userPageDTO.setCommitCount(filter.getCommitCount());
+        userPageDTO.setRepoCount(filter.getRepoCount());
+        userPageDTO.setCommitDays(filter.getCommitDays());
 
         return userPageDTO;
     }

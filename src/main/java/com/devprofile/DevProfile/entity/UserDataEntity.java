@@ -17,6 +17,7 @@ public class UserDataEntity {
 
     @Id
     private String id;
+
     private String userName;
 
     private Set<String> keywordSet;
@@ -49,7 +50,7 @@ public class UserDataEntity {
 
     private String userKeywordAnalyze;
 
-    private Map<String, Integer> cs;
 
+    private Map<String, Integer> cs;
 
 }

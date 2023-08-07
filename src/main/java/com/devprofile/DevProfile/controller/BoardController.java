@@ -7,26 +7,25 @@ import com.devprofile.DevProfile.entity.*;
 import com.devprofile.DevProfile.repository.*;
 import com.devprofile.DevProfile.service.FilterService;
 import com.devprofile.DevProfile.service.search.SearchService;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.util.Pair;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.data.domain.Pageable;
+
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Controller
 @AllArgsConstructor
+@Slf4j
 public class BoardController {
 
 
@@ -43,6 +42,7 @@ public class BoardController {
         keywords.put("keyword", keyword);
         return keywords;
     }
+
     @GetMapping("/board/filter")
     public ResponseEntity<ApiResponse> userBoardFilter(){
         Map<String, Object> filters = new HashMap<>();
@@ -163,11 +163,21 @@ public class BoardController {
             }
         }
         Pair<Integer, AggregationResults<Map>> results = aggregationFilter.runAggregation(field,frame,lang,keywords, page,20 );
-        if(results.getSecond().getMappedResults() !=null){
-            resultEntities = results.getSecond().getMappedResults().stream()
-                    .map(map->filterService.filterChangeToDTO(objectMapper.convertValue(map,FilterEntity.class)))
-                    .collect(Collectors.toList());
-        }
+
+        resultEntities = results.getSecond().getMappedResults().stream()
+                .filter(Objects::nonNull)
+                .map(map -> {
+                    try {
+                        FilterEntity entity = objectMapper.convertValue(map, FilterEntity.class);
+                        return filterService.filterChangeToDTO(entity);
+                    } catch (Exception e) {
+                        log.error(e.getMessage());
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
 
         Integer total = results.getFirst();
 

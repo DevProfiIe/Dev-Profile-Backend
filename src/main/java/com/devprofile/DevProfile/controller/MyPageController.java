@@ -41,6 +41,7 @@ public class MyPageController {
         List<UserPageDTO> userPageEnd = new ArrayList<>();
         for(UserStatusEntity userStatusEntity: userStatusSend){
             FilterEntity filterEntity = filterRepository.findByUserLogin(userStatusEntity.getBoardUserLogin());
+            if(filterEntity == null) continue;
             UserPageDTO userPage=filterService.filterChangeToDTO(filterEntity);
             if(userStatusEntity.getUserStatus().equals("onGoing")) userPageOngoing.add(userPage);
             else userPageEnd.add(userPage);
@@ -52,6 +53,7 @@ public class MyPageController {
 
         for(UserStatusEntity userStatusEntity: userStatusReceive){
             FilterEntity filterEntity = filterRepository.findByUserLogin(userStatusEntity.getBoardUserLogin());
+            if(filterEntity == null) continue;
             UserPageDTO userPage=filterService.filterChangeToDTO(filterEntity);
             if(userStatusEntity.getUserStatus().equals("onGoing")){
                 userPage.setSelected(userStatusEntity.getSelectedStatus());

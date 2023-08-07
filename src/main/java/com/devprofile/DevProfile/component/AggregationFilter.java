@@ -64,8 +64,12 @@ public class AggregationFilter {
         }
 
         AggregationResults<Map> countResult = mongoTemplate.aggregate(countAggregation, "filter", Map.class);
-        int totalCount = (int) countResult.getUniqueMappedResult().get("count");
 
+        Map resultMap = countResult.getUniqueMappedResult();
+        int totalCount = 0;
+        if (resultMap != null) {
+            totalCount = (int) resultMap.get("count");
+        }
         // Create final aggregation
         int skip = (page - 1) * size;
         if(!filters.isEmpty()){

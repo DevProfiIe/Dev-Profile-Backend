@@ -18,5 +18,8 @@ public class UserPageDTO {
     private Set<String> styles;
     private String field;
     private String avatarUrl;
+    private Integer repoCount;
+    private Integer commitCount;
+    private Integer commitDays;
     private Boolean selected = false;
 }
