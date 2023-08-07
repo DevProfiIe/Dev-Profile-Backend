@@ -5,6 +5,7 @@ import com.devprofile.DevProfile.entity.FrameworkEntity;
 import com.devprofile.DevProfile.entity.UserDataEntity;
 import com.devprofile.DevProfile.entity.WordEntity;
 import com.devprofile.DevProfile.repository.FrameworkRepository;
+import com.devprofile.DevProfile.repository.UserDataRepository;
 import com.devprofile.DevProfile.repository.WordRepository;
 import com.devprofile.DevProfile.service.search.SparqlService;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -19,7 +20,9 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class CommitKeywordsService {
@@ -28,6 +31,7 @@ public class CommitKeywordsService {
     private final WordRepository wordRepository;
     private final FrameworkRepository frameworkRepository;
     private final SparqlService sparqlService;
+    private final UserDataRepository userDataRepository;
 
 
 
@@ -38,7 +42,7 @@ public class CommitKeywordsService {
         List<WordEntity> candidateWords = wordRepository.findByFirstChar(firstChar);
 
         WordEntity closestWord = null;
-        double maxSimilarity = 0.65;
+        double maxSimilarity = 0.7;
 
         for (WordEntity wordEntity : candidateWords) {
             double currentDistance = StringUtils.getJaroWinklerDistance(inputWord, wordEntity.getKeyword().toLowerCase());
@@ -51,11 +55,12 @@ public class CommitKeywordsService {
     }
 
     @Autowired
-    public CommitKeywordsService(MongoTemplate mongoTemplate, WordRepository wordRepository, FrameworkRepository frameworkRepository, SparqlService sparqlService) {
+    public CommitKeywordsService(MongoTemplate mongoTemplate, WordRepository wordRepository, FrameworkRepository frameworkRepository, SparqlService sparqlService, UserDataRepository userDataRepository) {
         this.mongoTemplate = mongoTemplate;
         this.wordRepository = wordRepository;
         this.frameworkRepository = frameworkRepository;
         this.sparqlService = sparqlService;
+        this.userDataRepository = userDataRepository;
     }
 
     public FrameworkEntity getClosestFramework(String inputWord) {
@@ -100,11 +105,12 @@ public class CommitKeywordsService {
         Update update = new Update().set("oid", oid);
         Update updateUser = new Update().set("userName", userName);
 
+
         ObjectMapper mapper = new ObjectMapper();
 
         try {
             JsonNode keywordsJson = mapper.readTree(keywords);
-            processKeywords(update, updateUser, keywordsJson);
+            processKeywords(update, updateUser, keywordsJson,userName);
             update.addToSet("userName", userName);
             Query query = new Query(Criteria.where("oid").is(oid));
             Query queryUser = new Query(Criteria.where("userName").is(userName));
@@ -117,41 +123,38 @@ public class CommitKeywordsService {
         }
     }
 
-    public Mono<?> processMsgScore(String userName, String contents) {
-        contents = trimQuotes(contents);
-        contents = contents.replace("\\\"", "\"");
-        contents = contents.replace("\\n", "\n");
 
-        Update updateUser = new Update().set("userName", userName);
-        ObjectMapper mapper = new ObjectMapper();
-
-        try {
-            JsonNode keywordsJson = mapper.readTree(contents);
-            addMsgScore(updateUser, keywordsJson.get("msgScore"));
-            Query queryUser = new Query(Criteria.where("userName").is(userName));
-            mongoTemplate.upsert(queryUser, updateUser, UserDataEntity.class);
-            return Mono.empty();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private void processKeywords(Update update, Update updateUser, JsonNode keywordsJson) {
-        addCsKeywords(update, updateUser, keywordsJson.get("cs"));
+    private void processKeywords(Update update, Update updateUser, JsonNode keywordsJson,String userName) {
+        addCsKeywords(update, updateUser, keywordsJson.get("cs"),userName);
         addLangFrameKeywords(update, updateUser, keywordsJson.get("langFrame"));
         List<String> featureList = addFeatureKeywords(update, keywordsJson.get("feature"));
         addFieldKeywords(featureList, updateUser, update,keywordsJson.get("field"));
     }
 
-    private void addCsKeywords(Update update, Update updateUser, JsonNode csNode) {
+    private void addCsKeywords(Update update, Update updateUser, JsonNode csNode, String userName) {
         if (csNode != null) {
+            Map<String, Integer> csKeywordCounts = new HashMap<>();
             for (JsonNode cs : csNode) {
                 WordEntity closestWord = getClosestWord(cs.asText());
-                if(closestWord == null) continue;
+                if (closestWord == null) continue;
                 String keyword = sparqlService.findRedirect(closestWord);
+
                 update.addToSet("cs", keyword);
-                updateUser.addToSet("keywordSet", keyword);
+                csKeywordCounts.put(keyword, csKeywordCounts.getOrDefault(keyword, 0) + 1);
+
+            }
+
+            UserDataEntity userDataEntity = userDataRepository.findByUserName(userName);
+            Map<String, Integer> sanitizedMap = userDataEntity.getCs();
+            for (Map.Entry<String, Integer> entry : csKeywordCounts.entrySet()) {
+                String key = entry.getKey().replace(".", "_");
+                Integer count = sanitizedMap.getOrDefault(key, 0)+entry.getValue();
+                sanitizedMap.put(key, count);
+            }
+
+            if (userDataEntity != null) {
+                userDataEntity.setCs(sanitizedMap);
+                userDataRepository.save(userDataEntity);
             }
         }
     }
@@ -162,7 +165,6 @@ public class CommitKeywordsService {
                 FrameworkEntity framework= getClosestFramework(langFrame.asText());
                 if(framework == null) continue;
                 update.addToSet("langFramework", framework.getFrameworkName());
-                updateUser.addToSet("keywordSet", framework.getFrameworkName());
             }
         }
     }
@@ -184,73 +186,31 @@ public class CommitKeywordsService {
                 switch (field.asText()) {
                     case ("Game"):
                         update.addToSet("field", "game");
-                        for(String feature: featureList) updateUser.addToSet("gameSet",feature);
+                        for (String feature : featureList) updateUser.addToSet("gameSet", feature);
                         break;
                     case ("Web Backend"):
                         update.addToSet("field", "webBackend");
-                        for(String feature: featureList) updateUser.addToSet("webBackendSet", feature);
+                        for (String feature : featureList) updateUser.addToSet("webBackendSet", feature);
                         break;
                     case ("Web Frontend"):
                         update.addToSet("field", "webFrontend");
-                        for(String feature: featureList) updateUser.addToSet("webFrontendSet", feature);
+                        for (String feature : featureList) updateUser.addToSet("webFrontendSet", feature);
                         break;
                     case ("Database"):
                         update.addToSet("field", "database");
-                        for(String feature: featureList) updateUser.addToSet("databaseSet", feature);
+                        for (String feature : featureList) updateUser.addToSet("databaseSet", feature);
                         break;
                     case ("Mobile"):
                         update.addToSet("field", "mobile");
-                        for(String feature: featureList) updateUser.addToSet("mobileSet", feature);
+                        for (String feature : featureList) updateUser.addToSet("mobileSet", feature);
                         break;
                     case ("System Programming"):
                         update.addToSet("field", "systemProgramming");
-                        for(String feature: featureList) updateUser.addToSet("systemProgrammingSet", feature);
+                        for (String feature : featureList) updateUser.addToSet("systemProgrammingSet", feature);
                         break;
                     case ("AI"):
                         update.addToSet("field", "ai");
-                        for(String feature: featureList) updateUser.addToSet("aiSet", feature);
-                        break;
-                }
-            }
-        }
-    }
-
-    private void addMsgScore (Update updateUser, JsonNode msgScore) {
-        if (msgScore != null) {
-            for (JsonNode field : msgScore) {
-                switch (field.asText()) {
-                    case ("0"):
-                        updateUser.inc("msgScore_0");
-                        break;
-                    case ("1"):
-                        updateUser.inc("msgScore_1");
-                        break;
-                    case ("2"):
-                        updateUser.inc("msgScore_2");
-                        break;
-                    case ("3"):
-                        updateUser.inc("msgScore_3");
-                        break;
-                    case ("4"):
-                        updateUser.inc("msgScore_4");
-                        break;
-                    case ("5"):
-                        updateUser.inc("msgScore_5");
-                        break;
-                    case ("6"):
-                        updateUser.inc("msgScore_6");
-                        break;
-                    case ("7"):
-                        updateUser.inc("msgScore_7");
-                        break;
-                    case ("8"):
-                        updateUser.inc("msgScore_8");
-                        break;
-                    case ("9"):
-                        updateUser.inc("msgScore_9");
-                        break;
-                    case ("10"):
-                        updateUser.inc("msgScore_10");
+                        for (String feature : featureList) updateUser.addToSet("aiSet", feature);
                         break;
                 }
             }

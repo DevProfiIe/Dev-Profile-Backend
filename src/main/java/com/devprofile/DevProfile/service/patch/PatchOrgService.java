@@ -102,6 +102,7 @@ public class PatchOrgService {
                                 patchEntity.setDeletions(deletions);
                                 patchEntity.setAdditions(additions);
                                 patchEntity.setCommitOid(oid);
+                                patchEntity.setUserName(commitEntity.getUserName());
 
                                 commitRepository.updateLength(oid, patch.length());
                             }

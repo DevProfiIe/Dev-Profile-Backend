@@ -1,8 +1,14 @@
 package com.devprofile.DevProfile.service.gpt;
 
 
-import com.devprofile.DevProfile.entity.*;
-import com.devprofile.DevProfile.repository.*;
+import com.devprofile.DevProfile.entity.CommitEntity;
+import com.devprofile.DevProfile.entity.CommitKeywordsEntity;
+import com.devprofile.DevProfile.entity.PatchEntity;
+import com.devprofile.DevProfile.entity.UserDataEntity;
+import com.devprofile.DevProfile.repository.CommitKeywordsRepository;
+import com.devprofile.DevProfile.repository.CommitRepository;
+import com.devprofile.DevProfile.repository.PatchRepository;
+import com.devprofile.DevProfile.repository.UserDataRepository;
 import com.devprofile.DevProfile.service.commit.CommitKeywordsService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
@@ -22,12 +28,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static com.devprofile.DevProfile.search.LevenshteinDistance.levenshteinDistance;
+import java.util.*;
 
 
 @Slf4j
@@ -61,8 +62,11 @@ public class GptPatchService {
             """;
     String systemPromptKeyWordAnalyze =
             """
-            당신은 새로운 개발자를 고용하는 고용 관리자입니다. 아래 키워드는 신입 개발자가 사용한 스킬입니다. 이 키워드로 신입 개발자를 4~6문장으로 평가합니다. 
-            "이 개발자는"으로 시작해줘
+            당신은 새로운 개발자를 고용하는 고용 관리자입니다. 아래 키워드는 한 개발자가 사용한 기술과 이와 연관된 patch의 갯수입니다. 이 키워드로 신입 개발자를 4~6문장으로 평가한다. "이 개발자는"으로 시작해줘. \s
+            재밌는 이름 지어서 title에 적어줘.\s
+            둘다 한글로 뽑아줘, 형식은
+            {title: String
+            content:String}
             """;
 
     @Value("${gpt.url}")
@@ -76,11 +80,17 @@ public class GptPatchService {
         List<CommitEntity> commitEntities = commitRepository.findAll();
         List<PatchEntity> patchEntities;
         Query query = new Query(Criteria.where("userName").is(userName));
+
+        UserDataEntity userDataEntity = new UserDataEntity();
+        userDataEntity.setUserName(userName);
+        userDataEntity.setCs(new HashMap<>());
+        userDataRepository.save(userDataEntity);
         for(CommitEntity commitEntity : commitEntities){
             patchEntities = patchRepository.findByCommitOid(commitEntity.getCommitOid());
             if(patchEntities.isEmpty())continue;
             patchEntities.forEach(patchEntity -> this.generateKeyword(userName, patchEntity));
             CommitKeywordsEntity commitKeywords =commitKeywordsRepository.findByOid(commitEntity.getCommitOid());
+            if(commitKeywords == null) continue;
             Set<String> fields= commitKeywords.getField();
             Update update = new Update();
             if(fields == null) continue;
@@ -147,7 +157,7 @@ public class GptPatchService {
                 .onStatus(HttpStatusCode::is5xxServerError, clientResponse ->
                         Mono.error(new Exception("Server Error: " + clientResponse.statusCode())))
                 .bodyToMono(JsonNode.class)
-                .retryWhen(Retry.backoff(5, Duration.ofSeconds(2)).maxBackoff(Duration.ofSeconds(10)))
+                .retryWhen(Retry.backoff(2, Duration.ofSeconds(2)).maxBackoff(Duration.ofSeconds(5)))
                 .block();
     }
 

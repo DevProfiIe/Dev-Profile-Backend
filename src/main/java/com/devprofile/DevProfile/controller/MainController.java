@@ -9,7 +9,6 @@ import com.devprofile.DevProfile.repository.*;
 import com.devprofile.DevProfile.service.FilterService;
 import com.devprofile.DevProfile.service.RepositoryService;
 import com.devprofile.DevProfile.service.ResponseService;
-import com.devprofile.DevProfile.service.gpt.GptCommitService;
 import com.devprofile.DevProfile.service.gpt.GptPatchService;
 import com.devprofile.DevProfile.service.graphql.GraphOrgService;
 import com.devprofile.DevProfile.service.graphql.GraphUserService;
@@ -53,7 +52,7 @@ public class MainController {
     private final ResponseService responseService;
     private final GitRepository gitRepository;
     private final GptPatchService gptPatchService;
-    private final GptCommitService gptCommitService;
+//    private final GptCommitService gptCommitService;
     private final RepositoryService repositoryService;
     private final SparqlService sparqlService;
     private final CommitKeywordsRepository commitKeywordsRepository;
@@ -61,6 +60,7 @@ public class MainController {
     private final UserScoreRepository userScoreRepository;
     private final MessageSenderService messageSenderService;
     private final MessageOrgSenderService messageOrgSenderService;
+    private final FilterRepository filterRepository;
 
 
     private UserDTO convertToDTO(UserEntity userEntity, UserDataEntity userDataEntity) {
@@ -70,7 +70,13 @@ public class MainController {
         userDTO.setName(userEntity.getName());
 
         if (userDataEntity != null) {
-            userDTO.setKeywordSet(userDataEntity.getKeywordSet());
+            Set<String> top10CsKeywords = userDataEntity.getCs().entrySet().stream()
+                    .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                    .limit(10)
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toSet());
+
+            userDTO.setKeywordSet(top10CsKeywords);
             userDTO.setAi(userDataEntity.getAi());
             userDTO.setDatabase(userDataEntity.getDatabase());
             userDTO.setWebBackend(userDataEntity.getWebBackend());
@@ -122,9 +128,6 @@ public class MainController {
         return ResponseEntity.ok(apiResponse);
     }
 
-
-
-
     @PostMapping("/test/gpt")
     public String testGpt(@RequestParam String userName) {
         gptPatchService.processAllEntities(userName);
@@ -132,11 +135,11 @@ public class MainController {
     }
 
 
-    @PostMapping("/test/gpt/score")
-    public String testGptScore(@RequestParam String userName, @RequestParam String commitOid) {
-        gptCommitService.processOneCommit(userName, commitOid);
-        return "index";
-    }
+//    @PostMapping("/test/gpt/score")
+//    public String testGptScore(@RequestParam String userName, @RequestParam String commitOid) {
+//        gptCommitService.processOneCommit(userName, commitOid);
+//        return "index";
+//    }
 
 
     @PostMapping("/test")
@@ -148,13 +151,12 @@ public class MainController {
         return "index";
     }
 
-
-
     @GetMapping("/response_test")
     public ResponseEntity<ApiResponse<Object>> responseApiTest(@RequestParam String userName) {
         List<CommitEntity> allCommitEntities = commitRepository.findByUserName(userName);
         Map<String, CommitKeywordsDTO> oidAndKeywordsMap = new HashMap<>();
         Map<LocalDate, Integer> calendar = new HashMap<>();
+
 
         for (CommitEntity commitEntity : allCommitEntities) {
             Optional<CommitKeywordsDTO> keywords = responseService.getFeatureFramework(commitEntity.getCommitOid(), commitEntity.getUserId());
@@ -242,6 +244,8 @@ public class MainController {
         if (responseTest.getBody() != null && responseTest.getBody().isResult()) {
             combinedData.putAll((Map<? extends String, ?>) responseTest.getBody().getData());
         }
+        FilterEntity filterEntity = filterRepository.findByUserLogin(userName);
+        combinedData.put("keywords", filterEntity.getStyles());
 
         apiResponse.setResult(true);
         apiResponse.setData(combinedData);

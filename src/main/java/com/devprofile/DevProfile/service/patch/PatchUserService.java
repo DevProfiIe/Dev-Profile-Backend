@@ -34,8 +34,6 @@ public class PatchUserService {
         this.messageSenderService = messageSenderService;
     }
 
-
-
     public Mono<Void> savePatchs(String userName, String accessToken, Map<String, List<String>> repoOidsMap) {
         List<Mono<JsonNode>> requestMonos = new ArrayList<>();
 
@@ -87,6 +85,7 @@ public class PatchUserService {
                                 patchEntity.setDeletions(deletions);
                                 patchEntity.setAdditions(additions);
                                 patchEntity.setPatch(patch);
+                                patchEntity.setUserName(userName);
 
                                 commitRepository.updateLength(oid, patch.length());
 

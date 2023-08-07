@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
 
 
 @RestController
@@ -54,8 +55,11 @@ public class LoginController {
 
         if(!userRepository.existsById(user.getId())){
             userRepository.save(user);
+        }else{
+            UserEntity presentUser = userRepository.findById(user.getId()).orElseThrow();
+            user.setAnalyzed(presentUser.getAnalyzed());
+            userRepository.save(user);
         }
-
         user.setGitHubToken(null);
 
         apiResponse.setToken(jwtToken);

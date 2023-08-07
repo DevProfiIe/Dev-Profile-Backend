@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.Map;
 import java.util.Set;
 
 
@@ -50,4 +51,6 @@ public class UserDataEntity {
     private String userKeywordAnalyze;
 
     private String userTitle;
+
+    private Map<String, Integer> cs;
 }
