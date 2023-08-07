@@ -15,6 +15,8 @@ import java.util.Set;
 public class UserDataEntity {
 
     @Id
+    private String id;
+
     private String userName;
 
     private Set<String> keywordSet;
@@ -44,4 +46,6 @@ public class UserDataEntity {
     private Set<String> systemProgrammingSet;
 
     private Set<String> userStyle;
+
+    private String userKeywordAnalyze;
 }

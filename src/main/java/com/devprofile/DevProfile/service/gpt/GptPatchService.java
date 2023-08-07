@@ -45,6 +45,7 @@ public class GptPatchService {
     private final CommitRepository commitRepository;
 
     private final MongoTemplate mongoTemplate;
+    private final UserDataRepository userDataRepository;
 
     String systemPrompt =
             """
@@ -58,13 +59,11 @@ public class GptPatchService {
              Regardless of the length of the response, please ensure that it is provided in JSON format and strictly conforms to the specified schema.
              {"type":"object","properties":{"cs":{"type":"array", "items":{"type":"string"}},"langFrame":{"type":"array", "items":{"type":"string"}},"feature":{"type":"array","items":{"type":"string"}},"field":{"type":"array","items":{"type":"string"}}}}
             """;
-/*    String systemPrompt = "Answer in English.\n" +
-            "1.cs: Provide three to five keywords, each consisting of 1-2 words, that describe the computer science principles or concepts applied in this code, excluding specific languages or frameworks.\n" +
-            "2.frameLang: Provide the framework used in this code.\n" +
-            "3.feature:Provide a con                                                                                                                                                cise 1-2 line description of the feature implemented by this provided code.\n" +
-            "4.field: Select the most relevant keyword from the following list: Game, System Programming, AI, Data Science, Database, Mobile, Web Backend, Web Frontend, Document. If the accuracy significantly decreases, it's acceptable to omit the 3rd and 4th keywords. Regardless of the length of the response, please ensure that it is provided in JSON format and strictly conforms to the specified schema.\n" +
-            "```\n" +
-            "{\"type\":\"object\",\"properties\":{\"cs\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"langFrame\":{\"type\":\"array\",\"items”:{“type\":\"string\"}},\"feature\":{\"type”:”array\",\"items\":{\"type\":\"string\"}},\"field\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}}}}";*/
+    String systemPromptKeyWordAnalyze =
+            """
+            당신은 새로운 개발자를 고용하는 고용 관리자입니다. 아래 키워드는 신입 개발자가 사용한 스킬입니다. 이 키워드로 신입 개발자를 4~6문장으로 평가합니다. 
+            "이 개발자는"으로 시작해줘
+            """;
 
     @Value("${gpt.url}")
     private String url;
@@ -97,8 +96,7 @@ public class GptPatchService {
             return;
         }
         WebClient webClient = createWebClient();
-        List<Map<String, String>> messages = createMessageObjects(patch);
-
+        List<Map<String, String>> messages = createMessageObjects(patch, systemPrompt);
 
         try {
             JsonNode jsonNode = postToGptService(webClient, messages);
@@ -107,7 +105,22 @@ public class GptPatchService {
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
+    }
 
+
+    public void generateSentence(String userName) throws Exception {
+        Set<String> keywordSet = userDataRepository.findByUserName(userName).getKeywordSet();
+        WebClient webClient = createWebClient();
+        List<Map<String, String>> messages = createMessageObjects(keywordSet.toString(), systemPromptKeyWordAnalyze);
+        System.out.println("keywordSet = " + keywordSet);
+        JsonNode node = postToGptService16K(webClient,messages);
+        JsonNode choices = node.get("choices");
+        if (choices != null && choices.isArray() && choices.size() > 0) {
+            JsonNode content = choices.get(0).get("message").get("content");
+            UserDataEntity userDataEntity = userDataRepository.findByUserName(userName);
+            userDataEntity.setUserKeywordAnalyze(content.asText());
+            userDataRepository.save(userDataEntity);
+        }
     }
 
     private WebClient createWebClient() {
@@ -117,9 +130,9 @@ public class GptPatchService {
                 .build();
     }
 
-    private List<Map<String, String>> createMessageObjects(String patch) {
+    private List<Map<String, String>> createMessageObjects(String patch ,String system) {
         List<Map<String, String>> messages = new ArrayList<>();
-        messages.add(Map.of("role", "system", "content", systemPrompt));
+        messages.add(Map.of("role", "system", "content", system));
         messages.add(Map.of("role", "user", "content", patch));
         return messages;
     }
@@ -128,6 +141,20 @@ public class GptPatchService {
         return webClient.post()
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(Map.of("model", "gpt-3.5-turbo", "messages", messages, "temperature", 0.33, "top_p", 0.65))
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
+                        Mono.error(new Exception("Client Error: " + clientResponse.statusCode())))
+                .onStatus(HttpStatusCode::is5xxServerError, clientResponse ->
+                        Mono.error(new Exception("Server Error: " + clientResponse.statusCode())))
+                .bodyToMono(JsonNode.class)
+                .retryWhen(Retry.backoff(5, Duration.ofSeconds(2)).maxBackoff(Duration.ofSeconds(10)))
+                .block();
+    }
+
+    private JsonNode postToGptService16K(WebClient webClient, List<Map<String, String>> messages) throws Exception {
+        return webClient.post()
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("model", "gpt-3.5-turbo-16k", "messages", messages, "temperature", 1, "top_p", 1))
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
                         Mono.error(new Exception("Client Error: " + clientResponse.statusCode())))
