@@ -9,6 +9,7 @@ import com.devprofile.DevProfile.repository.*;
 import com.devprofile.DevProfile.service.FilterService;
 import com.devprofile.DevProfile.service.RepositoryService;
 import com.devprofile.DevProfile.service.ResponseService;
+import com.devprofile.DevProfile.service.VapidKeyGenerator;
 import com.devprofile.DevProfile.service.gpt.GptPatchService;
 import com.devprofile.DevProfile.service.graphql.GraphOrgService;
 import com.devprofile.DevProfile.service.graphql.GraphUserService;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.util.Pair;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -60,6 +62,7 @@ public class MainController {
     private final UserScoreRepository userScoreRepository;
     private final MessageSenderService messageSenderService;
     private final MessageOrgSenderService messageOrgSenderService;
+    private final VapidKeyGenerator vapidKeyGenerator;
 
 
     private UserDTO convertToDTO(UserEntity userEntity, UserDataEntity userDataEntity) {
@@ -112,7 +115,12 @@ public class MainController {
 
     @GetMapping("/chat2")
     public String chat() {
-        return "chat2";
+        try {
+            Pair<String, String> keys = vapidKeyGenerator.generateVapidKeys();
+            return "Public Key: " + keys.getFirst() + ", Private Key: " + keys.getSecond();
+        } catch (Exception e) {
+            return "Error occurred while generating VAPID keys: " + e.getMessage();
+        }
     }
 
 
