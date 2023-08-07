@@ -30,4 +30,5 @@ public class CommitKeywordsEntity {
     private String userName;
 
     private Integer tokens;
+
 }

@@ -2,18 +2,15 @@ package com.devprofile.DevProfile.service.search;
 
 
 import com.devprofile.DevProfile.entity.CommitKeywordsEntity;
-
-import com.devprofile.DevProfile.entity.UserEntity;
+import com.devprofile.DevProfile.entity.UserDataEntity;
 import com.devprofile.DevProfile.entity.WordEntity;
 import com.devprofile.DevProfile.repository.CommitKeywordsRepository;
-import com.devprofile.DevProfile.repository.CommitRepository;
+import com.devprofile.DevProfile.repository.UserDataRepository;
 import com.devprofile.DevProfile.repository.WordRepository;
 import com.devprofile.DevProfile.search.JaccardSimilarity;
 import com.devprofile.DevProfile.search.LevenshteinDistance;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
@@ -29,33 +26,35 @@ public class SearchService {
     private CommitKeywordsRepository commitKeywordsRepository;
     private final WordRepository wordRepository;
     private final SparqlService sparqlService;
+    private final UserDataRepository userDataRepository;
 
     public List<String> getTop10JaccardSimilarEntity(String word) {
         Set<String> wordNGrams = JaccardSimilarity.getNGrams(word, 2);
         Map<String, Double> commitSimilarities = new HashMap<>();
 
-        for (CommitKeywordsEntity commit : commitKeywordsRepository.findAll()) {
+        for (UserDataEntity userData : userDataRepository.findAll()) {
             double maxSimilarity = 0;
-            for (String keyword : commit.getCs()) {
+            for (String keyword : userData.getCs().keySet()) {
                 Set<String> keywordNGrams = JaccardSimilarity.getNGrams(keyword, 2);
                 double similarity = JaccardSimilarity.jaccardSimilarity(wordNGrams, keywordNGrams);
                 maxSimilarity = Math.max(maxSimilarity, similarity);
             }
-            commitSimilarities.put(commit.getOid(), maxSimilarity);
+            commitSimilarities.put(userData.getUserName(), maxSimilarity);
         }
 
-        List<String> sortedCommits = new ArrayList<>(commitSimilarities.keySet());
-        sortedCommits.sort(Comparator.comparingDouble(commitSimilarities::get).reversed());
+        List<String> sortedCommits = commitSimilarities.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .limit(10)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
 
-        return sortedCommits.size() > 10 ? sortedCommits.subList(0, 10) : sortedCommits;
+        return sortedCommits;
     }
-
 
     //TODO: 소문자로 탐색, userName 붙이기
     public List<Pair<String,String>> getTop10LevenshteinSimilarEntity(String word, String userName) {
         Map<Pair<String, String>, Integer> commitSimilarities = new HashMap<>();
         List<CommitKeywordsEntity> commitKeywordsEntities = commitKeywordsRepository.findAll();
-
         for (CommitKeywordsEntity commit : commitKeywordsEntities) {
             int minSimilarity = 100;
             String mostSimilarKeyword = "";
@@ -70,10 +69,8 @@ public class SearchService {
             }
             commitSimilarities.put(Pair.of(commit.getOid(), mostSimilarKeyword), minSimilarity);
         }
-
         List<Pair<String, String>> sortedCommits = new ArrayList<>(commitSimilarities.keySet());
         sortedCommits.sort(Comparator.comparingInt(commitSimilarities::get));
-
         return sortedCommits.size() > 10 ? sortedCommits.subList(0, 10) : sortedCommits;
     }
 

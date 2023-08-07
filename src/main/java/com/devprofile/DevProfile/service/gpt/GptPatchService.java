@@ -1,8 +1,14 @@
 package com.devprofile.DevProfile.service.gpt;
 
 
-import com.devprofile.DevProfile.entity.*;
-import com.devprofile.DevProfile.repository.*;
+import com.devprofile.DevProfile.entity.CommitEntity;
+import com.devprofile.DevProfile.entity.CommitKeywordsEntity;
+import com.devprofile.DevProfile.entity.PatchEntity;
+import com.devprofile.DevProfile.entity.UserDataEntity;
+import com.devprofile.DevProfile.repository.CommitKeywordsRepository;
+import com.devprofile.DevProfile.repository.CommitRepository;
+import com.devprofile.DevProfile.repository.PatchRepository;
+import com.devprofile.DevProfile.repository.UserDataRepository;
 import com.devprofile.DevProfile.service.commit.CommitKeywordsService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
@@ -22,12 +28,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static com.devprofile.DevProfile.search.LevenshteinDistance.levenshteinDistance;
+import java.util.*;
 
 
 @Slf4j
@@ -45,6 +46,7 @@ public class GptPatchService {
     private final CommitRepository commitRepository;
 
     private final MongoTemplate mongoTemplate;
+    private final UserDataRepository userDataRepository;
 
     String systemPrompt =
             """
@@ -77,11 +79,17 @@ public class GptPatchService {
         List<CommitEntity> commitEntities = commitRepository.findAll();
         List<PatchEntity> patchEntities;
         Query query = new Query(Criteria.where("userName").is(userName));
+
+        UserDataEntity userDataEntity = new UserDataEntity();
+        userDataEntity.setUserName(userName);
+        userDataEntity.setCs(new HashMap<>());
+        userDataRepository.save(userDataEntity);
         for(CommitEntity commitEntity : commitEntities){
             patchEntities = patchRepository.findByCommitOid(commitEntity.getCommitOid());
             if(patchEntities.isEmpty())continue;
             patchEntities.forEach(patchEntity -> this.generateKeyword(userName, patchEntity));
             CommitKeywordsEntity commitKeywords =commitKeywordsRepository.findByOid(commitEntity.getCommitOid());
+            if(commitKeywords == null) continue;
             Set<String> fields= commitKeywords.getField();
             Update update = new Update();
             if(fields == null) continue;
@@ -134,7 +142,7 @@ public class GptPatchService {
                 .onStatus(HttpStatusCode::is5xxServerError, clientResponse ->
                         Mono.error(new Exception("Server Error: " + clientResponse.statusCode())))
                 .bodyToMono(JsonNode.class)
-                .retryWhen(Retry.backoff(5, Duration.ofSeconds(2)).maxBackoff(Duration.ofSeconds(10)))
+                .retryWhen(Retry.backoff(2, Duration.ofSeconds(2)).maxBackoff(Duration.ofSeconds(5)))
                 .block();
     }
 

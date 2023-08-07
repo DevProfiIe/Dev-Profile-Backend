@@ -87,6 +87,7 @@ public class PatchUserService {
                                 patchEntity.setDeletions(deletions);
                                 patchEntity.setAdditions(additions);
                                 patchEntity.setPatch(patch);
+                                patchEntity.setUserName(userName);
 
                                 commitRepository.updateLength(oid, patch.length());
 
