@@ -34,8 +34,6 @@ public class PatchUserService {
         this.messageSenderService = messageSenderService;
     }
 
-
-
     public Mono<Void> savePatchs(String userName, String accessToken, Map<String, List<String>> repoOidsMap) {
         List<Mono<JsonNode>> requestMonos = new ArrayList<>();
 

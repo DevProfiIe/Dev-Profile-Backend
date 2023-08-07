@@ -87,6 +87,7 @@ public class FilterService {
         userPageDTO.setAvatarUrl(filter.getAvatarUrl());
         userPageDTO.setStyles(filter.getStyles());
         userPageDTO.setUserName(filter.getUserName());
+        userPageDTO.setLogin(filter.getUserLogin());
         userPageDTO.setField(filter.getField());
         List<String> framework = new ArrayList<>(filter.getFrameworks().keySet());
         framework.sort(Comparator.comparingInt(filter.getFrameworks()::get).reversed());

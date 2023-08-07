@@ -50,7 +50,7 @@ public class UserDataEntity {
 
     private String userKeywordAnalyze;
 
+    private String userTitle;
 
     private Map<String, Integer> cs;
-
 }

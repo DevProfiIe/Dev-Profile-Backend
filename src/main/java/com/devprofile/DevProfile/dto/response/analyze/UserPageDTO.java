@@ -13,6 +13,7 @@ import java.util.Set;
 @Data
 public class UserPageDTO {
     private String userName;
+    private String login;
     private List<String> language;
     private List<String> framework;
     private Set<String> styles;

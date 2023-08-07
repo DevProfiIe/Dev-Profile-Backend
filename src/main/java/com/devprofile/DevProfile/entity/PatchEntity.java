@@ -26,8 +26,6 @@ public class PatchEntity {
     @Column
     private Integer additions;
     private Integer deletions;
-
-    @Column
     private String userName;
 
 

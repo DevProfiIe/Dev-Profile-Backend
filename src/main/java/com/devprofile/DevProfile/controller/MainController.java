@@ -63,6 +63,8 @@ public class MainController {
     private final MessageSenderService messageSenderService;
     private final MessageOrgSenderService messageOrgSenderService;
     private final VapidKeyGenerator vapidKeyGenerator;
+    private final FilterRepository filterRepository;
+
 
 
     private UserDTO convertToDTO(UserEntity userEntity, UserDataEntity userDataEntity) {
@@ -135,9 +137,6 @@ public class MainController {
         return ResponseEntity.ok(apiResponse);
     }
 
-
-
-
     @PostMapping("/test/gpt")
     public String testGpt(@RequestParam String userName) {
         gptPatchService.processAllEntities(userName);
@@ -160,8 +159,6 @@ public class MainController {
 
         return "index";
     }
-
-
 
     @GetMapping("/response_test")
     public ResponseEntity<ApiResponse<Object>> responseApiTest(@RequestParam String userName) {
@@ -256,6 +253,8 @@ public class MainController {
         if (responseTest.getBody() != null && responseTest.getBody().isResult()) {
             combinedData.putAll((Map<? extends String, ?>) responseTest.getBody().getData());
         }
+        FilterEntity filterEntity = filterRepository.findByUserLogin(userName);
+        combinedData.put("keywords", filterEntity.getStyles());
 
         apiResponse.setResult(true);
         apiResponse.setData(combinedData);

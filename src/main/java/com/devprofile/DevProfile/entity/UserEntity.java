@@ -28,6 +28,7 @@ public class UserEntity {
     private String avatar_url;
     private String jwtRefreshToken;
     private String gitHubToken;
+    private Boolean analyzed = false;
 
     public UserEntity() {
 

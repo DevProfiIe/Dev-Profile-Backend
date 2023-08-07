@@ -42,7 +42,7 @@ public class CommitKeywordsService {
         List<WordEntity> candidateWords = wordRepository.findByFirstChar(firstChar);
 
         WordEntity closestWord = null;
-        double maxSimilarity = 0.65;
+        double maxSimilarity = 0.7;
 
         for (WordEntity wordEntity : candidateWords) {
             double currentDistance = StringUtils.getJaroWinklerDistance(inputWord, wordEntity.getKeyword().toLowerCase());
