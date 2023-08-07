@@ -3,6 +3,7 @@ package com.devprofile.DevProfile.service.repository;
 import com.devprofile.DevProfile.entity.RepositoryEntity;
 import com.devprofile.DevProfile.repository.GitRepository;
 import com.devprofile.DevProfile.service.commit.CommitOrgService;
+import com.devprofile.DevProfile.service.rabbitmq.MessageOrgSenderService;
 import com.devprofile.DevProfile.service.rabbitmq.MessageSenderService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
@@ -17,20 +18,20 @@ import java.util.Optional;
 @Slf4j
 public class OrgRepoService extends AbstractRepositoryService {
     private final CommitOrgService commitOrgService;
-    private final MessageSenderService messageSenderService;
+    private final MessageOrgSenderService messageOrgSenderService;
 
-    public OrgRepoService(GitRepository gitRepository, WebClient.Builder webClientBuilder, CommitOrgService commitOrgService, MessageSenderService messageSenderService) {
+    public OrgRepoService(GitRepository gitRepository, WebClient.Builder webClientBuilder, CommitOrgService commitOrgService, MessageSenderService messageSenderService, MessageOrgSenderService messageOrgSenderService) {
         super(gitRepository, webClientBuilder);
         this.commitOrgService = commitOrgService;
-        this.messageSenderService = messageSenderService;
+        this.messageOrgSenderService = messageOrgSenderService;
     }
 
     public Mono<Void> saveRepositories(JsonNode orgs, Integer userId, String userName) {
         return Flux.fromIterable(orgs)
                 .flatMap((JsonNode org) -> Flux.fromIterable(org.get("repositories").get("nodes"))
-                        .flatMap(repo -> this.saveRepository(repo, userId, org.get("name").asText()))
+                        .flatMap(repo -> this.saveRepository(repo, userId, org.get("name").asText(),userName))
                         .doOnNext(savedRepo -> {
-                            messageSenderService.RepoSendMessage(savedRepo)
+                            messageOrgSenderService.orgRepoSendMessage(savedRepo)
                                     .subscribe(result -> log.info("Sent message: " + result),
                                             error -> log.error("Error while sending message for repository: ", error));
                         })
@@ -41,7 +42,7 @@ public class OrgRepoService extends AbstractRepositoryService {
     }
 
 
-    private Mono<RepositoryEntity> saveRepository(JsonNode repo, Integer userId, String orgName) {
+    private Mono<RepositoryEntity> saveRepository(JsonNode repo, Integer userId, String orgName,String userName) {
         return Mono.fromCallable(() -> {
             String repoNodeId = repo.get("id").asText();
             Optional<RepositoryEntity> existingRepoEntity = gitRepository.findByRepoNodeId(repoNodeId);
@@ -71,6 +72,7 @@ public class OrgRepoService extends AbstractRepositoryService {
                                 repositoryEntity.setRepoUpdated(repoUpdated);
                                 repositoryEntity.setRepoUrl(repoUrl);
                                 repositoryEntity.setUserId(userId);
+                                repositoryEntity.setUserName(userName);
 
                                 gitRepository.save(repositoryEntity);
                             }

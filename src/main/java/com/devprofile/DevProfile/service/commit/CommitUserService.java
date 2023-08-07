@@ -34,10 +34,31 @@ public class CommitUserService {
             List<CommitEntity> commits = new ArrayList<>();
             for (JsonNode repo : repositories) {
                 List<String> oids = new ArrayList<>();
-                JsonNode edges = repo.get("defaultBranchRef").get("target").get("history").get("edges");
+                JsonNode defaultBranchRef = repo.get("defaultBranchRef");
+                if (defaultBranchRef == null) {
+                    continue;
+                }
+                JsonNode target = defaultBranchRef.get("target");
+                if (target == null) {
+                    continue;
+                }
+                JsonNode history = target.get("history");
+                if (history == null) {
+                    continue;
+                }
+                JsonNode edges = history.get("edges");
+                if (edges == null) {
+                    continue;
+                }
                 for (JsonNode edge : edges) {
-                    String oid = edge.get("node").get("oid").asText();
-
+                    JsonNode node = edge.get("node");
+                    if (node == null) {
+                        continue;
+                    }
+                    String oid = node.get("oid").asText();
+                    if (oid == null) {
+                        continue;
+                    }
                     Optional<CommitEntity> existingCommit = commitRepository.findByCommitOid(oid);
                     if (existingCommit.isPresent()) {
                         continue;

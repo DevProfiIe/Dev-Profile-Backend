@@ -4,7 +4,7 @@ package com.devprofile.DevProfile.service.commit;
 import com.devprofile.DevProfile.entity.CommitEntity;
 import com.devprofile.DevProfile.repository.CommitRepository;
 import com.devprofile.DevProfile.repository.GitRepository;
-import com.devprofile.DevProfile.service.rabbitmq.MessageSenderService;
+import com.devprofile.DevProfile.service.rabbitmq.MessageOrgSenderService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -24,7 +24,7 @@ public class CommitOrgService {
 
     private final CommitRepository commitRepository;
     private final GitRepository gitRepository;
-    private final MessageSenderService messageSenderService;
+    private final MessageOrgSenderService messageOrgSenderService;
     private final ObjectMapper objectMapper;
 
 
@@ -75,7 +75,7 @@ public class CommitOrgService {
                                             commits.add(commitEntity);
                                             oids.add(commitOid);
 
-                                            messageSenderService.CommitSendMessage(commitEntity).subscribe(
+                                            messageOrgSenderService.orgCommitSendMessage(commitEntity).subscribe(
                                                     result -> log.info("Sent message: " + result),
                                                     error -> log.error("Error sending message: ", error)
                                             );
@@ -106,7 +106,7 @@ public class CommitOrgService {
                 messageObject.put("message", "Dates updated");
                 String message = messageObject.toString();
 
-                messageSenderService.sendMessage(message).subscribe(
+                messageOrgSenderService.orgSendMessage(message).subscribe(
                         result -> log.info("Sent message: " + result),
                         error -> log.error("Error sending message: ", error)
                 );

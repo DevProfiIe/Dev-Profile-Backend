@@ -50,7 +50,11 @@ public class PatchUserService {
                         .uri(commitDetailUrl)
                         .header("Authorization", "Bearer " + accessToken)
                         .retrieve()
-                        .bodyToMono(JsonNode.class);
+                        .bodyToMono(JsonNode.class)
+                        .onErrorResume(e -> {
+                            log.error("Error while retrieving commit details for url: " + commitDetailUrl, e);
+                            return Mono.empty();
+                        });
 
                 requestMonos.add(requestMono);
             }
@@ -92,9 +96,8 @@ public class PatchUserService {
                                     if (existingPatches.isEmpty()) {
                                         operations.add(Mono.fromCallable(() -> {
                                             patchRepository.saveAndFlush(patchEntity);
-                                            messageSenderService.CommitSendMessage(commitEntity).subscribe();
                                             return null;
-                                        }));
+                                        }).then(messageSenderService.PatchSendMessage(patchEntity)).then());
                                     }
                                 }
                             }

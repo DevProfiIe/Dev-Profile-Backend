@@ -30,4 +30,5 @@ public interface CommitRepository extends JpaRepository<CommitEntity, String> {
 
     List<CommitEntity> findByUserName(String userName);
 
+    Optional<CommitEntity> findByCommitOidAndUserId(String commitOid, Integer userId);
 }

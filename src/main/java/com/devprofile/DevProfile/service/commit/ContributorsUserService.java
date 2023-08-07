@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -30,7 +31,7 @@ public class ContributorsUserService {
     }
 
 
-    public Mono<Void> countCommits(Map<String, List<String>> repoOidsMap, String userName, String token) {
+    public Mono<Void> countCommits(Map<String, List<String>> repoOidsMap, String userName, String token,Integer userId) {
         return Flux.fromIterable(repoOidsMap.entrySet())
                 .flatMap(entry -> {
                     String repoName = entry.getKey();
@@ -39,6 +40,15 @@ public class ContributorsUserService {
                             .header("Authorization", "Bearer " + token)
                             .retrieve()
                             .bodyToMono(String.class)
+                            .onErrorResume(e -> {
+                                if (e instanceof WebClientResponseException.NotFound) {
+                                    log.error("404 error: Resource not found", e);
+                                    return Mono.empty();
+                                } else {
+                                    log.error("Error calling API", e);
+                                    return Mono.error(e);
+                                }
+                            })
                             .flatMap(responseBody -> {
                                 try {
                                     List<Map<String, Object>> contributors = objectMapper.readValue(responseBody, new TypeReference<List<Map<String, Object>>>() {});
@@ -53,7 +63,7 @@ public class ContributorsUserService {
                                             myCommitCnt = contribution;
                                         }
                                     }
-                                    RepositoryEntity repositoryEntity = gitRepository.findByRepoName(repoName).orElse(new RepositoryEntity());
+                                    RepositoryEntity repositoryEntity = gitRepository.findByUserIdAndRepoName(userId,repoName).orElse(new RepositoryEntity());
 
                                     repositoryEntity.setTotalCommitCnt(totalCommitCnt);
                                     repositoryEntity.setMyCommitCnt(myCommitCnt);

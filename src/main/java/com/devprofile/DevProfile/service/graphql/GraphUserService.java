@@ -42,10 +42,10 @@ public class GraphUserService {
                     JsonNode repositories = response.get("data").get("user").get("repositories").get("nodes");
                     String userName = user.getLogin();
                     String accessToken = user.getGitHubToken();
-                    return saveRepositories(repositories, user.getId())
+                    return saveRepositories(repositories, user.getId(),userName)
                             .then(saveCommits(repositories, user))
                             .flatMap(repoOidsMap -> Flux.merge(
-                                            countCommits(repoOidsMap, userName, accessToken),
+                                            countCommits(repoOidsMap, userName, accessToken, user.getId()),
                                             savePatchs(repoOidsMap, user),
                                             repoLanguages(repoOidsMap, user))
                                     .then())
@@ -76,8 +76,8 @@ public class GraphUserService {
 
 
     @Transactional
-    public Mono<Void> saveRepositories(JsonNode repositories, Integer userId) {
-        return userRepoService.saveRepositories(repositories, userId)
+    public Mono<Void> saveRepositories(JsonNode repositories, Integer userId,String userName) {
+        return userRepoService.saveRepositories(repositories, userId,userName)
                 .doOnSuccess(aVoid -> log.info("Repositories saved successfully for user with id {}", userId))
                 .doOnError(e -> log.error("Error while saving repositories for user with id {}", userId, e));
     }
@@ -93,8 +93,8 @@ public class GraphUserService {
     }
 
     @Transactional
-    public Mono<Void> countCommits(Map<String, List<String>> repoOidsMap, String userName, String accessToken) {
-        return contributorsUserService.countCommits(repoOidsMap, userName, accessToken)
+    public Mono<Void> countCommits(Map<String, List<String>> repoOidsMap, String userName, String accessToken,Integer userId) {
+        return contributorsUserService.countCommits(repoOidsMap, userName, accessToken,userId)
                 .doOnSuccess(aVoid -> log.info("Commits counted successfully for user {}", userName))
                 .doOnError(e -> log.error("Error while counting commits for user {}", userName, e));
     }
@@ -110,7 +110,7 @@ public class GraphUserService {
 
     @Transactional
     public Mono<Void> repoLanguages(Map<String, List<String>> repoOidsMap, UserEntity user) {
-        return languageService.repoLanguages(repoOidsMap, user.getLogin(), user.getGitHubToken())
+        return languageService.repoLanguages(repoOidsMap, user.getLogin(), user.getGitHubToken(), user.getId())
                 .doOnSuccess(aVoid -> log.info("Languages for user {} processed successfully", user.getLogin()))
                 .doOnError(e -> log.error("Error while processing languages for user {}", user.getLogin(), e));
     }

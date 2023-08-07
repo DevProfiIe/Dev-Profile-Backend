@@ -69,15 +69,16 @@ public class GraphOrgService {
         return getQueryTemplate(user)
                 .flatMap(queryTemplate -> executeGraphQLRequest(user, queryTemplate))
                 .flatMap(response -> {
+                    System.out.println("response = " + response);
                     JsonNode organizations = response.get("data").get("user").get("organizations").get("nodes");
                     String userName = user.getLogin();
                     String accessToken = user.getGitHubToken();
                     return saveRepositories(organizations, user.getId(), userName)
                             .then(saveCommits(organizations, user))
                             .flatMap(orgRepoCommits -> Flux.merge(
-                                            countCommits(orgRepoCommits, userName, accessToken),
+                                            countCommits(orgRepoCommits, userName, accessToken,user.getId()),
                                             savePatchs(orgRepoCommits, accessToken),
-                                            orgLanguages(orgRepoCommits, accessToken, userName))
+                                            orgLanguages(orgRepoCommits, accessToken, userName, user.getId()))
                                     .then());
                 });
     }
@@ -123,8 +124,8 @@ public class GraphOrgService {
     }
 
     @Transactional
-    public Mono<Void> countCommits(Map<String, Map<String, List<String>>> orgRepoCommits, String userName, String accessToken) {
-        return contributorsOrgService.countCommits(orgRepoCommits, userName, accessToken)
+    public Mono<Void> countCommits(Map<String, Map<String, List<String>>> orgRepoCommits, String userName, String accessToken,Integer userId) {
+        return contributorsOrgService.countCommits(orgRepoCommits, userName, accessToken,userId)
                 .doOnSuccess(aVoid -> log.info("Commits counted successfully for organization"))
                 .doOnError(e -> log.error("Error while counting commits for organization", e));
     }
@@ -137,8 +138,8 @@ public class GraphOrgService {
     }
 
     @Transactional
-    public Mono<Void> orgLanguages(Map<String, Map<String, List<String>>> orgRepoCommits, String accessToken, String userName) {
-        return languageService.orgLanguages(orgRepoCommits, accessToken, userName)
+    public Mono<Void> orgLanguages(Map<String, Map<String, List<String>>> orgRepoCommits, String accessToken, String userName,Integer userId) {
+        return languageService.orgLanguages(orgRepoCommits, accessToken, userName,userId)
                 .doOnSuccess(aVoid -> log.info("Languages for organization processed successfully"))
                 .doOnError(e -> log.error("Error while processing languages for organization", e));
     }

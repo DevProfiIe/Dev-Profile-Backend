@@ -3,6 +3,7 @@ package com.devprofile.DevProfile.service.repository;
 import com.devprofile.DevProfile.entity.LanguageDuration;
 import com.devprofile.DevProfile.entity.RepositoryEntity;
 import com.devprofile.DevProfile.repository.GitRepository;
+import com.devprofile.DevProfile.service.rabbitmq.MessageOrgSenderService;
 import com.devprofile.DevProfile.service.rabbitmq.MessageSenderService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
@@ -25,16 +26,19 @@ public class LanguageService {
 
     private GitRepository gitRepository;
     private WebClient webClient;
+    private MessageOrgSenderService messageOrgSenderService;
     private MessageSenderService messageSenderService;
 
-    public LanguageService(GitRepository gitRepository, WebClient.Builder webClientBuilder, MessageSenderService messageSenderService) {
+    public LanguageService(GitRepository gitRepository, WebClient.Builder webClientBuilder, MessageOrgSenderService messageOrgSenderService,MessageSenderService messageSenderService) {
         this.gitRepository = gitRepository;
         this.webClient = webClientBuilder.baseUrl("https://api.github.com").build();
+        this.messageOrgSenderService = messageOrgSenderService;
         this.messageSenderService = messageSenderService;
+
     }
 
 
-    public Mono<Void> repoLanguages(Map<String, List<String>> repoOidsMap, String userName, String token) {
+    public Mono<Void> repoLanguages(Map<String, List<String>> repoOidsMap, String userName, String token,Integer userId) {
         List<Mono<Void>> languageMonos = new ArrayList<>();
 
         for (String repoName : repoOidsMap.keySet()) {
@@ -44,8 +48,12 @@ public class LanguageService {
                     .header("Authorization", "Bearer " + token)
                     .retrieve()
                     .bodyToMono(JsonNode.class)
+                    .onErrorResume(e -> {
+                        log.error("Error while retrieving language data for repository " + repoName, e);
+                        return Mono.empty();
+                    })
                     .flatMap(response -> {
-                        RepositoryEntity repoEntity = gitRepository.findByRepoName(repoName).orElse(new RepositoryEntity());
+                        RepositoryEntity repoEntity = gitRepository.findByUserIdAndRepoName(userId,repoName).orElse(new RepositoryEntity());
                         LocalDateTime startDate = repoEntity.getStartDate();
                         LocalDateTime endDate = repoEntity.getEndDate();
 
@@ -82,7 +90,7 @@ public class LanguageService {
     }
 
 
-    public Mono<Void> orgLanguages(Map<String, Map<String, List<String>>> orgRepoCommits, String token, String userName) {
+    public Mono<Void> orgLanguages(Map<String, Map<String, List<String>>> orgRepoCommits, String token, String userName,Integer userId) {
         List<Mono<Void>> languageMonos = new ArrayList<>();
 
         orgRepoCommits.forEach((orgName, repoCommits) -> {
@@ -93,8 +101,12 @@ public class LanguageService {
                         .header("Authorization", "Bearer " + token)
                         .retrieve()
                         .bodyToMono(JsonNode.class)
+                        .onErrorResume(e -> {
+                            log.error("Error while retrieving language data for repository " + repoName, e);
+                            return Mono.empty();
+                        })
                         .flatMap(response -> {
-                            RepositoryEntity repoEntity = gitRepository.findByRepoName(repoName).orElse(new RepositoryEntity());
+                            RepositoryEntity repoEntity = gitRepository.findByUserIdAndRepoName(userId,repoName).orElse(new RepositoryEntity());
                             LocalDateTime startDate = repoEntity.getStartDate();
                             LocalDateTime endDate = repoEntity.getEndDate();
 
@@ -109,7 +121,10 @@ public class LanguageService {
                                         .collect(Collectors.toList());
 
                                 repoEntity.setLanguageDurations(languageDurations);
-                                return Mono.fromRunnable(() -> gitRepository.save(repoEntity)).then();
+                                return Mono.fromRunnable(() -> {
+                                    gitRepository.save(repoEntity);
+                                    messageOrgSenderService.orgRepoSendMessage(repoEntity).subscribe();
+                                }).then();
                             } else {
                                 log.warn("Start date or end date is null for repository: " + repoName);
                                 return Mono.empty();

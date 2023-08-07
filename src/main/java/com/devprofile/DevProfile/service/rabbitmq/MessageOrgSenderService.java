@@ -12,20 +12,19 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 @Service
-public class MessageSenderService {
-
+public class MessageOrgSenderService {
     @Autowired
     private AmqpTemplate amqpTemplate;
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Value("${rabbitmq.exchange}")
+    @Value("${rabbitmq.exchange2}")
     private String exchange;
 
-    @Value("${rabbitmq.routingkey}")
+    @Value("${rabbitmq.routingkey2}")
     private String routingkey;
 
-    public Mono<String> MainSendMessage(UserEntity userEntity) {
+    public Mono<String> orgMainSendMessage(UserEntity userEntity) {
         return Mono.fromCallable(() -> {
             String message = objectMapper.writeValueAsString(userEntity);
             amqpTemplate.convertAndSend(exchange, routingkey, message);
@@ -33,7 +32,7 @@ public class MessageSenderService {
         });
     }
 
-    public Mono<String> RepoSendMessage(RepositoryEntity repositoryEntity) {
+    public Mono<String> orgRepoSendMessage(RepositoryEntity repositoryEntity) {
         return Mono.fromCallable(() -> {
             String message = objectMapper.writeValueAsString(repositoryEntity);
             amqpTemplate.convertAndSend(exchange, routingkey, message);
@@ -41,15 +40,14 @@ public class MessageSenderService {
         });
     }
 
-    public Mono<String> CommitSendMessage(CommitEntity commitEntity) {
+    public Mono<String> orgCommitSendMessage(CommitEntity commitEntity) {
         return Mono.fromCallable(() -> {
             String message = objectMapper.writeValueAsString(commitEntity);
             amqpTemplate.convertAndSend(exchange, routingkey, message);
             return "Message sent for Commit: " + commitEntity.getUserId();
         });
     }
-
-    public Mono<String> PatchSendMessage(PatchEntity patchEntity) {
+    public Mono<String> orgPatchSendMessage(PatchEntity patchEntity) {
         return Mono.fromCallable(() -> {
             String message = objectMapper.writeValueAsString(patchEntity);
             amqpTemplate.convertAndSend(exchange, routingkey, message);
@@ -57,7 +55,7 @@ public class MessageSenderService {
         });
     }
 
-    public Mono<String> sendMessage(String message) {
+    public Mono<String> orgSendMessage(String message) {
         return Mono.fromCallable(() -> {
             amqpTemplate.convertAndSend(exchange, routingkey, message);
             return "Message sent: " + message;

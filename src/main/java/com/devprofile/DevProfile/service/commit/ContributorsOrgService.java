@@ -2,12 +2,14 @@ package com.devprofile.DevProfile.service.commit;
 
 import com.devprofile.DevProfile.entity.RepositoryEntity;
 import com.devprofile.DevProfile.repository.GitRepository;
+import com.devprofile.DevProfile.service.rabbitmq.MessageOrgSenderService;
 import com.devprofile.DevProfile.service.rabbitmq.MessageSenderService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -21,16 +23,16 @@ public class ContributorsOrgService {
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
     private final GitRepository gitRepository;
-    private final MessageSenderService messageSenderService;
+    private final MessageOrgSenderService messageOrgSenderService;
 
-    public ContributorsOrgService(WebClient.Builder webClientBuilder, ObjectMapper objectMapper, GitRepository gitRepository, MessageSenderService messageSenderService) {
+    public ContributorsOrgService(WebClient.Builder webClientBuilder, ObjectMapper objectMapper, GitRepository gitRepository, MessageSenderService messageSenderService, MessageOrgSenderService messageOrgSenderService) {
         this.webClient = webClientBuilder.baseUrl("https://api.github.com").build();
         this.objectMapper = objectMapper;
         this.gitRepository = gitRepository;
-        this.messageSenderService = messageSenderService;
+        this.messageOrgSenderService = messageOrgSenderService;
     }
 
-    public Mono<Void> countCommits(Map<String, Map<String, List<String>>> orgRepoCommits,String userName,String token) {
+    public Mono<Void> countCommits(Map<String, Map<String, List<String>>> orgRepoCommits,String userName,String token,Integer userId) {
         return Flux.fromIterable(orgRepoCommits.entrySet())
                 .flatMap(orgEntry -> {
                     String orgName = orgEntry.getKey();
@@ -45,6 +47,15 @@ public class ContributorsOrgService {
                                         .header("Authorization", "Bearer " + token)
                                         .retrieve()
                                         .bodyToMono(String.class)
+                                        .onErrorResume(e -> {
+                                            if (e instanceof WebClientResponseException.NotFound) {
+                                                log.error("404 error: Resource not found", e);
+                                                return Mono.empty();
+                                            } else {
+                                                log.error("Error calling API", e);
+                                                return Mono.error(e);
+                                            }
+                                        })
                                         .flatMap(responseBody -> {
                                             try {
                                                 List<Map<String, Object>> contributors = objectMapper.readValue(responseBody, new TypeReference<List<Map<String, Object>>>() {});
@@ -59,7 +70,7 @@ public class ContributorsOrgService {
                                                         myCommitCnt = contribution;
                                                     }
                                                 }
-                                                RepositoryEntity repositoryEntity = gitRepository.findByRepoName(repoName).orElse(new RepositoryEntity());
+                                                RepositoryEntity repositoryEntity = gitRepository.findByUserIdAndRepoName(userId,repoName).orElse(new RepositoryEntity());
 
                                                 repositoryEntity.setTotalCommitCnt(totalCommitCnt);
                                                 repositoryEntity.setMyCommitCnt(myCommitCnt);
@@ -67,7 +78,7 @@ public class ContributorsOrgService {
                                                 repositoryEntity.setRepoName(repoName);
 
                                                 return Mono.fromCallable(() -> gitRepository.save(repositoryEntity))
-                                                        .flatMap(repoEntity -> messageSenderService.RepoSendMessage(repoEntity));
+                                                        .flatMap(repoEntity -> messageOrgSenderService.orgRepoSendMessage(repoEntity));
                                             } catch (Exception e) {
                                                 return Mono.error(new RuntimeException("Fail", e));
                                             }
