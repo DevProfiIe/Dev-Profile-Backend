@@ -28,5 +28,6 @@ public interface GitRepository extends JpaRepository<RepositoryEntity, Long> {
 
     @Query("SELECT r FROM RepositoryEntity r WHERE r.totalCommitCnt IS NOT NULL AND r.endDate IS NOT NULL")
     List<RepositoryEntity> findWithCommitAndEndDate();
+    Optional<RepositoryEntity> findByUserIdAndRepoName(Integer userId, String repoName);
 
 }

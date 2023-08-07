@@ -3,7 +3,6 @@ package com.devprofile.DevProfile.controller;
 import com.devprofile.DevProfile.component.JwtProvider;
 import com.devprofile.DevProfile.dto.response.ApiResponse;
 import com.devprofile.DevProfile.dto.response.analyze.CommitKeywordsDTO;
-import com.devprofile.DevProfile.dto.response.analyze.RepositoryEntityDTO;
 import com.devprofile.DevProfile.dto.response.analyze.UserDTO;
 import com.devprofile.DevProfile.entity.*;
 import com.devprofile.DevProfile.repository.*;
@@ -35,6 +34,7 @@ import java.lang.reflect.Field;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Controller
@@ -94,11 +94,9 @@ public class MainController {
             messageSenderService.MainSendMessage(user);
             messageOrgSenderService.orgMainSendMessage(user);
 
-            Mono<Void> userRepos = userService.userOwnedRepositories(user)
-                    .then(Mono.fromRunnable(() -> filterService.createAndSaveFilter(user.getLogin())));
+            Mono<Void> userRepos = userService.userOwnedRepositories(user);
 
-            Mono<Void> orgRepos = orgService.orgOwnedRepositories(user)
-                    .then(Mono.fromRunnable(() -> filterService.createAndSaveFilter(user.getLogin())));
+            Mono<Void> orgRepos = orgService.orgOwnedRepositories(user);
 
             return Flux.merge(userRepos, orgRepos)
                     .then();
@@ -154,16 +152,16 @@ public class MainController {
 
     @GetMapping("/response_test")
     public ResponseEntity<ApiResponse<Object>> responseApiTest(@RequestParam String userName) {
-        List<CommitEntity> allCommitEntities = commitRepository.findAll();
+        List<CommitEntity> allCommitEntities = commitRepository.findByUserName(userName);
         Map<String, CommitKeywordsDTO> oidAndKeywordsMap = new HashMap<>();
-        Map<LocalDate, Integer> calendar = new HashMap<>(); // LocalDateTime 대신 LocalDate 사용
+        Map<LocalDate, Integer> calendar = new HashMap<>();
 
         for (CommitEntity commitEntity : allCommitEntities) {
-            Optional<CommitKeywordsDTO> keywords = responseService.getFeatureFramework(commitEntity.getCommitOid());
+            Optional<CommitKeywordsDTO> keywords = responseService.getFeatureFramework(commitEntity.getCommitOid(), commitEntity.getUserId());
             if (keywords.isPresent()) {
                 oidAndKeywordsMap.put(commitEntity.getCommitOid(), keywords.get());
             }
-            LocalDate day = commitEntity.getCommitDate(); // LocalDateTime 대신 LocalDate 사용
+            LocalDate day = commitEntity.getCommitDate();
             calendar.merge(day, 1, Integer::sum);
         }
         List<Map<String, Object>> calendarData = new ArrayList<>();
@@ -179,9 +177,18 @@ public class MainController {
         }
 
         repositoryService.saveFrameworksToNewTable(allCommitEntities, oidAndKeywordsMap,userName);
-        List<RepositoryEntity> repositoryEntities = gitRepository.findWithCommitAndEndDate();
+        List<CommitEntity> filteredCommitEntities = allCommitEntities.stream()
+                .filter(commitEntity -> commitEntity.getUserName().equals(userName))
+                .collect(Collectors.toList());
 
-        List<RepositoryEntityDTO> extendedEntities = repositoryService.createRepositoryEntityDTOs(repositoryEntities, allCommitEntities, oidAndKeywordsMap);
+        List<RepositoryEntity> repositoryEntities = gitRepository.findWithCommitAndEndDate();
+        List<RepositoryEntity> filteredRepositoryEntities = repositoryEntities.stream()
+                .filter(repositoryEntity -> repositoryEntity.getUserName().equals(userName))
+                .collect(Collectors.toList());
+
+        Map<String, CommitKeywordsDTO> filteredOidAndKeywordsMap = oidAndKeywordsMap.entrySet().stream()
+                .filter(entry -> filteredCommitEntities.stream().anyMatch(commitEntity -> commitEntity.getCommitOid().equals(entry.getKey())))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         UserEntity userEntity = userRepository.findByLogin(userName);
         UserDataEntity userDataEntity = userDataRepository.findByUserName(userName);
@@ -196,16 +203,16 @@ public class MainController {
         String message = null;
         if (userDTO == null) {
             message = "Fail: No user found";
-        } else if (extendedEntities.isEmpty()) {
+        } else if (filteredRepositoryEntities.isEmpty()) {
             message = "Fail: No data found";
         }
 
         Map<String, Object> combinedData = new HashMap<>();
         combinedData.put("userInfo", userDTO);
-        combinedData.put("repositoryInfo", extendedEntities);
+        combinedData.put("repositoryInfo", repositoryService.createRepositoryEntityDTOs(filteredRepositoryEntities, filteredCommitEntities, filteredOidAndKeywordsMap));
 
         ApiResponse<Object> apiResponse = new ApiResponse<>();
-        apiResponse.setResult(userDTO != null && !extendedEntities.isEmpty());
+        apiResponse.setResult(userDTO != null && !filteredRepositoryEntities.isEmpty());
         apiResponse.setData(combinedData);
         apiResponse.setMessage(message);
 
@@ -219,7 +226,7 @@ public class MainController {
 
         ResponseEntity<ApiResponse> userBoardResponse;
         try {
-            userBoardResponse = userBoardData();
+            userBoardResponse = userBoardData(userName);
             if (userBoardResponse.getBody() != null && userBoardResponse.getBody().isResult()) {
                 combinedData.put("boardData", userBoardResponse.getBody().getData());
             }
@@ -261,21 +268,27 @@ public class MainController {
 
 
 
-    public ResponseEntity<ApiResponse> userBoardData() throws IllegalAccessException, NoSuchFieldException {
+    public ResponseEntity<ApiResponse> userBoardData(String userName) throws IllegalAccessException, NoSuchFieldException {
         ApiResponse<List<Map<String, Object>>> apiResponse = new ApiResponse<>();
         List<Map<String, Object>> resultList = new ArrayList<>();
-        List<UserEntity> UserEntityList = userRepository.findAll();
+        List<UserEntity> userEntityList = userRepository.findAll();
         double maxScoreCount = 0;
         double maxScoreRecencyLength = 0;
 
 
-        for(UserEntity userEntity : UserEntityList) {
+        for (UserEntity userEntity : userEntityList) {
+            if (!userEntity.getLogin().equals(userName)) {
+                continue;
+            }
+
             UserDataEntity userDataEntity = userDataRepository.findByUserName(userEntity.getLogin());
-            if(userDataEntity == null) continue;
+            if (userDataEntity == null) {
+                continue;
+            }
 
             Field[] fields = UserDataEntity.class.getDeclaredFields();
-            for(Field field : fields){
-                if(field.getType().equals(Integer.class) && !field.getName().endsWith("Set")){
+            for (Field field : fields) {
+                if (field.getType().equals(Integer.class) && !field.getName().endsWith("Set")) {
                     Map<String, Object> resultMap = new HashMap<>();
                     resultMap.put("field", field.getName());
                     resultMap.put("login", userEntity.getLogin());

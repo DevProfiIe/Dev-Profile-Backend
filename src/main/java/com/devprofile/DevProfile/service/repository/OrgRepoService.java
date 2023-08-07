@@ -29,7 +29,7 @@ public class OrgRepoService extends AbstractRepositoryService {
     public Mono<Void> saveRepositories(JsonNode orgs, Integer userId, String userName) {
         return Flux.fromIterable(orgs)
                 .flatMap((JsonNode org) -> Flux.fromIterable(org.get("repositories").get("nodes"))
-                        .flatMap(repo -> this.saveRepository(repo, userId, org.get("name").asText()))
+                        .flatMap(repo -> this.saveRepository(repo, userId, org.get("name").asText(),userName))
                         .doOnNext(savedRepo -> {
                             messageOrgSenderService.orgRepoSendMessage(savedRepo)
                                     .subscribe(result -> log.info("Sent message: " + result),
@@ -42,7 +42,7 @@ public class OrgRepoService extends AbstractRepositoryService {
     }
 
 
-    private Mono<RepositoryEntity> saveRepository(JsonNode repo, Integer userId, String orgName) {
+    private Mono<RepositoryEntity> saveRepository(JsonNode repo, Integer userId, String orgName,String userName) {
         return Mono.fromCallable(() -> {
             String repoNodeId = repo.get("id").asText();
             Optional<RepositoryEntity> existingRepoEntity = gitRepository.findByRepoNodeId(repoNodeId);
@@ -72,6 +72,7 @@ public class OrgRepoService extends AbstractRepositoryService {
                                 repositoryEntity.setRepoUpdated(repoUpdated);
                                 repositoryEntity.setRepoUrl(repoUrl);
                                 repositoryEntity.setUserId(userId);
+                                repositoryEntity.setUserName(userName);
 
                                 gitRepository.save(repositoryEntity);
                             }

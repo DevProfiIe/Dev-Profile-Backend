@@ -25,9 +25,9 @@ public class UserRepoService extends AbstractRepositoryService {
 
 
 
-    public Mono<Void> saveRepositories(JsonNode repos, Integer userId) {
+    public Mono<Void> saveRepositories(JsonNode repos, Integer userId,String userName) {
         return Flux.fromIterable(repos)
-                .flatMap(repo -> this.saveRepository(repo, userId))
+                .flatMap(repo -> this.saveRepository(repo, userId,userName))
                 .doOnNext(savedRepo -> {
                     messageSenderService.RepoSendMessage(savedRepo)
                             .subscribe(result -> log.info("Sent message: " + result));
@@ -36,7 +36,7 @@ public class UserRepoService extends AbstractRepositoryService {
     }
 
 
-    public Mono<RepositoryEntity> saveRepository(JsonNode repo, Integer userId) {
+    public Mono<RepositoryEntity> saveRepository(JsonNode repo, Integer userId,String userName) {
         return Mono.fromCallable(() -> {
             String repoNodeId = repo.get("id").asText();
             Optional<RepositoryEntity> existingRepoEntity = gitRepository.findByRepoNodeId(repoNodeId);
@@ -57,6 +57,7 @@ public class UserRepoService extends AbstractRepositoryService {
                 repositoryEntity.setRepoUrl(repoUrl);
                 repositoryEntity.setRepoDesc(repoDesc);
                 repositoryEntity.setUserId(userId);
+                repositoryEntity.setUserName(userName);
             }
 
             RepositoryEntity savedEntity = gitRepository.save(repositoryEntity);

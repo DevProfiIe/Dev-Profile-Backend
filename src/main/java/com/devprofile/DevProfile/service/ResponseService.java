@@ -21,8 +21,8 @@ public class ResponseService {
     }
 
 
-    public Optional<CommitKeywordsDTO> getFeatureFramework(String commitOid) {
-        Optional<CommitEntity> commitEntity = commitRepository.findByCommitOid(commitOid);
+    public Optional<CommitKeywordsDTO> getFeatureFramework(String commitOid,Integer userId) {
+        Optional<CommitEntity> commitEntity = commitRepository.findByCommitOidAndUserId(commitOid,userId);
         if(commitEntity.isPresent()){
             Optional<CommitKeywordsEntity> commitKeywordsEntity = Optional.ofNullable(commitKeywordsRepository.findByOid(commitOid));
 

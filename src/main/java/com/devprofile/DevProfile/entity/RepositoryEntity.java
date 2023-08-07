@@ -30,6 +30,7 @@ public class RepositoryEntity {
     private String repoDesc;
     private String repoUrl;
     private String orgName;
+    private String userName;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDateTime startDate;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")

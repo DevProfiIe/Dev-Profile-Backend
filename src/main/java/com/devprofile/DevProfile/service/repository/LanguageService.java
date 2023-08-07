@@ -38,7 +38,7 @@ public class LanguageService {
     }
 
 
-    public Mono<Void> repoLanguages(Map<String, List<String>> repoOidsMap, String userName, String token) {
+    public Mono<Void> repoLanguages(Map<String, List<String>> repoOidsMap, String userName, String token,Integer userId) {
         List<Mono<Void>> languageMonos = new ArrayList<>();
 
         for (String repoName : repoOidsMap.keySet()) {
@@ -53,7 +53,7 @@ public class LanguageService {
                         return Mono.empty();
                     })
                     .flatMap(response -> {
-                        RepositoryEntity repoEntity = gitRepository.findByRepoName(repoName).orElse(new RepositoryEntity());
+                        RepositoryEntity repoEntity = gitRepository.findByUserIdAndRepoName(userId,repoName).orElse(new RepositoryEntity());
                         LocalDateTime startDate = repoEntity.getStartDate();
                         LocalDateTime endDate = repoEntity.getEndDate();
 
@@ -90,7 +90,7 @@ public class LanguageService {
     }
 
 
-    public Mono<Void> orgLanguages(Map<String, Map<String, List<String>>> orgRepoCommits, String token, String userName) {
+    public Mono<Void> orgLanguages(Map<String, Map<String, List<String>>> orgRepoCommits, String token, String userName,Integer userId) {
         List<Mono<Void>> languageMonos = new ArrayList<>();
 
         orgRepoCommits.forEach((orgName, repoCommits) -> {
@@ -106,7 +106,7 @@ public class LanguageService {
                             return Mono.empty();
                         })
                         .flatMap(response -> {
-                            RepositoryEntity repoEntity = gitRepository.findByRepoName(repoName).orElse(new RepositoryEntity());
+                            RepositoryEntity repoEntity = gitRepository.findByUserIdAndRepoName(userId,repoName).orElse(new RepositoryEntity());
                             LocalDateTime startDate = repoEntity.getStartDate();
                             LocalDateTime endDate = repoEntity.getEndDate();
 
