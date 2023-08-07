@@ -48,4 +48,6 @@ public class UserDataEntity {
     private Set<String> userStyle;
 
     private String userKeywordAnalyze;
+
+    private String userTitle;
 }
