@@ -4,7 +4,9 @@ import com.devprofile.DevProfile.entity.CommitEntity;
 import com.devprofile.DevProfile.entity.PatchEntity;
 import com.devprofile.DevProfile.entity.RepositoryEntity;
 import com.devprofile.DevProfile.entity.UserEntity;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 @Service
+@Slf4j
 public class MessageSenderService {
 
     @Autowired
@@ -49,11 +52,15 @@ public class MessageSenderService {
         });
     }
 
-    public Mono<String> PatchSendMessage(PatchEntity patchEntity) {
-        return Mono.fromCallable(() -> {
-            String message = objectMapper.writeValueAsString(patchEntity);
-            amqpTemplate.convertAndSend(exchange, routingkey, message);
-            return "Message sent for Patch: " + patchEntity.getCommitOid();
+    public Mono<Void> PatchSendMessage(PatchEntity patchEntity) {
+        return Mono.fromRunnable(() -> {
+            try {
+                String message = objectMapper.writeValueAsString(patchEntity);
+                amqpTemplate.convertAndSend(exchange, routingkey, message);
+                log.info("Message sent for Patch: " + patchEntity.getCommitOid());
+            } catch (JsonProcessingException e) {
+                log.error("Error serializing PatchEntity: ", e);
+            }
         });
     }
 
