@@ -1,6 +1,5 @@
 package com.devprofile.DevProfile.service.patch;
 
-import com.devprofile.DevProfile.entity.CommitEntity;
 import com.devprofile.DevProfile.entity.PatchEntity;
 import com.devprofile.DevProfile.repository.CommitRepository;
 import com.devprofile.DevProfile.repository.PatchRepository;
@@ -34,6 +33,7 @@ public class PatchUserService {
         this.messageSenderService = messageSenderService;
     }
 
+
     public Mono<Void> savePatchs(String userName, String accessToken, Map<String, List<String>> repoOidsMap) {
         List<Mono<JsonNode>> requestMonos = new ArrayList<>();
 
@@ -59,52 +59,66 @@ public class PatchUserService {
         }
 
         return Flux.merge(requestMonos)
-                .flatMap(commitDetailResponse -> {
-                    List<Mono<Void>> operations = new ArrayList<>();
-                    if (commitDetailResponse.has("files")) {
-                        for (JsonNode file : commitDetailResponse.get("files")) {
-                            PatchEntity patchEntity = new PatchEntity();
-                            String oid = commitDetailResponse.get("sha").asText();
-                            CommitEntity commitEntity = commitRepository.findByCommitOid(oid)
-                                    .orElseThrow();
+                .distinct(commitDetailResponse -> {
+                    String sha = commitDetailResponse.get("sha").asText();
+                    String filename = commitDetailResponse.at("/files/0/filename").asText();
+                    return sha + "-" + filename;
+                })
+                .collectList()
+                .flatMap(commitDetailResponses -> {
+                    List<PatchEntity> patchesToSave = new ArrayList<>();
+                    for (JsonNode commitDetailResponse : commitDetailResponses) {
+                        if (commitDetailResponse.has("files")) {
+                            for (JsonNode file : commitDetailResponse.get("files")) {
+                                PatchEntity patchEntity = new PatchEntity();
+                                String oid = commitDetailResponse.get("sha").asText();
 
-                            if (file.has("filename")) patchEntity.setFileName(file.get("filename").asText());
-                            if (file.has("contents_url"))
-                                patchEntity.setContentsUrl(file.get("contents_url").asText());
-                            if (file.has("patch")) {
-                                String patch = file.get("patch").asText();
-                                int additions = 0;
-                                int deletions = 0;
-                                for (String line : patch.split("\n")) {
-                                    if (line.startsWith("+")) {
-                                        additions++;
-                                    } else if (line.startsWith("-")) {
-                                        deletions++;
+                                if (file.has("filename")) patchEntity.setFileName(file.get("filename").asText());
+                                if (file.has("contents_url"))
+                                    patchEntity.setContentsUrl(file.get("contents_url").asText());
+                                if (file.has("patch")) {
+                                    String patch = file.get("patch").asText();
+                                    int additions = 0;
+                                    int deletions = 0;
+                                    for (String line : patch.split("\n")) {
+                                        if (line.startsWith("+")) {
+                                            additions++;
+                                        } else if (line.startsWith("-")) {
+                                            deletions++;
+                                        }
                                     }
-                                }
-                                patchEntity.setDeletions(deletions);
-                                patchEntity.setAdditions(additions);
-                                patchEntity.setPatch(patch);
-                                patchEntity.setUserName(userName);
+                                    patchEntity.setDeletions(deletions);
+                                    patchEntity.setAdditions(additions);
+                                    patchEntity.setPatch(patch);
+                                    patchEntity.setUserName(userName);
 
-                                commitRepository.updateLength(oid, patch.length());
+                                    commitRepository.updateLength(oid, patch.length());
 
-                                patchEntity.setCommitOid(oid);
-                                if (patchEntity.getPatch() != null) {
-                                    List<PatchEntity> existingPatches = patchRepository.findAllByPatch(patchEntity.getPatch());
-                                    if (existingPatches.isEmpty()) {
-                                        operations.add(Mono.fromCallable(() -> {
-                                            patchRepository.saveAndFlush(patchEntity);
-                                            return null;
-                                        }).then(messageSenderService.PatchSendMessage(patchEntity)).then());
+                                    patchEntity.setCommitOid(oid);
+                                    if (patchEntity.getPatch() != null) {
+                                        patchesToSave.add(patchEntity);
                                     }
                                 }
                             }
                         }
                     }
-                    return Flux.merge(operations).then();
-                })
-                .doOnError(error -> log.error("Error fetching commit detail: ", error))
-                .then();
+
+                    List<String> patchesToCheck = new ArrayList<>();
+                    for (PatchEntity patch : patchesToSave) {
+                        patchesToCheck.add(patch.getPatch());
+                    }
+                    List<PatchEntity> existingPatches = patchRepository.findAllByPatchIn(patchesToCheck);
+
+                    List<PatchEntity> finalPatchesToSave = new ArrayList<>(patchesToSave);
+                    finalPatchesToSave.removeAll(existingPatches);
+
+                    patchRepository.saveAll(finalPatchesToSave);
+
+                    for (PatchEntity savedPatch : finalPatchesToSave) {
+                        messageSenderService.PatchSendMessage(savedPatch);
+                    }
+
+                    return Mono.empty();
+                });
     }
 }

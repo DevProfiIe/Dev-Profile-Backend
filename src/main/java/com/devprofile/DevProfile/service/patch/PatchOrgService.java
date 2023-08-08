@@ -72,59 +72,75 @@ public class PatchOrgService {
                 .then();
     }
 
-    private Mono<Void> processResponse(JsonNode response) {
+
+    public Mono<Void> processResponse(JsonNode response) {
         if (!response.has("sha")) {
             return Mono.empty();
         }
         String oid = response.get("sha").asText();
         return Mono.fromCallable(() -> commitRepository.findByCommitOid(oid).orElseThrow())
                 .flatMap(commitEntity -> {
+                    List<PatchEntity> patchesToSave = new ArrayList<>();
                     List<Mono<Void>> operations = new ArrayList<>();
                     if (response.has("files")) {
                         for (JsonNode file : response.get("files")) {
-                            PatchEntity patchEntity = new PatchEntity();
-                            if (file.has("filename"))
-                                patchEntity.setFileName(file.get("filename").asText());
-                            if (file.has("contents_url"))
-                                patchEntity.setContentsUrl(file.get("contents_url").asText());
-                            if (file.has("patch")) {
-                                String patch = file.get("patch").asText();
-                                patchEntity.setPatch(patch);
-                                int additions = 0;
-                                int deletions = 0;
-                                for (String line : patch.split("\n")) {
-                                    if (line.startsWith("+")) {
-                                        additions++;
-                                    } else if (line.startsWith("-")) {
-                                        deletions++;
-                                    }
-                                }
-                                patchEntity.setDeletions(deletions);
-                                patchEntity.setAdditions(additions);
-                                patchEntity.setCommitOid(oid);
-                                patchEntity.setUserName(commitEntity.getUserName());
-
-                                commitRepository.updateLength(oid, patch.length());
-                            }
-
+                            PatchEntity patchEntity = createPatchEntityFromJson(file, oid, commitEntity.getUserName());
                             if (patchEntity.getPatch() != null) {
-                                List<PatchEntity> existingPatches = patchRepository.findAllByPatch(patchEntity.getPatch());
-                                if (existingPatches.isEmpty()) {
-                                    Mono<Void> saveAndSendMono = Mono.fromCallable(() -> patchRepository.save(patchEntity))
-                                            .then(messageOrgSenderService.orgPatchSendMessage(patchEntity))
-                                            .then();
-                                    operations.add(saveAndSendMono);
-                                }
+                                patchesToSave.add(patchEntity);
                             }
                         }
                     }
+                    List<String> patchesToCheck = new ArrayList<>();
+                    for (PatchEntity patch : patchesToSave) {
+                        patchesToCheck.add(patch.getPatch());
+                    }
+                    List<PatchEntity> existingPatches = patchRepository.findAllByPatchIn(patchesToCheck);
+
+                    patchesToSave.removeAll(existingPatches);
+
+                    Flux<PatchEntity> distinctPatchesToSave = Flux.fromIterable(patchesToSave).distinct(PatchEntity::getPatch);
+
+                    Mono<Void> saveAndSendMono = distinctPatchesToSave.collectList()
+                            .flatMap(patches -> {
+                                patchRepository.saveAll(patches);
+                                return Flux.fromIterable(patches)
+                                        .flatMap(patch -> messageOrgSenderService.orgPatchSendMessage(patch))
+                                        .then();
+                            });
+
+                    operations.add(saveAndSendMono);
+
                     return Flux.merge(operations).then();
                 })
                 .doOnError(error -> log.error("Error fetching commit detail: ", error))
                 .then();
     }
 
-    private Mono<PatchEntity> savePatchEntity(PatchEntity patchEntity) {
-        return Mono.fromCallable(() -> patchRepository.save(patchEntity));
+    private PatchEntity createPatchEntityFromJson(JsonNode file, String oid, String userName) {
+        PatchEntity patchEntity = new PatchEntity();
+        if (file.has("filename"))
+            patchEntity.setFileName(file.get("filename").asText());
+        if (file.has("contents_url"))
+            patchEntity.setContentsUrl(file.get("contents_url").asText());
+        if (file.has("patch")) {
+            String patch = file.get("patch").asText();
+            patchEntity.setPatch(patch);
+            int additions = 0;
+            int deletions = 0;
+            for (String line : patch.split("\n")) {
+                if (line.startsWith("+")) {
+                    additions++;
+                } else if (line.startsWith("-")) {
+                    deletions++;
+                }
+            }
+            patchEntity.setDeletions(deletions);
+            patchEntity.setAdditions(additions);
+            patchEntity.setCommitOid(oid);
+            patchEntity.setUserName(userName);
+
+            commitRepository.updateLength(oid, patch.length());
+        }
+        return patchEntity;
     }
 }
