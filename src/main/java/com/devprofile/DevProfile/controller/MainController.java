@@ -52,7 +52,6 @@ public class MainController {
     private final ResponseService responseService;
     private final GitRepository gitRepository;
     private final GptPatchService gptPatchService;
-//    private final GptCommitService gptCommitService;
     private final RepositoryService repositoryService;
     private final SparqlService sparqlService;
     private final CommitKeywordsRepository commitKeywordsRepository;
@@ -83,6 +82,8 @@ public class MainController {
             userDTO.setSystemProgramming(userDataEntity.getSystemProgramming());
             userDTO.setWebFrontend(userDataEntity.getWebFrontend());
             userDTO.setGame(userDataEntity.getGame());
+            userDTO.setUserKeywordAnalyze(userDataEntity.getUserKeywordAnalyze());
+            userDTO.setUserTitle(userDataEntity.getUserTitle());
         }
 
         return userDTO;
@@ -245,7 +246,7 @@ public class MainController {
             combinedData.putAll((Map<? extends String, ?>) responseTest.getBody().getData());
         }
         FilterEntity filterEntity = filterRepository.findByUserLogin(userName);
-        combinedData.put("keywords", filterEntity.getStyles());
+        combinedData.put("styles", filterEntity.getStyles());
 
         apiResponse.setResult(true);
         apiResponse.setData(combinedData);

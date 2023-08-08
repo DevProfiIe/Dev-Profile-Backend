@@ -51,6 +51,8 @@ public class GitLoginService {
                 .retrieve()
                 .toEntity(Map.class)
                 .block();
+        System.out.println("response = " + response);
+
 
         // 응답으로 오는 엑세스 토큰 반환
         if (response.getStatusCode() == HttpStatus.OK) {

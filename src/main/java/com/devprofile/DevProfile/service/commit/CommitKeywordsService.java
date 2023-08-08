@@ -8,6 +8,7 @@ import com.devprofile.DevProfile.repository.FrameworkRepository;
 import com.devprofile.DevProfile.repository.UserDataRepository;
 import com.devprofile.DevProfile.repository.WordRepository;
 import com.devprofile.DevProfile.service.search.SparqlService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
@@ -96,6 +97,21 @@ public class CommitKeywordsService {
         return str;
     }
 
+    public Map<String, String> addSentenceTitle(String userName, String contents) throws JsonProcessingException {
+        contents = trimQuotes(contents);
+        contents = contents.replace("\\\"", "\"");
+        contents = contents.replace("\\n", "\n");
+        System.out.println("contents = " + contents);
+
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode contentsJson = mapper.readTree(contents);
+        Map<String, String> titleKeyword = new HashMap<>();
+        titleKeyword.put("userTitle", contentsJson.get("title").toString());
+        titleKeyword.put("userKeywordAnalyze", contentsJson.get("content").toString());
+        return titleKeyword;
+    }
+
     public Mono<?> addCommitKeywords(String userName,String oid, String keywords) {
         keywords = trimQuotes(keywords);
         keywords = keywords.replace("\\\"", "\"");
@@ -122,6 +138,7 @@ public class CommitKeywordsService {
             return null;
         }
     }
+
 
 
     private void processKeywords(Update update, Update updateUser, JsonNode keywordsJson,String userName) {

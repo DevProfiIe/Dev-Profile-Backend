@@ -34,5 +34,8 @@ public class UserDTO {
 
     private Integer systemProgramming;
 
+    private String userKeywordAnalyze;
+    private String userTitle;
+
 
 }

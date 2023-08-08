@@ -10,6 +10,7 @@ import com.devprofile.DevProfile.repository.CommitRepository;
 import com.devprofile.DevProfile.repository.PatchRepository;
 import com.devprofile.DevProfile.repository.UserDataRepository;
 import com.devprofile.DevProfile.service.commit.CommitKeywordsService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -119,7 +120,7 @@ public class GptPatchService {
 
 
     public void generateSentence(String userName) throws Exception {
-        Set<String> keywordSet = userDataRepository.findByUserName(userName).getKeywordSet();
+        Map<String, Integer> keywordSet= userDataRepository.findByUserName(userName).getCs();
         WebClient webClient = createWebClient();
         List<Map<String, String>> messages = createMessageObjects(keywordSet.toString(), systemPromptKeyWordAnalyze);
         System.out.println("keywordSet = " + keywordSet);
@@ -128,7 +129,9 @@ public class GptPatchService {
         if (choices != null && choices.isArray() && choices.size() > 0) {
             JsonNode content = choices.get(0).get("message").get("content");
             UserDataEntity userDataEntity = userDataRepository.findByUserName(userName);
-            userDataEntity.setUserKeywordAnalyze(content.asText());
+            Map<String, String> titleSentence=processJsonNodeAnalyze(content, userName);
+            userDataEntity.setUserKeywordAnalyze(titleSentence.get("userKeywordAnalyze"));
+            userDataEntity.setUserTitle(titleSentence.get("userTitle"));
             userDataRepository.save(userDataEntity);
         }
     }
@@ -181,5 +184,19 @@ public class GptPatchService {
             JsonNode content = choices.get(0).get("message").get("content");
             commitKeywordsService.addCommitKeywords(userName, oid, content.toString()).subscribe();
         }
+    }
+
+    private Map<String, String> processJsonNodeAnalyze(JsonNode jsonNode, String userName) {
+        JsonNode choices = jsonNode.get("choices");
+        System.out.println("choices = " + choices);
+        if (choices != null && choices.isArray() && choices.size() > 0) {
+            JsonNode content = choices.get(0).get("message").get("content");
+            try {
+                return commitKeywordsService.addSentenceTitle(userName, content.toString());
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return null;
     }
 }
