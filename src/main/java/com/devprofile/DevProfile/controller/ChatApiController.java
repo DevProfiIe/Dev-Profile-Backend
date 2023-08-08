@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-//@RequestMapping("/api")
 public class ChatApiController {
 
     private final UserRepository userRepository;
