@@ -76,7 +76,6 @@ public class CommitUserService {
                     commits.add(commitEntity);
                     oids.add(oid);
 
-                    // send a message after saving each commit
                     messageSenderService.CommitSendMessage(commitEntity).subscribe(result -> log.info("Sent message: " + result));
                 }
                 repoOidsMap.put(repo.get("name").asText(), oids);
