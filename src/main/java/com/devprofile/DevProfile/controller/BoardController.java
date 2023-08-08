@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 
@@ -34,6 +35,7 @@ public class BoardController {
     private final FilterService filterService;
     private final AggregationFilter aggregationFilter;
     private final UserStatusRepository userStatusRepository;
+    private final ListRepository listRepository;
 
 
     public Map<String, Object> makeKeywordMap(Integer num, String keyword){
@@ -105,22 +107,22 @@ public class BoardController {
     }
 
     @PostMapping("/board/send")
-    public ResponseEntity<ApiResponse> userSendMsg(@RequestParam String sendUserName,
-                                                   @RequestParam String receiveUserName,
-                                                   @RequestParam List<String> boardUserNames){
+    public ResponseEntity<ApiResponse> userSendMsg(@RequestParam String sendUserLogin,
+                                                   @RequestParam String receiveUserLogin,
+                                                   @RequestParam List<String> boardUserLogin,
+                                                   @RequestParam List<String> filterList){
 
         ApiResponse<String> apiResponse = new ApiResponse<>();
-        List<UserStatusEntity> userStatusEntities = new ArrayList<>();
-        for(String boardUserName : boardUserNames){
-            UserStatusEntity userStatus = new UserStatusEntity();
-            userStatus.setBoardUserLogin(boardUserName);
-            userStatus.setSendUserLogin(sendUserName);
-            userStatus.setReceiveUserLogin(receiveUserName);
-            userStatus.setSelectedStatus(false);
-            userStatus.setUserStatus("onGoing");
-            userStatusEntities.add(userStatus);
-        }
-        userStatusRepository.saveAll(userStatusEntities);
+        ListEntity listEntity = new ListEntity();
+
+        listEntity.setSendUserLogin(sendUserLogin);
+        listEntity.setReceiveUserLogin(receiveUserLogin);
+        listEntity.setPeople(boardUserLogin.size());
+        listEntity.setStatus(false);
+        listEntity.setFilter(filterList);
+        listEntity.setFilteredNameList(boardUserLogin);
+        listRepository.save(listEntity);
+
         apiResponse.setData(null);
         apiResponse.setToken(null);
         apiResponse.setMessage(null);
