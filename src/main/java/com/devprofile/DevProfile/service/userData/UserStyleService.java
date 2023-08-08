@@ -163,7 +163,7 @@ public class UserStyleService {
             }
         }
 
-        if (weekendCommits > 30) {
+        if (weekendCommits > 50) {
             return "주말 커밋 전문가";
         }else if(weekendCommits >= 10){
             return "주말 커밋자";

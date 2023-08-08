@@ -9,6 +9,7 @@ import com.devprofile.DevProfile.repository.*;
 import com.devprofile.DevProfile.service.FilterService;
 import com.devprofile.DevProfile.service.RepositoryService;
 import com.devprofile.DevProfile.service.ResponseService;
+import com.devprofile.DevProfile.service.VapidKeyGenerator;
 import com.devprofile.DevProfile.service.gpt.GptPatchService;
 import com.devprofile.DevProfile.service.graphql.GraphOrgService;
 import com.devprofile.DevProfile.service.graphql.GraphUserService;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.util.Pair;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -59,7 +61,9 @@ public class MainController {
     private final UserScoreRepository userScoreRepository;
     private final MessageSenderService messageSenderService;
     private final MessageOrgSenderService messageOrgSenderService;
+    private final VapidKeyGenerator vapidKeyGenerator;
     private final FilterRepository filterRepository;
+
 
 
     private UserDTO convertToDTO(UserEntity userEntity, UserDataEntity userDataEntity) {
@@ -114,7 +118,12 @@ public class MainController {
 
     @GetMapping("/chat2")
     public String chat() {
-        return "chat2";
+        try {
+            Pair<String, String> keys = vapidKeyGenerator.generateVapidKeys();
+            return "Public Key: " + keys.getFirst() + ", Private Key: " + keys.getSecond();
+        } catch (Exception e) {
+            return "Error occurred while generating VAPID keys: " + e.getMessage();
+        }
     }
 
 
@@ -246,7 +255,25 @@ public class MainController {
             combinedData.putAll((Map<? extends String, ?>) responseTest.getBody().getData());
         }
         FilterEntity filterEntity = filterRepository.findByUserLogin(userName);
-        combinedData.put("styles", filterEntity.getStyles());
+
+
+//        combinedData.put("keywords", filterEntity.getStyles());
+        List<Map<String, String>> stylesInfoList = new ArrayList<>();
+
+        Map<String, String> styles_info = new HashMap<>();
+        styles_info.put("주말 커밋자", "주말 커밋자 타이틀은 주말 누적 커밋 횟수가 최근 1년 내 50회를 초과하는 개발자에게 부여되는 특별한 인증입니다.");
+        styles_info.put("\"리드미\" 리드미", "각 저장소에 대한 README 파일의 내용을 불러온 후, 그 내용의 길이를 분석합니다. 특히, 50줄을 초과하는 리드미 파일의 수를 집계하여, 저장소의 리드미 내용이 얼마나 상세하게 작성되었는지를 파악합니다.");
+        styles_info.put("지속적인 개발자", "사용자의 커밋 데이터 중, 최근 6개월 동안의 활동만을 필터링하여 분석합니다. 최근 6개월 동안 활동일이 80%인 144일 이상일 경우, 해당 사용자를 \"지속적인 개발자\"로 인정합니다.");
+        styles_info.put("1일 1커밋", "최근 30일이상 커밋한 경우, 해당 사용자를 “1일 1커밋”으로 인식합니다. 하루 동안 여러 번의 커밋이 있더라도 그 날짜를 한 번만 카운트하여, 사용자의 개발 활동을 정확하게 파악합니다.");
+
+        for (Map.Entry<String, String> entry : styles_info.entrySet()) {
+            Map<String, String> temp = new HashMap<>();
+            temp.put("keyword", entry.getKey());
+            temp.put("detail", entry.getValue());
+            stylesInfoList.add(temp);
+        }
+
+        combinedData.put("styleInfo", stylesInfoList);
 
         apiResponse.setResult(true);
         apiResponse.setData(combinedData);

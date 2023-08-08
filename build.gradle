@@ -61,6 +61,9 @@ dependencies {
 	implementation 'com.google.code.gson:gson:2.8.0'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
+	implementation 'org.bouncycastle:bcprov-jdk15on:1.69'
+	implementation 'nl.martijndwars:web-push:5.1.1'
+
 	//itext for pdf
 	implementation files('build/libs/svg-8.0.0.jar')
 	implementation files('build/libs/barcodes-8.0.0.jar')
