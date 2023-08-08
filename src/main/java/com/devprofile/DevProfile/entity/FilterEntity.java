@@ -1,14 +1,12 @@
 package com.devprofile.DevProfile.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -24,6 +22,7 @@ public class FilterEntity {
     private String avatarUrl;
     private String field;
     private Set<String> styles;
+    private List<Map<String,String>> styleInfo;
     private Map<String,Integer> languages;
     private Map<String,Integer> frameworks;
     private Integer repoCount;
