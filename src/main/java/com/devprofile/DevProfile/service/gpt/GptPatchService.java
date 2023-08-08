@@ -100,7 +100,6 @@ public class GptPatchService {
         }
     }
 
-    @Transactional
     public void generateKeyword(String userName, PatchEntity patchEntity) {
         String patch = patchEntity.getPatch();
         if (patch == null) {

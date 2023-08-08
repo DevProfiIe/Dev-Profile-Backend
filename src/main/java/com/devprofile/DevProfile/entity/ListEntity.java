@@ -23,7 +23,7 @@ public class ListEntity {
     private String sendUserLogin;
     private String receiveUserLogin;
     private Integer people;
-    private Boolean status;
+    private String state;
     private List<String> filter;
     private List<String> filteredNameList;
 }

@@ -20,4 +20,10 @@ public class GPTController {
         gptPatchService.generateSentence(userName);
         return ResponseEntity.ok(null);
     }
+
+    @PostMapping("/analyze/patches")
+    public ResponseEntity<ApiResponse> testGpt(@RequestParam String userName) {
+        gptPatchService.processAllEntities(userName);
+        return ResponseEntity.ok(new ApiResponse());
+    }
 }

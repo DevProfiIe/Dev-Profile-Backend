@@ -118,7 +118,7 @@ public class BoardController {
         listEntity.setSendUserLogin(sendUserLogin);
         listEntity.setReceiveUserLogin(receiveUserLogin);
         listEntity.setPeople(boardUserLogin.size());
-        listEntity.setStatus(false);
+        listEntity.setState("onGoing");
         listEntity.setFilter(filterList);
         listEntity.setFilteredNameList(boardUserLogin);
         listRepository.save(listEntity);

@@ -138,18 +138,6 @@ public class MainController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @PostMapping("/test/gpt")
-    public String testGpt(@RequestParam String userName) {
-        gptPatchService.processAllEntities(userName);
-        return "index";
-    }
-
-
-//    @PostMapping("/test/gpt/score")
-//    public String testGptScore(@RequestParam String userName, @RequestParam String commitOid) {
-//        gptCommitService.processOneCommit(userName, commitOid);
-//        return "index";
-//    }
 
 
     @PostMapping("/test")
@@ -254,10 +242,6 @@ public class MainController {
         if (responseTest.getBody() != null && responseTest.getBody().isResult()) {
             combinedData.putAll((Map<? extends String, ?>) responseTest.getBody().getData());
         }
-        FilterEntity filterEntity = filterRepository.findByUserLogin(userName);
-
-
-//        combinedData.put("keywords", filterEntity.getStyles());
         List<Map<String, String>> stylesInfoList = new ArrayList<>();
 
         Map<String, String> styles_info = new HashMap<>();
@@ -297,16 +281,12 @@ public class MainController {
         return ResponseEntity.ok(" ");
     }
 
-
-
-
     public ResponseEntity<ApiResponse> userBoardData(String userName) throws IllegalAccessException, NoSuchFieldException {
         ApiResponse<List<Map<String, Object>>> apiResponse = new ApiResponse<>();
         List<Map<String, Object>> resultList = new ArrayList<>();
         List<UserEntity> userEntityList = userRepository.findAll();
         double maxScoreCount = 0;
         double maxScoreRecencyLength = 0;
-
 
         for (UserEntity userEntity : userEntityList) {
             if (!userEntity.getLogin().equals(userName)) {

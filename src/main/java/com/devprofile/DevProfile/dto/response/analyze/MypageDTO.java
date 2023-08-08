@@ -16,5 +16,5 @@ public class MypageDTO {
     private String userName;
     private List<String> filter;
     private Integer people;
-    private Boolean status;
+    private String state;
 }
