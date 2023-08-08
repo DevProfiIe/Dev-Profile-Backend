@@ -27,17 +27,17 @@ public class CommitOrgService {
     private final MessageOrgSenderService messageOrgSenderService;
     private final ObjectMapper objectMapper;
 
-
     public Mono<Map<String, List<String>>> saveCommits(JsonNode repositories, String userName, Integer userId) {
         return Mono.defer(() -> {
             Map<String, List<String>> repoOidsMap = new HashMap<>();
             try {
                 List<CommitEntity> commits = new ArrayList<>();
+
                 for (JsonNode repo : repositories) {
                     List<String> oids = new ArrayList<>();
                     JsonNode repository = repo.get("repositories");
                     JsonNode nodes = repository.get("nodes");
-                    for(JsonNode repoNode:nodes){
+                    for (JsonNode repoNode : nodes) {
                         String repoName = repoNode.get("name").asText();
                         JsonNode defaultBranchRef = repoNode.get("defaultBranchRef");
                         if (defaultBranchRef != null) {
@@ -48,7 +48,6 @@ public class CommitOrgService {
                                     JsonNode edges = history.get("edges");
                                     if (edges != null) {
                                         for (JsonNode edge : edges) {
-
                                             JsonNode node = edge.get("node");
                                             String commitOid = node.get("oid").asText();
                                             Optional<CommitEntity> existingCommit = commitRepository.findByCommitOid(commitOid);
@@ -74,7 +73,6 @@ public class CommitOrgService {
                                             commitEntity.setLength(0);
                                             commits.add(commitEntity);
                                             oids.add(commitOid);
-
                                             messageOrgSenderService.orgCommitSendMessage(commitEntity).subscribe(
                                                     result -> log.info("Sent message: " + result),
                                                     error -> log.error("Error sending message: ", error)
@@ -87,6 +85,7 @@ public class CommitOrgService {
                     }
                     repoOidsMap.put(repo.get("name").asText(), oids);
                 }
+
                 commitRepository.saveAll(commits);
                 commitRepository.flush();
             } catch (DataAccessException e) {
@@ -110,7 +109,7 @@ public class CommitOrgService {
                         result -> log.info("Sent message: " + result),
                         error -> log.error("Error sending message: ", error)
                 );
-            }catch (Exception e) {
+            } catch (Exception e) {
                 log.info(e.getMessage());
                 e.printStackTrace();
             }

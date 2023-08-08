@@ -13,6 +13,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +26,7 @@ public class PatchUserService {
     private final WebClient webClient;
     private final MessageSenderService messageSenderService;
 
+    private final Map<String, Integer> commitLengthMap = new HashMap<>();
     public PatchUserService(PatchRepository patchRepository, CommitRepository commitRepository,
                             @Qualifier("patchWebClient") WebClient webClient, MessageSenderService messageSenderService) {
         this.commitRepository = commitRepository;
@@ -92,7 +94,8 @@ public class PatchUserService {
                                     patchEntity.setPatch(patch);
                                     patchEntity.setUserName(userName);
 
-                                    commitRepository.updateLength(oid, patch.length());
+                                    Integer length = commitLengthMap.getOrDefault(oid, 0) + patch.length();
+                                    commitLengthMap.put(oid, length);
 
                                     patchEntity.setCommitOid(oid);
                                     if (patchEntity.getPatch() != null) {
@@ -102,6 +105,8 @@ public class PatchUserService {
                             }
                         }
                     }
+
+                    batchUpdateLengths();
 
                     List<String> patchesToCheck = new ArrayList<>();
                     for (PatchEntity patch : patchesToSave) {
@@ -120,5 +125,13 @@ public class PatchUserService {
 
                     return Mono.empty();
                 });
+    }
+    private void batchUpdateLengths() {
+        for (Map.Entry<String, Integer> entry : commitLengthMap.entrySet()) {
+            String commitOid = entry.getKey();
+            Integer length = entry.getValue();
+            commitRepository.updateLength(commitOid, length);
+        }
+        commitLengthMap.clear();
     }
 }

@@ -16,6 +16,7 @@ import reactor.util.retry.Retry;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +28,7 @@ public class PatchOrgService {
     private final WebClient webClient;
     private final CommitRepository commitRepository;
     private final MessageOrgSenderService messageOrgSenderService;
+    private final Map<String, Integer> commitLengthMap = new HashMap<>();
 
     public PatchOrgService(PatchRepository patchRepository, @Qualifier("patchWebClient") WebClient webClient,
                            CommitRepository commitRepository, MessageOrgSenderService messageOrgSenderService) {
@@ -139,8 +141,20 @@ public class PatchOrgService {
             patchEntity.setCommitOid(oid);
             patchEntity.setUserName(userName);
 
-            commitRepository.updateLength(oid, patch.length());
+            Integer length = commitLengthMap.getOrDefault(oid, 0) + patch.length();
+            commitLengthMap.put(oid, length);
+
         }
+        batchUpdateLengths();
         return patchEntity;
+    }
+
+    private void batchUpdateLengths() {
+        for (Map.Entry<String, Integer> entry : commitLengthMap.entrySet()) {
+            String commitOid = entry.getKey();
+            Integer length = entry.getValue();
+            commitRepository.updateLength(commitOid, length);
+        }
+        commitLengthMap.clear();
     }
 }
