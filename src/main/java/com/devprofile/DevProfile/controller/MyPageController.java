@@ -94,8 +94,11 @@ public class MyPageController {
     }
 
     @PostMapping("/myPage/submit")
-    public ResponseEntity<ApiResponse> myPageSubmitOngoing(@RequestParam String id){
-
+    public ResponseEntity<ApiResponse> myPageSubmitOngoing(@RequestParam String id, @RequestParam List<String> checkUserNames){
+        ListEntity listEntity = listRepository.findById(id).orElseThrow();
+        listEntity.setFilteredNameList(checkUserNames);
+        listEntity.setState("end");
+        listRepository.save(listEntity);
         ApiResponse<String> apiResponse = new ApiResponse<>();
         apiResponse.setResult(true);
         apiResponse.setData(null);
@@ -105,13 +108,8 @@ public class MyPageController {
     }
 
     @PostMapping("/myPage/submit/end")
-    public ResponseEntity<ApiResponse> myPageSubmitEnd(@RequestParam String userName){
-        List<UserStatusEntity> userStatusEntities = userStatusRepository.findBySendUserLogin(userName);
-        for(UserStatusEntity userStatusEntity: userStatusEntities){
-            if(userStatusEntity.getUserStatus().equals("end")){
-                userStatusRepository.delete(userStatusEntity);
-            }
-        }
+    public ResponseEntity<ApiResponse> myPageSubmitEnd(@RequestParam String id){
+        listRepository.deleteById(id);
         ApiResponse<String> apiResponse = new ApiResponse<>();
         apiResponse.setResult(true);
         apiResponse.setData(null);
