@@ -10,4 +10,5 @@ import java.util.List;
 public interface CommitKeywordsRepository extends MongoRepository<CommitKeywordsEntity, String> {
     CommitKeywordsEntity findByOid(String oid);
     List<CommitKeywordsEntity> findByFieldContaining(String field);
+    List<CommitKeywordsEntity> findByUserName(String userName);
 }

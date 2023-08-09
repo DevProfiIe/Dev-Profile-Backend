@@ -54,7 +54,7 @@ public class SearchService {
     //TODO: 소문자로 탐색, userName 붙이기
     public List<Pair<String,String>> getTop10LevenshteinSimilarEntity(String word, String userName) {
         Map<Pair<String, String>, Integer> commitSimilarities = new HashMap<>();
-        List<CommitKeywordsEntity> commitKeywordsEntities = commitKeywordsRepository.findAll();
+        List<CommitKeywordsEntity> commitKeywordsEntities = commitKeywordsRepository.findByUserName(userName);
         for (CommitKeywordsEntity commit : commitKeywordsEntities) {
             int minSimilarity = 100;
             String mostSimilarKeyword = "";

@@ -10,6 +10,8 @@ import com.devprofile.DevProfile.service.search.SearchService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 
+import lombok.Data;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.util.Pair;
@@ -21,8 +23,18 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+
+
+@Data
+class MsgRequest{
+    String sendUserLogin;
+    String receiveUserLogin;
+    List<String> boardUserLogin;
+    List<String> filterList;
+}
 
 @Controller
 @AllArgsConstructor
@@ -34,8 +46,8 @@ public class BoardController {
     private final FrameworkRepository frameworkRepository;
     private final FilterService filterService;
     private final AggregationFilter aggregationFilter;
-    private final UserStatusRepository userStatusRepository;
     private final ListRepository listRepository;
+    private final StyleRepository styleRepository;
 
 
     public Map<String, Object> makeKeywordMap(Integer num, String keyword){
@@ -80,23 +92,9 @@ public class BoardController {
             board.add(langMap);
         }
         filters.put("skills", board);
-        List<Map<String,Object>> styleList = new ArrayList<>();
 
-        styleList.add(makeKeywordMap(1,"지속적인 개발자"));
-        styleList.add(makeKeywordMap(2,"싱글 플레이어"));
-        styleList.add(makeKeywordMap(3,"멀티 플레이어"));
-        styleList.add(makeKeywordMap(4, "1일 1커밋"));
-        styleList.add(makeKeywordMap(5,"\"리드미\" 리드미"));
-        styleList.add(makeKeywordMap(6,"인기 개발자"));
-        styleList.add(makeKeywordMap(7,"영향력 있는 개발자"));
-        styleList.add(makeKeywordMap(8,"새벽형 개발자"));
-        styleList.add(makeKeywordMap(9,"아침형 개발자"));
-        styleList.add(makeKeywordMap(10,"설명충"));
-        styleList.add(makeKeywordMap(11,"주말 커밋 전문가"));
-        styleList.add(makeKeywordMap(12,"주말 커밋자"));
-        styleList.add(makeKeywordMap(13,"실속없는 커밋자"));
+        List<StyleEntity> styleList = styleRepository.findAll();
         filters.put("keyword", styleList);
-
 
         apiResponse.setData(filters);
         apiResponse.setMessage(null);
@@ -107,20 +105,19 @@ public class BoardController {
     }
 
     @PostMapping("/board/send")
-    public ResponseEntity<ApiResponse> userSendMsg(@RequestParam String sendUserLogin,
-                                                   @RequestParam String receiveUserLogin,
-                                                   @RequestParam List<String> boardUserLogin,
-                                                   @RequestParam List<String> filterList){
+    public ResponseEntity<ApiResponse> userSendMsg(@RequestBody MsgRequest msgRequest){
 
         ApiResponse<String> apiResponse = new ApiResponse<>();
         ListEntity listEntity = new ListEntity();
 
-        listEntity.setSendUserLogin(sendUserLogin);
-        listEntity.setReceiveUserLogin(receiveUserLogin);
-        listEntity.setPeople(boardUserLogin.size());
+        listEntity.setSendUserLogin(msgRequest.sendUserLogin);
+        listEntity.setReceiveUserLogin(msgRequest.receiveUserLogin);
+        listEntity.setPeople(msgRequest.boardUserLogin.size());
         listEntity.setState("onGoing");
-        listEntity.setFilter(filterList);
-        listEntity.setFilteredNameList(boardUserLogin);
+        listEntity.setFilter(msgRequest.filterList);
+        listEntity.setFilteredNameList(msgRequest.boardUserLogin);
+        listEntity.setSendDate(LocalDate.now().toString());
+
         listRepository.save(listEntity);
 
         apiResponse.setData(null);

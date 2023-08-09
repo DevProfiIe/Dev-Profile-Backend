@@ -18,6 +18,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.ArrayList;
@@ -29,7 +30,6 @@ import java.util.Map;
 @AllArgsConstructor
 public class MyPageController {
 
-    private final UserStatusRepository userStatusRepository;
     private final ListRepository listRepository;
     private final FilterRepository filterRepository;
     private final FilterService filterService;
@@ -42,6 +42,7 @@ public class MyPageController {
         mypageDTO.setId(listEntity.getId());
         mypageDTO.setFilter(listEntity.getFilter());
         mypageDTO.setUserName(userName);
+        mypageDTO.setSendDate(listEntity.getSendDate());
 
         return mypageDTO;
     }
@@ -49,24 +50,24 @@ public class MyPageController {
     public ResponseEntity<ApiResponse> myPage(@RequestParam String userName){
         Map<String,List<MypageDTO>> userStatusEntities = new HashMap<>();
 
-        List<ListEntity> userStatusSend=listRepository.findBySendUserLogin(userName);
-        List<ListEntity> userStatusReceive=listRepository.findByReceiveUserLogin(userName);
-        List<MypageDTO> userPages= new ArrayList<>();
-
+        List<ListEntity> userStatusSend = listRepository.findBySendUserLogin(userName);
+        List<ListEntity> userStatusReceive = listRepository.findByReceiveUserLogin(userName);
+        List<MypageDTO> userPageSend= new ArrayList<>();
+        List<MypageDTO> userPageReceive = new ArrayList<>();
 
         for(ListEntity listEntity: userStatusSend){
             String uniqueName = listEntity.getReceiveUserLogin();
-            userPages.add(convertToMyPageDTO(listEntity, uniqueName));
+            userPageSend.add(convertToMyPageDTO(listEntity, uniqueName));
         }
 
-        userStatusEntities.put("send",userPages);
-        userPages.clear();
+        userStatusEntities.put("send",userPageSend);
+
 
         for(ListEntity listEntity: userStatusReceive){
             String uniqueName = listEntity.getSendUserLogin();
-            userPages.add(convertToMyPageDTO(listEntity, uniqueName));
+            userPageReceive.add(convertToMyPageDTO(listEntity, uniqueName));
         }
-        userStatusEntities.put("receive",userPages);
+        userStatusEntities.put("receive",userPageReceive);
 
         ApiResponse<Map<String, List<MypageDTO>>> apiResponse = new ApiResponse<>();
         apiResponse.setToken(null);
@@ -94,9 +95,9 @@ public class MyPageController {
     }
 
     @PostMapping("/myPage/submit")
-    public ResponseEntity<ApiResponse> myPageSubmitOngoing(@RequestParam String id, @RequestParam List<String> checkUserNames){
-        ListEntity listEntity = listRepository.findById(id).orElseThrow();
-        listEntity.setFilteredNameList(checkUserNames);
+    public ResponseEntity<ApiResponse> myPageSubmitOngoing(@RequestBody Map<String, Object> requestBody){
+        ListEntity listEntity = listRepository.findById(requestBody.get("id").toString()).orElseThrow();
+        listEntity.setFilteredNameList((List<String>) requestBody.get("checkUserNames"));
         listEntity.setState("end");
         listRepository.save(listEntity);
         ApiResponse<String> apiResponse = new ApiResponse<>();
@@ -108,7 +109,7 @@ public class MyPageController {
     }
 
     @PostMapping("/myPage/submit/end")
-    public ResponseEntity<ApiResponse> myPageSubmitEnd(@RequestParam String id){
+    public ResponseEntity<ApiResponse> myPageSubmitEnd(@RequestBody String id){
         listRepository.deleteById(id);
         ApiResponse<String> apiResponse = new ApiResponse<>();
         apiResponse.setResult(true);

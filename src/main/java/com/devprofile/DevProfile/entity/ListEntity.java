@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -19,11 +20,13 @@ public class ListEntity {
     @Id
     private String id;
 
-    @Column
     private String sendUserLogin;
     private String receiveUserLogin;
     private Integer people;
     private String state;
     private List<String> filter;
     private List<String> filteredNameList;
+    private String sendDate;
+
+
 }
