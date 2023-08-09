@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FileTreeNode {
+    private String id;
+
     public String name;
     String type;
     public List<FileTreeNode> children;
@@ -20,5 +22,13 @@ public class FileTreeNode {
 
     public List<FileTreeNode> getChildren() {
         return children != null ? children : new ArrayList<>();
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 }

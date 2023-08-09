@@ -17,10 +17,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -170,6 +167,7 @@ public class SearchController {
 
                 if (!found) {
                     FileTreeNode newNode = new FileTreeNode(part, isFile ? "file" : "folder");
+                    newNode.setId(generateUniqueId());  // ID 설정
                     current.children.add(newNode);
                     current = newNode;
                 }
@@ -191,5 +189,9 @@ public class SearchController {
             }
         }
         return commonPrefix;
+    }
+
+    private String generateUniqueId() {
+        return UUID.randomUUID().toString();
     }
 }

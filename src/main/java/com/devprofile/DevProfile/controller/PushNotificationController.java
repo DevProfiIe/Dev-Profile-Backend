@@ -15,7 +15,6 @@ import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/push")
 public class PushNotificationController {
 
     private final PushNotificationService pushNotificationService;
