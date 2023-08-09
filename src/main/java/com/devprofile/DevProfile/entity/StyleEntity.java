@@ -15,9 +15,9 @@ import lombok.Setter;
 public class StyleEntity {
 
     @Id
-    private Integer id;
+    private Integer num;
 
     @Column
-    private String style;
-    private String styleDescription;
+    private String keyword;
+    private String keywordDescription;
 }
