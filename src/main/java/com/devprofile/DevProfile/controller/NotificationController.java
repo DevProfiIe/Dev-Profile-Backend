@@ -19,6 +19,13 @@ public class NotificationController {
         this.notificationRepository = notificationRepository;
     }
 
+    @PostMapping("/create")
+    public ResponseEntity<?> createNotification(@RequestParam String userName, @RequestBody AlarmNotification alarm) {
+        alarm.setUserName(userName);
+        alarm.setRead(false);
+        notificationRepository.save(alarm);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
     @GetMapping("/unread")
     public List<AlarmNotification> getUnreadNotifications(@RequestParam String userName) {
         return notificationRepository.findByUserNameAndIsReadFalse(userName);
