@@ -149,7 +149,7 @@ public class SearchController {
                 boolean found = false;
 
                 if (isFile && part.isEmpty()) {
-                    // 파일 노드이면서 이름이 비어 있을 경우, 그 이후에 자식을 추가하지 않음
+
                     break;
                 }
 

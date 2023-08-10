@@ -140,7 +140,7 @@ public class UserStyleService {
         }
 
         if (totalStars > 50 || totalForks > 20) {
-            return "영향력 있는 제작자";
+            return "영향력 있는 개발자";
         } else if (totalStars > 20 || totalForks > 10) {
             return "인기 개발자";
         }
