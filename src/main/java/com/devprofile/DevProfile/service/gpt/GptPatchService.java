@@ -23,7 +23,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
@@ -39,13 +38,9 @@ public class GptPatchService {
 
 
     private final CommitKeywordsService commitKeywordsService;
-
     private final PatchRepository patchRepository;
-
     private final CommitKeywordsRepository commitKeywordsRepository;
-
     private final CommitRepository commitRepository;
-
     private final MongoTemplate mongoTemplate;
     private final UserDataRepository userDataRepository;
 
@@ -76,7 +71,6 @@ public class GptPatchService {
     @Value("${gpt.secret}")
     private String key;
 
-    @Transactional
     public void processAllEntities(String userName) {
         List<CommitEntity> commitEntities = commitRepository.findAll();
         List<PatchEntity> patchEntities;
@@ -116,7 +110,6 @@ public class GptPatchService {
             log.error(e.getMessage(), e);
         }
     }
-
 
     public void generateSentence(String userName) throws Exception {
         Map<String, Integer> keywordSet= userDataRepository.findByUserName(userName).getCs();

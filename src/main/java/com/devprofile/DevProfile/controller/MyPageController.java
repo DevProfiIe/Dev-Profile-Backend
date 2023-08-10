@@ -21,10 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Controller
 @AllArgsConstructor
@@ -59,6 +56,7 @@ public class MyPageController {
             String uniqueName = listEntity.getReceiveUserLogin();
             userPageSend.add(convertToMyPageDTO(listEntity, uniqueName));
         }
+        userPageSend.sort(Comparator.comparing(MypageDTO::getSendDate));
 
         userStatusEntities.put("send",userPageSend);
 
@@ -67,6 +65,7 @@ public class MyPageController {
             String uniqueName = listEntity.getSendUserLogin();
             userPageReceive.add(convertToMyPageDTO(listEntity, uniqueName));
         }
+        userPageReceive.sort(Comparator.comparing(MypageDTO::getSendDate));
         userStatusEntities.put("receive",userPageReceive);
 
         ApiResponse<Map<String, List<MypageDTO>>> apiResponse = new ApiResponse<>();
