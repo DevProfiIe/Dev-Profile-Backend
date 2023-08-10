@@ -38,13 +38,9 @@ public class GptPatchService {
 
 
     private final CommitKeywordsService commitKeywordsService;
-
     private final PatchRepository patchRepository;
-
     private final CommitKeywordsRepository commitKeywordsRepository;
-
     private final CommitRepository commitRepository;
-
     private final MongoTemplate mongoTemplate;
     private final UserDataRepository userDataRepository;
 
@@ -74,7 +70,6 @@ public class GptPatchService {
 
     @Value("${gpt.secret}")
     private String key;
-
 
     public void processAllEntities(String userName) {
         List<CommitEntity> commitEntities = commitRepository.findAll();
@@ -115,7 +110,6 @@ public class GptPatchService {
             log.error(e.getMessage(), e);
         }
     }
-
 
     public void generateSentence(String userName) throws Exception {
         Map<String, Integer> keywordSet= userDataRepository.findByUserName(userName).getCs();

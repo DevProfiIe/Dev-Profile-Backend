@@ -40,7 +40,8 @@ class MsgRequest{
     String sendUserLogin;
     String receiveUserLogin;
     List<String> boardUserLogin;
-    List<String> filterList;
+    List<String> filterKeyword;
+    List<String> filterSkill;
 }
 
 @Controller
@@ -123,7 +124,12 @@ public class BoardController {
         listEntity.setReceiveUserLogin(msgRequest.receiveUserLogin);
         listEntity.setPeople(msgRequest.boardUserLogin.size());
         listEntity.setState("onGoing");
-        listEntity.setFilter(msgRequest.filterList);
+        List<String> filterList = new ArrayList<>();
+        for(String keywordNum : msgRequest.filterKeyword){
+            filterList.add(styleRepository.findById(Integer.parseInt(keywordNum)).orElseThrow().getKeyword());
+        }
+        filterList.addAll(msgRequest.filterSkill);
+        listEntity.setFilter(filterList);
         listEntity.setFilteredNameList(msgRequest.boardUserLogin);
         listEntity.setSendDate(LocalDate.now().toString());
 
