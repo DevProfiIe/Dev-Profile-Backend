@@ -140,6 +140,23 @@ public class BoardController {
         apiResponse.setMessage(null);
         apiResponse.setResult(true);
 
+        String recipientToken = userRepository.findTokenByUsername(msgRequest.receiveUserLogin);
+
+        if (recipientToken == null) {
+            return new ResponseEntity("Recipient token not found", HttpStatus.NOT_FOUND);
+        }
+        try {
+            PushNotificationRequest pushRequest = new PushNotificationRequest();
+            pushRequest.setTitle("DevProfile");
+            pushRequest.setBody(msgRequest.sendUserLogin + "님이 " +
+                    " " + listEntity.getPeople() + "명의 분석 데이터를 보냈습니다.");
+            pushRequest.setUserName(msgRequest.receiveUserLogin);
+            pushRequest.setToken(recipientToken);
+            pushNotificationService.sendPushMessage(pushRequest);
+        } catch (FirebaseMessagingException e) {
+            e.printStackTrace();
+        }
+
 
         return ResponseEntity.ok(apiResponse);
     }

@@ -10,6 +10,7 @@ public class PushNotificationRequest {
     private String title;
     private String body;
     private String userName;
+    private String token;
 
     public String getTitle() {
         return title;

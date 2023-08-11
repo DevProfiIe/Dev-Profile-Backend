@@ -15,6 +15,7 @@ public class PushNotificationService {
         Message message = Message.builder()
                 .putData("title", request.getTitle())
                 .putData("body", request.getBody())
+                .setToken(request.getToken())
                 .build();
 
         FirebaseMessaging.getInstance().send(message);
