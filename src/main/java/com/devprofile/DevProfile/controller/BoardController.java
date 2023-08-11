@@ -3,25 +3,32 @@ package com.devprofile.DevProfile.controller;
 import com.devprofile.DevProfile.component.AggregationFilter;
 import com.devprofile.DevProfile.dto.response.ApiResponse;
 import com.devprofile.DevProfile.dto.response.analyze.UserPageDTO;
-import com.devprofile.DevProfile.entity.*;
-import com.devprofile.DevProfile.repository.*;
+import com.devprofile.DevProfile.entity.FilterEntity;
+import com.devprofile.DevProfile.entity.FrameworkEntity;
+import com.devprofile.DevProfile.entity.ListEntity;
+import com.devprofile.DevProfile.entity.StyleEntity;
+import com.devprofile.DevProfile.repository.FrameworkRepository;
+import com.devprofile.DevProfile.repository.ListRepository;
+import com.devprofile.DevProfile.repository.StyleRepository;
+import com.devprofile.DevProfile.repository.UserRepository;
+import com.devprofile.DevProfile.request.PushNotificationRequest;
 import com.devprofile.DevProfile.service.FilterService;
+import com.devprofile.DevProfile.service.notification.PushNotificationService;
 import com.devprofile.DevProfile.service.search.SearchService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.firebase.messaging.FirebaseMessagingException;
 import lombok.AllArgsConstructor;
-
 import lombok.Data;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.util.Pair;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
-
 
 import java.time.LocalDate;
 import java.util.*;
@@ -49,6 +56,8 @@ public class BoardController {
     private final AggregationFilter aggregationFilter;
     private final ListRepository listRepository;
     private final StyleRepository styleRepository;
+    private final PushNotificationService pushNotificationService;
+    private final UserRepository userRepository;
 
 
     public Map<String, Object> makeKeywordMap(Integer num, String keyword){
@@ -130,6 +139,24 @@ public class BoardController {
         apiResponse.setToken(null);
         apiResponse.setMessage(null);
         apiResponse.setResult(true);
+
+        String recipientToken = userRepository.findTokenByUsername(msgRequest.receiveUserLogin);
+
+        if (recipientToken == null) {
+            return new ResponseEntity("Recipient token not found", HttpStatus.NOT_FOUND);
+        }
+        try {
+            PushNotificationRequest pushRequest = new PushNotificationRequest();
+            pushRequest.setTitle("DevProfile");
+            pushRequest.setBody(msgRequest.sendUserLogin + "님이 " +
+                    " " + listEntity.getPeople() + "명의 분석 데이터를 보냈습니다.");
+            pushRequest.setUserName(msgRequest.receiveUserLogin);
+            pushRequest.setToken(recipientToken);
+            pushNotificationService.sendPushMessage(pushRequest);
+        } catch (FirebaseMessagingException e) {
+            e.printStackTrace();
+        }
+
 
         return ResponseEntity.ok(apiResponse);
     }

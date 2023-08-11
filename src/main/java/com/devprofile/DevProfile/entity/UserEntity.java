@@ -29,6 +29,7 @@ public class UserEntity {
     private String jwtRefreshToken;
     private String gitHubToken;
     private Boolean analyzed = false;
+    private String token;
 
     public UserEntity() {
 

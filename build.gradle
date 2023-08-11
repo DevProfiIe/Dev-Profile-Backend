@@ -87,6 +87,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-amqp'
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.11.3'
 
+	implementation 'com.google.firebase:firebase-admin:9.1.1'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 	annotationProcessor 'org.projectlombok:lombok'

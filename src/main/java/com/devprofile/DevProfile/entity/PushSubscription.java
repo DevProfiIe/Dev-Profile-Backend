@@ -20,6 +20,8 @@ public class PushSubscription {
     @Column
     private String userName;
 
+    @Column
+    private String token;
     @Embedded
     private Keys keys;
 

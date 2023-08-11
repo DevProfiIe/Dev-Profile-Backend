@@ -1,33 +1,24 @@
 package com.devprofile.DevProfile.service.notification;
 
-import nl.martijndwars.webpush.Notification;
-import nl.martijndwars.webpush.PushService;
-import nl.martijndwars.webpush.Subscription;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.springframework.beans.factory.annotation.Value;
+import com.devprofile.DevProfile.request.PushNotificationRequest;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingException;
+import com.google.firebase.messaging.Message;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
-import java.security.Security;
+
 
 @Service
 public class PushNotificationService {
 
-    @Value("${vapid.public-key}")
-    private String publicKey;
+    public void sendPushMessage(PushNotificationRequest request) throws FirebaseMessagingException {
+        Message message = Message.builder()
+                .putData("title", request.getTitle())
+                .putData("body", request.getBody())
+                .setToken(request.getToken())
+                .build();
 
-    @Value("${vapid.private-key}")
-    private String privateKey;
-
-    public PushNotificationService() {
-        Security.addProvider(new BouncyCastleProvider());
-    }
-
-    public void sendPushMessage(Subscription subscription, byte[] payload) throws Exception {
-        PushService pushService = new PushService(publicKey, privateKey);
-        String payloadStr = new String(payload, StandardCharsets.UTF_8);
-        Notification notification = new Notification(subscription, payloadStr);
-        pushService.send(notification);
+        FirebaseMessaging.getInstance().send(message);
     }
 }
 
