@@ -29,7 +29,6 @@ public class FilterService {
 
     private final UserDataRepository userDataRepository;
     private final UserRepository userRepository;
-    private final UserScoreRepository userScoreRepository;
     private final FrameworkRepository frameworkRepository;
     private final CommitRepository commitRepository;
     private final GitRepository gitRepository;
@@ -47,6 +46,7 @@ public class FilterService {
         filterEntity.setUserName(user.getName());
         filterEntity.setUserLogin(userLogin);
         filterEntity.setStyles(userData.getUserStyle());
+        filterEntity.setAvatarUrl(user.getAvatar_url());
 
         List<RepoFrameworkEntity> repoFrameworkEntities = repoFrameworkRepository.findAll();
         Map<String, Integer> frameworks = repoFrameworkEntities.stream()
@@ -89,9 +89,12 @@ public class FilterService {
         userPageDTO.setUserName(filter.getUserName());
         userPageDTO.setLogin(filter.getUserLogin());
         userPageDTO.setField(filter.getField());
+
+
         List<String> framework = new ArrayList<>(filter.getFrameworks().keySet());
         framework.sort(Comparator.comparingInt(filter.getFrameworks()::get).reversed());
         userPageDTO.setFramework(framework.size() > 3 ? framework.subList(0, 3) : framework);
+
 
         List<String> language = new ArrayList<>(filter.getLanguages().keySet());
         language.sort(Comparator.comparingInt(filter.getLanguages()::get).reversed());
