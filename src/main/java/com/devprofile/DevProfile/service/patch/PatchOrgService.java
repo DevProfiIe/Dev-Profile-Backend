@@ -106,7 +106,14 @@ public class PatchOrgService {
                             .flatMap(patches -> {
                                 patchRepository.saveAll(patches);
                                 return Flux.fromIterable(patches)
-                                        .flatMap(patch -> messageOrgSenderService.orgPatchSendMessage(patch))
+                                        .flatMap(patch -> messageOrgSenderService.orgPatchSendMessage(patch)
+                                                .onErrorResume(error -> {
+                                                    log.error("Error sending message: {}", error.getMessage());
+                                                    return Mono.delay(Duration.ofSeconds(5)) // 재시도 간격 설정
+                                                            .then(Mono.empty());
+                                                })
+                                        )
+                                        .retryWhen(Retry.fixedDelay(3, Duration.ofSeconds(5))) // 재시도 횟수 및 간격 설정
                                         .then();
                             });
 

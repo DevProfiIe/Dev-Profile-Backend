@@ -117,13 +117,16 @@ public class PatchUserService {
                     List<PatchEntity> finalPatchesToSave = new ArrayList<>(patchesToSave);
                     finalPatchesToSave.removeAll(existingPatches);
 
-                    patchRepository.saveAll(finalPatchesToSave);
-
-                    for (PatchEntity savedPatch : finalPatchesToSave) {
-                        messageSenderService.PatchSendMessage(savedPatch);
-                    }
-
-                    return Mono.empty();
+                    // 메세지 전송 시 에러 핸들링과 재시도
+                    return Flux.fromIterable(finalPatchesToSave)
+                            .flatMap(savedPatch -> {
+                                return messageSenderService.PatchSendMessage(savedPatch)
+                                        .onErrorResume(e -> {
+                                            log.error("Error sending message for Patch: " + savedPatch.getCommitOid(), e);
+                                            return Mono.empty();
+                                        });
+                            })
+                            .then(Mono.empty());
                 });
     }
     private void batchUpdateLengths() {
