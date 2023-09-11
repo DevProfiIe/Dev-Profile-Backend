@@ -169,7 +169,7 @@ public class BoardController {
             @RequestParam(required = false) List<Integer> keywordsFilter,
             @RequestParam(required = false) String field) {
         ApiResponse<Map<String,Object>> apiResponse = new ApiResponse<>();
-        List<UserPageDTO> resultEntities = new ArrayList<>();
+        List<UserPageDTO> resultEntities;
         List<String> keywords = new ArrayList<>();
         Map<Integer,String> styles = new HashMap<>();
         ObjectMapper objectMapper= new ObjectMapper();

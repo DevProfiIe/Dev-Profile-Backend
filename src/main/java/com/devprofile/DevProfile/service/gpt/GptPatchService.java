@@ -72,7 +72,7 @@ public class GptPatchService {
     private String key;
 
     public void processAllEntities(String userName) {
-        List<CommitEntity> commitEntities = commitRepository.findAll();
+        List<CommitEntity> commitEntities = commitRepository.findByUserName(userName);
         List<PatchEntity> patchEntities;
         Query query = new Query(Criteria.where("userName").is(userName));
 
@@ -105,7 +105,6 @@ public class GptPatchService {
         try {
             JsonNode jsonNode = postToGptService(webClient, messages);
             processJsonNode(jsonNode, userName, patchEntity.getCommitOid());
-
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }

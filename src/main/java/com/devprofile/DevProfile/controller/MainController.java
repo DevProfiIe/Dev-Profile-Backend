@@ -62,7 +62,6 @@ public class MainController {
     private final MessageSenderService messageSenderService;
     private final MessageOrgSenderService messageOrgSenderService;
     private final VapidKeyGenerator vapidKeyGenerator;
-    private final FilterRepository filterRepository;
 
 
 
